@@ -1,0 +1,4156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Config Generator</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233b82f6'/%3E%3Ctext x='16' y='23' font-size='22' font-family='monospace' font-weight='700' fill='white' text-anchor='middle'%3ES%26gt;%3C/text%3E%3C/svg%3E"
+    />
+
+    <style>
+      :root {
+        --bg: #000000;
+        --surface: #111111;
+        --surface-alt: #0a0a0a;
+        --border: #2a2d3a;
+        --text: #e2e4ea;
+        --text-dim: #8b8fa3;
+        --text-hint: #6b6f82;
+        --rgb-accent: 59, 130, 246;
+        --rgb-accent-dim: 37, 99, 235;
+        --rgb-success: 96, 165, 250;
+        --rgb-warn: 245, 158, 11;
+        --rgb-error: 239, 68, 68;
+        --rgb-white: 255, 255, 255;
+        --rgb-black: 0, 0, 0;
+        --accent: rgb(var(--rgb-accent));
+        --accent-dim: rgb(var(--rgb-accent-dim));
+        --border-focus: var(--accent);
+        --success: rgb(var(--rgb-success));
+        --success-dim: rgba(var(--rgb-success), 0.15);
+        --warn: rgb(var(--rgb-warn));
+        --warn-dim: rgba(var(--rgb-warn), 0.15);
+        --error: rgb(var(--rgb-error));
+        --mono: Consolas, "Courier New", monospace;
+        --sans: Segoe UI, Tahoma, Geneva, sans-serif;
+        --radius: 8px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track,
+      ::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-hint);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 420px 1fr;
+        min-height: 100vh;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+
+        .form-panel {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .preview-panel {
+          min-height: 60vh;
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .toolbar-header {
+          width: 100%;
+        }
+
+        .toolbar-actions {
+          width: 100%;
+        }
+
+        .toolbar-actions .btn {
+          flex: 1;
+        }
+      }
+
+      .form-panel,
+      .preview-panel {
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+
+      .form-panel {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 28px 24px;
+      }
+
+      .preview-panel {
+        padding: 28px 32px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-panel.drag-over {
+        background: rgba(var(--rgb-accent), 0.05);
+        outline: 2px dashed var(--accent);
+        outline-offset: -12px;
+      }
+
+      .brand,
+      .brand-title {
+        display: flex;
+        align-items: center;
+      }
+
+      .brand {
+        justify-content: space-between;
+      }
+
+      .brand-title {
+        gap: 10px;
+      }
+
+      .brand-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 20px;
+        color: #fff;
+      }
+
+      .brand h1 {
+        font-size: 17px;
+        font-weight: 700;
+      }
+
+      .instructions {
+        font-size: 12px;
+        color: var(--text-hint);
+        line-height: 1.5;
+        margin-top: 20px;
+        margin-bottom: 28px;
+      }
+
+      .instructions ol {
+        margin: 0;
+        padding-left: 14px;
+      }
+
+      .instructions li {
+        margin-bottom: 6px;
+        padding-left: 4px;
+      }
+
+      .panel-header {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--text);
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .panel-header::before {
+        content: "";
+        width: 3px;
+        height: 12px;
+        background: var(--accent);
+        border-radius: 2px;
+        margin-top: 1px;
+      }
+
+      .vars-count {
+        color: var(--text-dim);
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: none;
+        display: none;
+      }
+
+      .vars-count .count-number {
+        color: var(--success);
+      }
+
+      .vars-count .count-auto {
+        color: var(--warn);
+      }
+
+      .panel-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 32px 0 24px 0;
+      }
+
+      .file-loader {
+        background: var(--surface-alt);
+        border: 1px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .file-loader.loaded {
+        border-color: rgba(var(--rgb-success), 0.3);
+        background: rgba(var(--rgb-success), 0.04);
+      }
+
+      .file-loader .clear-file-btn {
+        display: none;
+      }
+
+      .file-loader.loaded .clear-file-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        color: var(--text-hint);
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          color 0.15s,
+          opacity 0.2s ease;
+      }
+
+      .file-loader.loaded:hover .clear-file-btn {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .file-loader.loaded .clear-file-btn:hover {
+        color: #ffffff;
+      }
+
+      .clear-file-btn svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .file-status {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        color: var(--text-dim);
+        line-height: 1.4;
+        overflow: hidden;
+        margin-right: -12px;
+        padding-right: 12px;
+        container-type: inline-size;
+        -webkit-mask-image: linear-gradient(
+          to right,
+          black calc(100% - 18px),
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          to right,
+          black calc(100% - 18px),
+          transparent 100%
+        );
+      }
+
+      .file-status .filename,
+      .file-status .not-loaded {
+        display: block;
+        white-space: nowrap;
+        width: max-content;
+        transition: transform 0.3s ease;
+      }
+
+      .file-status .filename {
+        color: var(--success);
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+
+      .file-status .not-loaded {
+        color: var(--text-hint);
+      }
+
+      .file-status:hover .filename {
+        animation: file-marquee var(--marquee-time, 3s) linear infinite
+          alternate;
+      }
+
+      @keyframes file-marquee {
+        0%,
+        15% {
+          transform: translateX(0);
+        }
+
+        85%,
+        100% {
+          transform: translateX(min(0px, calc(100cqw - 100% - 6px)));
+        }
+      }
+
+      .section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-hint);
+        margin: 24px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      .field {
+        margin-bottom: 14px;
+        transition:
+          background 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .field.flash-focus {
+        background: rgba(var(--rgb-accent), 0.15);
+        box-shadow: 0 0 0 6px rgba(var(--rgb-accent), 0.15);
+        border-radius: 4px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+        font-family: var(--mono);
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+
+      .field label:hover {
+        color: var(--accent);
+      }
+
+      .req-star {
+        color: var(--warn);
+        font-size: 11px;
+        margin-left: 4px;
+        display: none;
+        line-height: 0;
+        position: relative;
+        top: -2px;
+      }
+
+      .field .hint {
+        font-size: 11px;
+        color: var(--text-hint);
+        margin-bottom: 5px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 9px 12px;
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--text);
+        transition: border-color 0.15s;
+        outline: none;
+      }
+
+      .field input:focus,
+      .field select:focus {
+        border-color: var(--border-focus);
+      }
+
+      .field input::placeholder {
+        color: var(--text-hint);
+        font-size: 12px;
+      }
+
+      .field input.filled,
+      .field select.filled {
+        border-color: rgba(var(--rgb-success), 0.3);
+        background-color: rgba(var(--rgb-success), 0.04);
+      }
+
+      .field input.invalid {
+        border-color: rgba(var(--rgb-error), 0.5);
+        background-color: rgba(var(--rgb-error), 0.04);
+      }
+
+      .field input.invalid:focus {
+        box-shadow: 0 0 0 3px rgba(var(--rgb-error), 0.15);
+      }
+
+      .field select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b6f82'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+      }
+
+      .field select option {
+        background-color: var(--surface);
+        color: var(--text);
+      }
+
+      .validation-msg {
+        font-size: 10px;
+        color: var(--error);
+        margin-top: 3px;
+        font-family: var(--mono);
+      }
+
+      .preview-var {
+        cursor: pointer;
+        transition:
+          filter 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .preview-var:hover {
+        filter: brightness(1.3);
+        box-shadow: 0 2px 8px rgba(var(--rgb-black), 0.5);
+        border-radius: 3px;
+      }
+
+      .preview-var.flash-search {
+        background: var(--accent) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 4px var(--accent) !important;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+
+      .progress-bar {
+        background: var(--bg);
+        border-radius: 4px;
+        height: 6px;
+        margin: 16px 0 6px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .progress-text {
+        font-size: 11px;
+        color: var(--text-hint);
+        margin-bottom: 0;
+        text-align: left;
+      }
+
+      .btn,
+      .subtle-icon-btn,
+      .header-icon-btn,
+      .split-btn .btn-part {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          background-color 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+
+      .btn {
+        padding: 7px 14px;
+        border-radius: var(--radius);
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        gap: 6px;
+        font-family: var(--sans);
+        white-space: nowrap;
+      }
+
+      .btn svg,
+      .subtle-icon-btn svg,
+      .header-icon-btn svg,
+      .split-btn .btn-part svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .btn:hover {
+        border-color: var(--text-hint);
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-dim);
+        border-color: var(--accent-dim);
+      }
+
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+
+      .subtle-icon-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-hint);
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+      }
+
+      .subtle-icon-btn:hover {
+        background: rgba(var(--rgb-white), 0.05);
+        color: var(--text);
+      }
+
+      .header-icon-btn {
+        background: transparent;
+        border: none;
+        border-left: 1px solid var(--border);
+        color: var(--text-hint);
+        width: 44px;
+        padding: 0;
+      }
+
+      .header-icon-btn:hover {
+        background: rgba(var(--rgb-white), 0.05);
+        color: var(--text);
+      }
+
+      .split-btn {
+        display: flex;
+        align-items: stretch;
+        border-left: 1px solid var(--border);
+        transition: background 0.15s;
+      }
+
+      .split-btn .btn-part {
+        background: transparent;
+        border: none;
+        color: var(--text-hint);
+        width: 44px;
+        padding: 0;
+      }
+
+      .split-btn .copy-only {
+        position: relative;
+      }
+
+      .split-btn .copy-only::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 30%;
+        bottom: 30%;
+        width: 1px;
+        background: var(--border);
+        transition: opacity 0.15s;
+      }
+
+      .split-btn:hover {
+        background: rgba(var(--rgb-white), 0.05);
+      }
+
+      .split-btn:hover .btn-part {
+        color: var(--text);
+      }
+
+      .split-btn:has(.copy-only:hover) {
+        background: transparent;
+      }
+
+      .split-btn:has(.copy-only:hover) .copy-down {
+        color: var(--text-hint);
+      }
+
+      .split-btn:has(.copy-only:hover) .copy-only::after {
+        opacity: 0.2;
+      }
+
+      .split-btn .copy-only:hover {
+        background: rgba(var(--rgb-white), 0.05);
+        color: var(--text);
+      }
+
+      .scroll-top-btn {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-hint);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.2s ease;
+        z-index: 90;
+        box-shadow: 0 4px 12px rgba(var(--rgb-black), 0.5);
+      }
+
+      .scroll-top-btn.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .scroll-top-btn:hover {
+        color: var(--text);
+        border-color: var(--text-hint);
+        background: var(--surface-alt);
+      }
+
+      .scroll-top-btn svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .preview-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 8px;
+        margin-bottom: 16px;
+      }
+
+      .toolbar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex: 1;
+        min-width: 250px;
+      }
+
+      .preview-toolbar h2 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-dim);
+        letter-spacing: 0.3px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      .view-toggle {
+        margin: 0;
+        flex-shrink: 0;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .view-toggle-track {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 156px;
+        height: 32px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 2px;
+        overflow: hidden;
+      }
+
+      .view-toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 76px;
+        height: 26px;
+        background: var(--accent);
+        border-radius: 14px;
+        transition: left 0.2s ease;
+        z-index: 1;
+      }
+
+      .view-toggle-thumb.right {
+        left: 76px;
+      }
+
+      .view-toggle-label {
+        flex: 1;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-dim);
+        letter-spacing: 0.3px;
+        position: relative;
+        z-index: 2;
+        transition: color 0.2s;
+      }
+
+      #viewLabelSections {
+        color: #fff;
+      }
+
+      .view-toggle-thumb.right ~ #viewLabelSections {
+        color: var(--text-dim);
+      }
+
+      .view-toggle-thumb.right ~ #viewLabelFull {
+        color: #fff;
+      }
+
+      .config-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        padding: 0 0 0 16px;
+        min-height: 40px;
+        background: var(--surface-alt);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .section-header h3 {
+        display: flex;
+        margin: 0;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--text-dim);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .section-header.edited h3::after {
+        content: "(edited)";
+        margin-left: 8px;
+        font-size: 10px;
+        color: var(--warn);
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .section-header.is-editing {
+        background: rgba(var(--rgb-accent), 0.08);
+        border-bottom-color: var(--border-focus);
+      }
+
+      .section-header.is-editing h3 {
+        color: var(--text);
+      }
+
+      .section-header.important h3 {
+        color: #ff7e7e;
+      }
+
+      .section-header .btn-group {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+      }
+
+      .section-edit {
+        width: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.65;
+        border: none;
+        padding: 14px 18px;
+        resize: none;
+        outline: none;
+        tab-size: 2;
+        white-space: pre;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .config-section pre {
+        padding: 14px 18px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.65;
+        color: var(--text);
+        white-space: pre;
+        tab-size: 2;
+        margin: 0;
+        overflow-x: auto;
+      }
+
+      .config-line {
+        display: block;
+        min-width: 100%;
+        width: max-content;
+        padding: 0 22px 0 4px;
+        margin: 0 -4px;
+        border-radius: 3px;
+      }
+
+      .config-line:hover {
+        background: rgba(var(--rgb-white), 0.04);
+      }
+
+      .ios-comment {
+        color: #6a9955;
+      }
+
+      .var-unfilled {
+        color: var(--warn);
+        background: var(--warn-dim);
+        padding: 1px 0px;
+        border-radius: 3px;
+      }
+
+      .var-filled {
+        color: var(--success);
+        background: var(--success-dim);
+        padding: 1px 0px;
+        border-radius: 3px;
+      }
+
+      .badge-group {
+        margin-left: 16px;
+        user-select: none;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: stretch;
+        overflow: hidden;
+        padding: 0;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        border-radius: 4px;
+        margin-left: 6px;
+        letter-spacing: 0.5px;
+        font-family: var(--mono);
+        user-select: none;
+        cursor: pointer;
+        background: rgba(var(--badge-rgb), 0.18);
+        color: var(--badge-fg);
+        transition: background 0.12s ease;
+      }
+      .badge-c0 {
+        --badge-rgb: 14, 165, 233;
+        --badge-fg: #38bdf8;
+      }
+      .badge-c1 {
+        --badge-rgb: 244, 63, 94;
+        --badge-fg: #fb7185;
+      }
+      .badge-c2 {
+        --badge-rgb: 249, 115, 22;
+        --badge-fg: #fb923c;
+      }
+      .badge-c3 {
+        --badge-rgb: 16, 185, 129;
+        --badge-fg: #34d399;
+      }
+      .badge-c4 {
+        --badge-rgb: 168, 85, 247;
+        --badge-fg: #c084fc;
+      }
+      .badge-group.badge-alone {
+        margin-left: 0;
+      }
+      .badge-group.badge-alone .badge:first-child {
+        margin-left: 0;
+      }
+
+      .badge:hover {
+        background: rgba(var(--badge-rgb), 0.4);
+      }
+      .badge-kw {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.4);
+        color: var(--badge-fg);
+        padding: 2px 14px 2px 8px;
+        clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
+      }
+      .badge-vals {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 8px;
+      }
+      .badge-divider {
+        align-self: stretch;
+        width: 2px;
+        background: currentColor;
+        opacity: 0.3;
+        transform: skewX(25deg);
+      }
+      .badge-copy-popup {
+        position: fixed;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 440px;
+        padding: 6px 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+      }
+      .badge-copy-popup[hidden] {
+        display: none;
+      }
+      .badge-copy-text {
+        user-select: text;
+        white-space: normal;
+        line-height: 1.5;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text);
+      }
+
+      .config-section.last-copied {
+        position: relative;
+      }
+
+      .config-section.last-copied::after {
+        content: "";
+        position: absolute;
+        top: 41px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 10;
+        border-radius: 0 0 10px 10px;
+        background-image:
+          linear-gradient(90deg, #4caf50 50%, transparent 50%),
+          linear-gradient(90deg, #4caf50 50%, transparent 50%),
+          linear-gradient(0deg, #4caf50 50%, transparent 50%),
+          linear-gradient(0deg, #4caf50 50%, transparent 50%);
+        background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+        background-size:
+          16px 2px,
+          16px 2px,
+          2px 16px,
+          2px 16px;
+        background-position:
+          0 0,
+          100% 100%,
+          0 100%,
+          100% 0;
+        animation: marching-ants 0.6s linear infinite;
+      }
+
+      @keyframes marching-ants {
+        100% {
+          background-position:
+            16px 0,
+            calc(100% - 16px) 100%,
+            0 calc(100% - 16px),
+            100% 16px;
+        }
+      }
+
+      .lightbox-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(var(--rgb-black), 0.8);
+        z-index: 999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(1px);
+      }
+
+      .lightbox-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .lightbox-modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(var(--rgb-black), 0.5);
+        transform: translateY(20px);
+        transition: all 0.2s ease;
+      }
+
+      .lightbox-overlay.show .lightbox-modal {
+        transform: translateY(0);
+      }
+
+      .lightbox-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--surface-alt);
+        border-radius: 12px 12px 0 0;
+      }
+
+      .lightbox-header h2 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .lightbox-header h2 svg {
+        transform: translateY(2px);
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .lightbox-close {
+        background: transparent;
+        border: none;
+        color: var(--text-hint);
+        cursor: pointer;
+        transition: color 0.15s;
+        padding: 4px;
+      }
+
+      .lightbox-close svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .lightbox-close:hover {
+        color: var(--text);
+      }
+
+      .lightbox-body {
+        padding: 32px 40px;
+        overflow-y: auto;
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-dim);
+      }
+
+      .sop-content h3 {
+        font-size: 15px;
+        color: var(--text);
+        margin: 24px 0 12px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .sop-content h3:first-child {
+        margin-top: 0;
+      }
+
+      .sop-content h4 {
+        font-size: 13px;
+        color: var(--accent);
+        margin: 16px 0 8px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .sop-content p {
+        margin-bottom: 12px;
+      }
+
+      .sop-content ul,
+      .sop-content ol {
+        margin: 0 0 16px 24px;
+      }
+
+      .sop-content li {
+        margin-bottom: 6px;
+      }
+
+      .sop-content code {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--success);
+      }
+
+      .sop-content pre {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin-bottom: 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text);
+      }
+
+      .guide-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--surface-alt);
+        color: var(--text);
+        vertical-align: middle;
+        margin: 0 4px;
+      }
+
+      .guide-icon {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .copied-badge {
+        font-size: 11px;
+        color: var(--success);
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.2s;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+      }
+
+      .copied-badge.show {
+        opacity: 1;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--success);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .empty-state {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-hint);
+        font-size: 14px;
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      .tooltip-trigger {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .tooltip-trigger::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        right: -4px;
+        margin-bottom: 8px;
+        background: var(--border);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        font-family: var(--sans);
+        white-space: pre-wrap;
+        min-width: max-content;
+        text-align: left;
+        z-index: 100;
+        box-shadow: 0 6px 16px rgba(var(--rgb-black), 0.8);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.1s ease,
+          visibility 0.1s ease;
+        pointer-events: none;
+      }
+
+      .tooltip-trigger::before {
+        content: "";
+        position: absolute;
+        bottom: 100%;
+        right: 2px;
+        margin-bottom: 4px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--border) transparent transparent transparent;
+        z-index: 101;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.1s ease,
+          visibility 0.1s ease;
+        pointer-events: none;
+      }
+
+      .tooltip-trigger:hover::after,
+      .tooltip-trigger:hover::before {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .mini-btn {
+        width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <svg class="hidden" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="icon-load" viewBox="0 0 24 24">
+          <path
+            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+          ></path>
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24">
+          <path
+            d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+          ></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </symbol>
+        <symbol id="icon-help" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </symbol>
+        <symbol id="icon-reset" viewBox="0 0 24 24">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path
+            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+          ></path>
+        </symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24">
+          <path
+            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+          ></path>
+          <path
+            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+          ></path>
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </symbol>
+        <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </symbol>
+        <symbol id="icon-lightning" viewBox="0 0 24 24">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </symbol>
+        <symbol id="icon-copy-down" viewBox="0 0 24 24">
+          <line x1="12" y1="3" x2="12" y2="21"></line>
+          <polyline points="19 14 12 21 5 14"></polyline>
+        </symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24">
+          <path
+            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+          ></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </symbol>
+      </defs>
+    </svg>
+    <div class="layout">
+      <div class="form-panel">
+        <div class="brand">
+          <div class="brand-title">
+            <div class="brand-icon">S&gt;</div>
+            <h1>Config Generator</h1>
+          </div>
+          <div style="display: flex; gap: 2px">
+            <button
+              class="subtle-icon-btn"
+              onclick="openTextFile('sessionInput', processSessionFile)"
+              title="Load Session"
+              aria-label="Load Session"
+            >
+              <svg>
+                <use href="#icon-load"></use>
+              </svg>
+            </button>
+            <button
+              class="subtle-icon-btn"
+              onclick="saveSession()"
+              title="Save Session"
+              aria-label="Save Session"
+            >
+              <svg>
+                <use href="#icon-save"></use>
+              </svg>
+            </button>
+            <button
+              class="subtle-icon-btn"
+              onclick="openHelp()"
+              title="Open Guide"
+              aria-label="Open Guide"
+            >
+              <svg>
+                <use href="#icon-help"></use>
+              </svg>
+            </button>
+            <input
+              type="file"
+              id="sessionInput"
+              class="hidden"
+              accept=".json"
+            />
+          </div>
+        </div>
+        <div class="instructions">
+          <ol>
+            <li>Load a template.config file</li>
+            <li>Load a vars.ini file or auto-detect variables from template</li>
+            <li>Fill out the form below to generate config</li>
+          </ol>
+        </div>
+        <div class="panel-header">
+          Template
+          <span
+            id="templateErrorBadge"
+            class="tooltip-trigger"
+            data-tooltip="Contains formatting errors"
+            style="
+              display: none;
+              color: var(--warn);
+              cursor: help;
+              margin-left: auto;
+            "
+          >
+            <svg
+              style="
+                width: 15px;
+                height: 15px;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                fill: none;
+                transform: translateY(2px);
+              "
+            >
+              <use href="#icon-alert"></use>
+            </svg>
+          </span>
+        </div>
+        <div class="file-loader" id="templateLoader">
+          <div
+            class="file-status"
+            id="templateStatus"
+            onmouseenter="calcMarquee(this)"
+          >
+            <span class="not-loaded">No template loaded</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 2px">
+            <button
+              class="clear-file-btn"
+              onclick="clearTemplate()"
+              title="Clear Template"
+              aria-label="Clear Template"
+            >
+              <svg>
+                <use href="#icon-close"></use>
+              </svg>
+            </button>
+            <button
+              class="btn btn-sm"
+              onclick="openTextFile('templateInput', processTemplateFile)"
+            >
+              <svg>
+                <use href="#icon-load"></use>
+              </svg>
+              Load
+            </button>
+          </div>
+          <input
+            type="file"
+            id="templateInput"
+            class="hidden"
+            accept=".config,.txt,.cfg,.tpl,.conf,.template"
+          />
+        </div>
+        <div class="panel-header" style="margin-top: 20px">
+          Variables
+          <span id="varsCountBadge" class="vars-count"></span>
+          <span
+            id="varsErrorBadge"
+            class="tooltip-trigger"
+            data-tooltip="Contains formatting errors"
+            style="
+              display: none;
+              color: var(--warn);
+              cursor: help;
+              margin-left: auto;
+            "
+          >
+            <svg
+              style="
+                width: 15px;
+                height: 15px;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                fill: none;
+                transform: translateY(2px);
+              "
+            >
+              <use href="#icon-alert"></use>
+            </svg>
+          </span>
+        </div>
+        <div class="file-loader" id="varsLoader">
+          <div
+            class="file-status"
+            id="varsStatus"
+            onmouseenter="calcMarquee(this)"
+          >
+            <span class="not-loaded">No vars loaded</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 2px">
+            <button
+              class="clear-file-btn"
+              onclick="clearVariables()"
+              title="Clear Variables"
+              aria-label="Clear Variables"
+            >
+              <svg>
+                <use href="#icon-close"></use>
+              </svg>
+            </button>
+            <button
+              class="btn btn-sm"
+              onclick="openTextFile('varsInput', processVarsFile)"
+            >
+              <svg>
+                <use href="#icon-load"></use>
+              </svg>
+              Load
+            </button>
+          </div>
+          <input type="file" id="varsInput" class="hidden" accept=".ini" />
+        </div>
+        <div class="panel-divider"></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-header">
+          <div class="progress-text" id="progressText">0 / 0 fields filled</div>
+          <div style="display: flex; gap: 4px; align-items: center">
+            <div id="autoDetectIcons" style="display: flex; gap: 4px"></div>
+            <button
+              class="subtle-icon-btn mini-btn"
+              onclick="resetAll()"
+              title="Reset Fields"
+              aria-label="Reset Fields"
+            >
+              <svg>
+                <use href="#icon-reset"></use>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="formFields"></div>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-toolbar">
+          <div class="toolbar-header">
+            <h2>CONFIG PREVIEW</h2>
+            <div class="view-toggle" onclick="toggleView()">
+              <div class="view-toggle-track">
+                <div class="view-toggle-thumb" id="viewThumb"></div>
+                <span class="view-toggle-label" id="viewLabelSections">
+                  Sections
+                </span>
+                <span class="view-toggle-label" id="viewLabelFull">Full</span>
+              </div>
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn" onclick="saveTemplate()">
+              <svg>
+                <use href="#icon-save"></use>
+              </svg>
+              Save Template
+            </button>
+            <button class="btn btn-primary" onclick="saveConfig()">
+              <svg>
+                <use href="#icon-save"></use>
+              </svg>
+              Save Config
+            </button>
+          </div>
+        </div>
+        <div id="previewContainer">
+          <div class="empty-state">Load a template to get started.</div>
+        </div>
+        <div id="badgeCopyPopup" class="badge-copy-popup" hidden>
+          <span class="badge-copy-text"></span>
+        </div>
+      </div>
+    </div>
+    <button
+      class="scroll-top-btn"
+      id="scrollTopBtn"
+      onclick="scrollToTop()"
+      title="Scroll to top"
+      aria-label="Scroll to top"
+    >
+      <svg>
+        <use href="#icon-chevron-up"></use>
+      </svg>
+    </button>
+    <div class="toast" id="toast"></div>
+    <div class="lightbox-overlay" id="helpLightbox" onclick="closeHelp(event)">
+      <div class="lightbox-modal" onclick="event.stopPropagation()">
+        <div class="lightbox-header">
+          <h2>
+            <svg width="18" height="18">
+              <use href="#icon-book"></use>
+            </svg>
+            Guide
+          </h2>
+          <button class="lightbox-close" onclick="closeHelp()">
+            <svg viewBox="0 0 24 24">
+              <use href="#icon-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="lightbox-body">
+          <div class="sop-content">
+            <h3>Config Generator Guide</h3>
+            <p>
+              This tool is designed to generate error-free, standardized network
+              configurations entirely locally within your browser. No data is
+              transmitted over the network. No data persists in the browser
+              after this tab is closed.
+            </p>
+            <h4>Workspace & Files</h4>
+            <ul>
+              <li>
+                <strong>Template File:</strong>
+                Click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-load"></use>
+                  </svg>
+                </span>
+                <strong>Load</strong>
+                under Template to upload a Jinja-formatted configuration file.
+                <em>
+                  Note: If your template does not contain
+                  <code>!!! Section Name</code>
+                  markers, the preview will automatically switch to Full mode.
+                </em>
+              </li>
+              <li>
+                <strong>Variables File (Optional):</strong>
+                Click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-load"></use>
+                  </svg>
+                </span>
+                <strong>Load</strong>
+                under Variables to upload an INI file to define the form
+                structure, descriptions, dropdowns, and regex validation.
+              </li>
+              <li>
+                <strong>Auto-Detect</strong>
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-lightning"></use>
+                  </svg>
+                </span>
+                <strong>:</strong>
+                Click the lightning bolt icon next to the progress bar to
+                instantly generate missing form fields by scanning your
+                template.
+              </li>
+              <li>
+                <strong>Export INI</strong>
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-download"></use>
+                  </svg>
+                </span>
+                <strong>:</strong>
+                If you use Auto-Detect without a variables file loaded, a
+                download icon appears next to it. Click it to generate a
+                boilerplate
+                <code>.vars.ini</code>
+                schema file for template maintainers.
+              </li>
+            </ul>
+            <h4>Generating Configurations</h4>
+            <ul>
+              <li>
+                Fill out the form fields on the left. The Preview panel on the
+                right will update in real-time.
+              </li>
+              <li>
+                Click the
+                <strong>Reset</strong>
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-reset"></use>
+                  </svg>
+                </span>
+                icon above the form to clear all your typed inputs without
+                removing your loaded files.
+              </li>
+              <li>
+                Fields marked with a
+                <span style="color: var(--warn)">*</span>
+                are required and can be dynamically updated based on which
+                fields are filled.
+              </li>
+              <li>
+                Click any highlighted
+                <code>{{ VARIABLE }}</code>
+                in the Preview panel to automatically scroll to and flash its
+                corresponding input field on the left.
+              </li>
+            </ul>
+            <h4>Manual Editing</h4>
+            <p>
+              If a specific deployment requires a unique command not covered by
+              the template, you can manually edit the output.
+            </p>
+            <ul>
+              <li>
+                <strong>Section Mode:</strong>
+                Click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-edit"></use>
+                  </svg>
+                </span>
+                on any specific section header to edit just that block of text.
+              </li>
+              <li>
+                <strong>Full Mode:</strong>
+                Toggle the view to
+                <em>Full</em>
+                at the top right, then click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-edit"></use>
+                  </svg>
+                </span>
+                to edit the entire configuration as a single text file.
+              </li>
+              <li>
+                If you edit a section, a yellow
+                <code>(edited)</code>
+                badge will appear. To revert to the template's automated output,
+                click the
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-reset"></use>
+                  </svg>
+                </span>
+                reset button on that specific section.
+              </li>
+              <li>
+                After editing, you can save the edited template by clicking the
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-save"></use>
+                  </svg>
+                </span>
+                <strong>Save Template</strong>
+                button in the top right.
+              </li>
+            </ul>
+            <h4>Exporting & Sessions</h4>
+            <ul>
+              <li>
+                <strong>Copying:</strong>
+                Click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-copy"></use>
+                  </svg>
+                </span>
+                to copy a section or the full config to your clipboard. Badges
+                (e.g.,
+                <code>!STIG: V-123456</code>
+                ) are automatically stripped from the copied text.
+              </li>
+              <li>
+                <strong>Saving:</strong>
+                Click
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-save"></use>
+                  </svg>
+                </span>
+                <strong>Save Config</strong>
+                in the top right to save the filled in config to your files.
+              </li>
+              <li>
+                <strong>Sessions:</strong>
+                Use the
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-save"></use>
+                  </svg>
+                </span>
+                <strong>Save Session</strong>
+                icon (top left) to save your current progress as a
+                <code>.session.json</code>
+                file. This saves your loaded templates, variables, form inputs,
+                and manual edits so you can safely close your browser and resume
+                work later using the
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-load"></use>
+                  </svg>
+                </span>
+                <strong>Load</strong>
+                icon.
+              </li>
+            </ul>
+            <h4>Limitations</h4>
+            <ul>
+              <li>
+                <strong>INI Constraints:</strong>
+                Variables are defined as flat
+                <code>[VAR_NAME]</code>
+                sections of
+                <code>key = value</code>
+                lines. Nested structures are not supported, and
+                <code>choices</code>
+                must be an inline list (
+                <code>[opt1, opt2]</code>
+                ). Unrecognized keys are ignored with a warning.
+              </li>
+              <li>
+                <strong>Jinja Constraints:</strong>
+                Conditionals only support existence checks (e.g.,
+                <code>{% if VARIABLE %}</code>
+                ). They do not support equality checks (e.g.,
+                <code>{% if VARIABLE == 'value' %}</code>
+                ).
+              </li>
+              <li>
+                <strong>Variable Names:</strong>
+                Must be alphanumeric with underscores/hyphens. Spaces in
+                variable names will break the regex.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      "use strict";
+      let variableDefs = {};
+      let templateSource = null;
+      let originalTemplateSource = null;
+      let sectionRecords = [];
+      let nextRecordId = 1;
+      const formValues = {};
+      const activeSectionEditors = new Set();
+      const sectionEditBackups = {};
+      let viewMode = "sections";
+      let fullModeEditBuffer = "";
+      const FULL_EDIT_KEY = "__full__";
+      const SESSION_SCHEMA_VERSION = 1;
+      let templateFileName = "";
+      let varsFromFile = {};
+      let varsFileName = "";
+      const SECTION_RE = /^(!!!+)\s*(.+)$/;
+      const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
+      const BADGE_RE = /!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
+      const CLEAN_BADGE_RE = /![A-Z][A-Z0-9_-]*:[^\n]+/g;
+      const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
+      const INNER_IF_ELSE_RE =
+        /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
+      const INNER_IF_RE =
+        /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
+      let cachedKwGroupsRef = null;
+      let cachedKwMap = null;
+      const keywordGroups = [
+        {
+          name: "Interfaces",
+          color: "#4ec9b0",
+          words: [
+            "interface",
+            "ethernet",
+            "fastethernet",
+            "gigabitethernet",
+            "tengigabitethernet",
+            "serial",
+            "port-channel",
+            "loopback",
+            "tunnel",
+            "vlan",
+            "vty",
+            "line",
+            "console",
+            "aux",
+            "po",
+            "mgmt",
+            "null",
+            "nvi",
+            "vfc",
+          ],
+        },
+        {
+          name: "Good Words & Permits",
+          color: "#86efac",
+          words: [
+            "yes",
+            "permit",
+            "ok",
+            "on",
+            "enabled",
+            "up",
+            "running",
+            "success",
+            "passed",
+            "complete",
+            "active",
+          ],
+        },
+        {
+          name: "Bad Words & Denies",
+          color: "#f87171",
+          words: [
+            "err",
+            "fail",
+            "invalid",
+            "reload",
+            "no",
+            "administratively",
+            "shut",
+            "shutdown",
+            "never",
+            "deny",
+            "down",
+            "not",
+            "initializing",
+            "off",
+            "err-disabled",
+            "disabled",
+            "half-duplex",
+            "telnet",
+            "inhibit",
+            "erase",
+            "remove",
+            "delete",
+            "confirm",
+          ],
+        },
+        {
+          name: "Security & Credentials",
+          color: "#ce9178",
+          words: [
+            "wwn",
+            "pwwn",
+            "username",
+            "password",
+            "key",
+            "crypto",
+            "tacacs-server",
+            "radius-server",
+          ],
+        },
+        {
+          name: "Access Lists",
+          color: "#dcdcaa",
+          words: [
+            "access-list",
+            "access-class",
+            "access-group",
+            "use-acl",
+            "prefix-list",
+            "time-range",
+            "object-group",
+            "route-map",
+          ],
+        },
+        {
+          name: "Services & Protocols",
+          color: "#c586c0",
+          words: [
+            "ftp",
+            "tcp",
+            "udp",
+            "tftp",
+            "scp",
+            "ssh",
+            "ntp",
+            "snmp",
+            "inspect",
+            "icmp",
+            "router",
+            "eigrp",
+            "bgp",
+            "ospf",
+            "rip",
+            "gre",
+            "hsrp",
+            "snmp-server",
+          ],
+        },
+        {
+          name: "Config Commands & Misc",
+          color: "#569cd6",
+          words: [
+            "hostname",
+            "ip",
+            "address",
+            "default-gateway",
+            "route",
+            "name-server",
+            "domain-name",
+            "switchport",
+            "mode",
+            "access",
+            "trunk",
+            "voice",
+            "port-security",
+            "channel-group",
+            "spanning-tree",
+            "portfast",
+            "bpduguard",
+            "storm-control",
+            "dot1q",
+            "passive",
+            "desirable",
+            "auto",
+            "class",
+            "policy",
+            "service",
+            "parameter",
+            "match",
+            "class-map",
+            "policy-map",
+            "description",
+            "remark",
+            "mtu",
+            "bw",
+            "dly",
+            "version",
+            "device",
+            "local",
+            "platform",
+            "port",
+            "uptime",
+            "neighbor",
+          ],
+        },
+      ];
+      function parseINI(text, errorList = []) {
+        const KNOWN_KEYS = new Set([
+          "description",
+          "placeholder",
+          "default",
+          "type",
+          "choices",
+          "regex",
+          "error",
+          "category",
+          "required",
+          "group",
+        ]);
+        const result = {};
+        const lines = text.split("\n");
+        let currentItem = null;
+        for (let i = 0; i < lines.length; i++) {
+          let rawLine = lines[i];
+          // unquoted '#' starts a comment; '#' inside a quoted value is literal
+          if (rawLine.includes("#")) {
+            let inQuote = false;
+            let quoteChar = "";
+            for (let j = 0; j < rawLine.length; j++) {
+              const c = rawLine[j];
+              if (inQuote) {
+                if (c === quoteChar) inQuote = false;
+              } else if (c === '"' || c === "'") {
+                inQuote = true;
+                quoteChar = c;
+              } else if (c === "#") {
+                rawLine = rawLine.substring(0, j);
+                break;
+              }
+            }
+          }
+          const line = rawLine.replace(/\s+$/, "");
+          if (line.trim() === "") continue;
+          try {
+            const headerMatch = line.match(/^\s*\[\s*(.+?)\s*\]\s*$/);
+            if (headerMatch) {
+              if (currentItem) commitINIItem(result, currentItem, errorList);
+              currentItem = { name: headerMatch[1] };
+              continue;
+            }
+            const kvMatch = line.match(/^\s*(\w+)\s*=\s*(.*)$/);
+            if (kvMatch) {
+              const key = kvMatch[1];
+              if (!currentItem) {
+                errorList.push(
+                  `Line ${i + 1}: '${key}' appears before any [VAR_NAME] header`,
+                );
+                continue;
+              }
+              if (!KNOWN_KEYS.has(key)) {
+                errorList.push(`Line ${i + 1}: Unrecognized key '${key}'`);
+                continue;
+              }
+              currentItem[key] = stripINIQuotes(kvMatch[2].trim());
+              continue;
+            }
+            errorList.push(`Line ${i + 1}: Unrecognized syntax`);
+          } catch (err) {
+            console.error(`Error parsing INI on line ${i + 1}: ${line}`, err);
+            errorList.push(`Line ${i + 1}: Fatal parse error`);
+          }
+        }
+        if (currentItem) commitINIItem(result, currentItem, errorList);
+        return result;
+      }
+      function commitINIItem(result, item, errorList = []) {
+        if (result[item.name])
+          errorList.push(`Duplicate variable name: '${item.name}'`);
+        let compiledRegex = null;
+        if (item.regex) {
+          try {
+            compiledRegex = new RegExp(item.regex);
+          } catch (e) {
+            errorList.push(
+              `Invalid regex pattern for '${item.name}': ${item.regex}`,
+            );
+          }
+        }
+        let parsedChoices = null;
+        if (item.choices) {
+          parsedChoices = parseINIInlineList(item.choices);
+          if (!parsedChoices) {
+            errorList.push(
+              `Invalid choices format for '${item.name}'. Must be inline: [opt1, opt2]`,
+            );
+          }
+        }
+        result[item.name] = {
+          category: item.category || "",
+          description: item.description || "",
+          placeholder: item.placeholder || "",
+          default: item.default || "",
+          required: item.required !== "false",
+          group: item.group || null,
+          type: item.type || null,
+          regex: item.regex || null,
+          compiledRegex: compiledRegex,
+          error: item.error || null,
+          choices: parsedChoices,
+        };
+      }
+      // RegExp doesn't survive JSON; restore compiledRegex on session load.
+      function recompileRegexes(defs) {
+        if (!defs) return;
+        for (const name of Object.keys(defs)) {
+          const def = defs[name];
+          if (!def || typeof def !== "object") continue;
+          if (def.regex) {
+            try {
+              def.compiledRegex = new RegExp(def.regex);
+            } catch (e) {
+              def.compiledRegex = null;
+            }
+          } else {
+            def.compiledRegex = null;
+          }
+        }
+      }
+      function parseINIInlineList(val) {
+        if (!val) return null;
+        const match = val.match(/^\[(.*)\]$/);
+        if (!match) return null;
+        return match[1]
+          .split(",")
+          .map((s) => stripINIQuotes(s.trim()))
+          .filter(Boolean);
+      }
+      function stripINIQuotes(val) {
+        return val.replace(/^["'](.*)["']$/, "$1");
+      }
+      function evaluateExpression(content) {
+        const trimmed = content.trim();
+        const { baseExpr, filters } = parseExprParts(trimmed);
+        let value;
+        let isList = false;
+        if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
+          const varNames = baseExpr
+            .slice(1, -1)
+            .split(",")
+            .map((s) => s.trim());
+          value = varNames
+            .map((name) => formValues[name] || "")
+            .filter((v) => v.trim() !== "");
+          isList = true;
+        } else {
+          value = formValues[baseExpr] || "";
+        }
+        let filled = isList ? value.length > 0 : value.trim() !== "";
+        for (const filter of filters) {
+          const applied = applyFilter(filter.name, filter.arg, value, isList);
+          value = applied.value;
+          isList = applied.isList;
+          if (filter.name === "default" && !filled) filled = true;
+        }
+        return { text: isList ? value.join(",") : value, filled };
+      }
+      function parseExprParts(expr) {
+        let baseEnd = -1;
+        let bracketDepth = 0;
+        for (let i = 0; i < expr.length; i++) {
+          if (expr[i] === "[") bracketDepth++;
+          else if (expr[i] === "]") bracketDepth--;
+          else if (expr[i] === "|" && bracketDepth === 0) {
+            baseEnd = i;
+            break;
+          }
+        }
+        if (baseEnd === -1) return { baseExpr: expr.trim(), filters: [] };
+        const baseExpr = expr.substring(0, baseEnd).trim();
+        const filters = [];
+        for (const part of splitOnPipe(expr.substring(baseEnd + 1))) {
+          const m = part.trim().match(/^(\w+)(?:\(\s*['"](.*?)['"]\s*\))?$/);
+          if (m)
+            filters.push({ name: m[1], arg: m[2] !== undefined ? m[2] : null });
+        }
+        return { baseExpr, filters };
+      }
+      // All vars an expression depends on; exact tokens so VLAN_ID != VLAN.
+      function exprReferencesVars(rawContent) {
+        const { baseExpr } = parseExprParts((rawContent ?? "").trim());
+        if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
+          return baseExpr
+            .slice(1, -1)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        return baseExpr ? [baseExpr] : [];
+      }
+      function collectTemplateVarNames(templateText) {
+        const source = (templateText ?? "").replace(JINJA_COMMENT_RE, "");
+        const found = new Set();
+        const exprRE = /\{\{(.+?)\}\}/g;
+        let match;
+        while ((match = exprRE.exec(source)) !== null) {
+          for (const v of exprReferencesVars(match[1])) found.add(v);
+        }
+        const ifRE = /\{%\s*if\s+([\w.-]+)\s*%\}/g;
+        while ((match = ifRE.exec(source)) !== null) found.add(match[1]);
+        return found;
+      }
+      function splitOnPipe(chain) {
+        const parts = [];
+        let current = "";
+        let inQuote = false;
+        let quoteChar = "";
+        for (const ch of chain) {
+          if (!inQuote && (ch === "'" || ch === '"')) {
+            inQuote = true;
+            quoteChar = ch;
+          } else if (inQuote && ch === quoteChar) {
+            inQuote = false;
+          } else if (!inQuote && ch === "|") {
+            parts.push(current);
+            current = "";
+            continue;
+          }
+          current += ch;
+        }
+        if (current.trim()) parts.push(current);
+        return parts;
+      }
+      function applyFilter(name, arg, value, isList) {
+        switch (name) {
+          case "default":
+            return isList
+              ? { value: value.length ? value : [arg || ""], isList: true }
+              : { value: value.trim() ? value : arg || "", isList: false };
+          case "upper":
+            return isList
+              ? { value: value.map((v) => v.toUpperCase()), isList: true }
+              : { value: value.toUpperCase(), isList: false };
+          case "lower":
+            return isList
+              ? { value: value.map((v) => v.toLowerCase()), isList: true }
+              : { value: value.toLowerCase(), isList: false };
+          case "trim":
+            return isList
+              ? { value: value.map((v) => v.trim()), isList: true }
+              : { value: value.trim(), isList: false };
+          case "join":
+            return isList
+              ? { value: value.join(arg !== null ? arg : ","), isList: false }
+              : { value, isList: false };
+          default:
+            return { value, isList };
+        }
+      }
+      function simplifyExpression(expr) {
+        if (expr.startsWith("[")) {
+          const end = expr.indexOf("]");
+          if (end !== -1) {
+            const vars = expr
+              .slice(1, end)
+              .split(",")
+              .map((s) => s.trim());
+            return vars.length > 2
+              ? `{{${vars.slice(0, 2).join(", ")}, ...}}`
+              : `{{${vars.join(", ")}}}`;
+          }
+        }
+        const pipe = expr.indexOf("|");
+        return pipe !== -1
+          ? `{{ ${expr.substring(0, pipe).trim()} }}`
+          : `{{ ${expr} }}`;
+      }
+      function processConditionals(template, formValues) {
+        let result = template;
+        let prev = "";
+        let iterations = 0;
+        const MAX_ITERATIONS = 50;
+        while (result !== prev && iterations < MAX_ITERATIONS) {
+          prev = result;
+          result = result.replace(INNER_IF_ELSE_RE, (_, v, yes, __, no) =>
+            isValuePresent(formValues[v])
+              ? yes.replace(/^\n/, "").replace(/\n$/, "")
+              : no.replace(/^\n/, "").replace(/\n$/, ""),
+          );
+          result = result.replace(INNER_IF_RE, (_, v, content, _inner, tail) =>
+            isValuePresent(formValues[v])
+              ? content.replace(/^\n/, "").replace(/\n$/, "") + tail
+              : "",
+          );
+          iterations++;
+        }
+        if (iterations >= MAX_ITERATIONS) {
+          console.warn("Template conditional parser hit iteration limit.");
+          showToast("Malformed {% if %} tags in template");
+        }
+        return result;
+      }
+      function cleanFormatting(text) {
+        return text
+          .split("\n")
+          .map((line) => line.replace(/\s+$/, ""))
+          .join("\n")
+          .trim();
+      }
+      // Single chokepoint for {{ }} evaluation; all render paths go here so they can't drift.
+      function renderExpr(content) {
+        const trimmed = content.trim();
+        const { text, filled } = evaluateExpression(content);
+        const baseVar = parseExprParts(trimmed)
+          .baseExpr.replace(/[\[\]]/g, "")
+          .split(",")[0]
+          .trim();
+        return {
+          text: filled ? text : simplifyExpression(trimmed),
+          filled,
+          baseVar,
+        };
+      }
+      function jinjaRaw(template) {
+        let result = template.replace(JINJA_COMMENT_RE, "");
+        result = processConditionals(result, formValues);
+        result = result.replace(
+          /\{\{(.+?)\}\}/g,
+          (_, content) => renderExpr(content).text,
+        );
+        result = result.replace(CLEAN_BADGE_RE, "");
+        return cleanFormatting(result);
+      }
+      function jinjaDisplay(template, keywordGroups, badgeColorMap) {
+        let result = template.replace(JINJA_COMMENT_RE, "");
+        result = processConditionals(result, formValues);
+        // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
+        const exprTokens = [];
+        result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
+          const { text, filled, baseVar } = renderExpr(content);
+          const token = `\x00EX${exprTokens.length}\x00`;
+          exprTokens.push({
+            displayText: text,
+            filled,
+            baseVar,
+            rawContent: content,
+          });
+          return token;
+        });
+        const badgeTokens = [];
+        const order = badgeColorMap || {};
+        result = result.replace(
+          BADGE_RE,
+          (match, keyword, ids, offset, str) => {
+            // Badge alone on its line: drop the inline left-margin to avoid a spurious indent.
+            const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
+            const lineEnd = str.indexOf("\n", offset);
+            const before = str.slice(lineStart, offset);
+            const after = str.slice(
+              offset + match.length,
+              lineEnd === -1 ? str.length : lineEnd,
+            );
+            if (!(keyword in order)) order[keyword] = Object.keys(order).length;
+            const token = `\x00BG${badgeTokens.length}\x00`;
+            badgeTokens.push({
+              keyword: keyword,
+              ids: ids
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+              alone: before.trim() === "" && after.trim() === "",
+            });
+            return token;
+          },
+        );
+        result = escHtml(cleanFormatting(result));
+        if (keywordGroups && keywordGroups.length) {
+          result = applyKeywordHighlighting(result, keywordGroups);
+        }
+        for (let i = 0; i < exprTokens.length; i++) {
+          const { displayText, filled, baseVar, rawContent } = exprTokens[i];
+          const cls = filled ? "var-filled" : "var-unfilled";
+          const safeVar = escJSString(baseVar);
+          const safeRaw = escHtml(rawContent);
+          result = result.replace(
+            `\x00EX${i}\x00`,
+            () =>
+              `<span class="${cls} preview-var" data-var="${safeVar}" data-raw="${safeRaw}" title="Click to edit ${escHtml(baseVar)}">${escHtml(displayText)}</span>`,
+          );
+        }
+        for (let i = 0; i < badgeTokens.length; i++) {
+          const tok = badgeTokens[i];
+          const colorClass = `badge-c${order[tok.keyword] % BADGE_COLOR_COUNT}`;
+          const valsHtml = tok.ids
+            .map((id) => `<span class="badge-val">${escHtml(id)}</span>`)
+            .join(`<span class="badge-divider"></span>`);
+          const marker = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
+          const pill = `<span class="badge ${colorClass}" data-marker="${marker}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
+          const cls = tok.alone ? "badge-group badge-alone" : "badge-group";
+          result = result.replace(
+            `\x00BG${i}\x00`,
+            () => `<span class="${cls}">${pill}</span>`,
+          );
+        }
+        return cleanFormatting(result)
+          .split("\n")
+          .map(
+            (line) =>
+              `<span class="config-line">${line === "" ? " " : line}</span>`,
+          )
+          .join("");
+      }
+      function getKeywordMap(keywordGroups) {
+        if (keywordGroups === cachedKwGroupsRef && cachedKwMap)
+          return cachedKwMap;
+        const entries = [];
+        for (const group of keywordGroups) {
+          for (const word of group.words) {
+            entries.push({
+              word: word.toLowerCase(),
+              color: group.color,
+              pattern: new RegExp(`(?<!\\w)(${escRegex(word)})(?!\\w)`, "gi"),
+            });
+          }
+        }
+        entries.sort((a, b) => b.word.length - a.word.length);
+        cachedKwGroupsRef = keywordGroups;
+        cachedKwMap = entries;
+        return entries;
+      }
+      function applyKeywordHighlighting(html, keywordGroups) {
+        const map = getKeywordMap(keywordGroups);
+        const lines = html.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i];
+          let commentHtml = "";
+          const commentMatch = line.match(/(?:^|\s)!/);
+          if (commentMatch) {
+            const commentIdx = line.indexOf("!", commentMatch.index);
+            const rawComment = line.slice(commentIdx);
+            commentHtml = `<span class="ios-comment">${rawComment}</span>`;
+            line = line.slice(0, commentIdx);
+          }
+          if (line.trim().length > 0) {
+            for (const entry of map) {
+              line = line.replace(
+                entry.pattern,
+                (m) => `<span style="color:${entry.color}">${m}</span>`,
+              );
+            }
+          }
+          lines[i] = line + commentHtml;
+        }
+        return lines.join("\n");
+      }
+      // File System Access API avoids same-size stale-reload; falls back to hidden <input>. Cancel is silent.
+      async function openTextFile(inputId, process) {
+        if (window.showOpenFilePicker) {
+          try {
+            const [handle] = await showOpenFilePicker();
+            const file = await handle.getFile();
+            process(file);
+            return;
+          } catch (e) {
+            if (e && e.name === "AbortError") return; // user cancelled
+            // any other failure (e.g. disabled by policy): fall through
+          }
+        }
+        document.getElementById(inputId).click();
+      }
+
+      function onTemplateFileSelected(e) {
+        const file = e.target.files[0];
+        if (file) processTemplateFile(file);
+        e.target.value = "";
+      }
+      function scanTemplateForErrors(text) {
+        const cleanText = text.replace(JINJA_COMMENT_RE, "");
+        const opensVars = (cleanText.match(/\{\{/g) || []).length;
+        const closesVars = (cleanText.match(/\}\}/g) || []).length;
+        const opensLogic = (cleanText.match(/\{%/g) || []).length;
+        const closesLogic = (cleanText.match(/%\}/g) || []).length;
+        if (opensVars !== closesVars || opensLogic !== closesLogic) return true;
+        const unsupportedTagMatch = cleanText.match(
+          /\{%\s*(?!if\b|else\b|endif\b)[\w-]+\b/i,
+        );
+        if (unsupportedTagMatch) return true;
+        let depth = 0;
+        let elseFlags = [];
+        const logicRegex = /\{%\s*(if|else|endif)\b/gi;
+        let match;
+        while ((match = logicRegex.exec(cleanText)) !== null) {
+          const keyword = match[1].toLowerCase();
+          if (keyword === "if") {
+            depth++;
+            elseFlags[depth] = false;
+          } else if (keyword === "else") {
+            if (depth === 0) return true;
+            if (elseFlags[depth]) return true;
+            elseFlags[depth] = true;
+          } else if (keyword === "endif") {
+            depth--;
+            if (depth < 0) return true;
+          }
+        }
+        return depth !== 0;
+      }
+      function updateTemplateErrorBadge() {
+        if (templateSource === null) return;
+        const hasErrors = scanTemplateForErrors(assembleFullEditableText());
+        document.getElementById("templateErrorBadge").style.display = hasErrors
+          ? "inline-flex"
+          : "none";
+      }
+      function toInternalEOL(s) {
+        return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      }
+      function toWindowsEOL(s) {
+        return (s ?? "").replace(/\r?\n/g, "\r\n");
+      }
+      function readFileAsText(file, errorMsg, onLoad) {
+        const reader = new FileReader();
+        reader.onerror = () => showToast(errorMsg);
+        reader.onload = onLoad;
+        reader.readAsText(file);
+      }
+      function templateBasename() {
+        const dot = templateFileName.lastIndexOf(".");
+        return dot > 0 ? templateFileName.slice(0, dot) : templateFileName;
+      }
+      function outputStem() {
+        return templateBasename().replace(/\.template$/i, "");
+      }
+      function setTemplateStatus(name) {
+        const safe = escHtml(name);
+        document.getElementById("templateStatus").innerHTML =
+          `<span class="filename" title="${safe}">${safe}</span>`;
+        document.getElementById("templateLoader").classList.add("loaded");
+      }
+      function applyAutoViewMode() {
+        if (templateSource !== null && getNamedSections().length === 0) {
+          viewMode = "full";
+          document.getElementById("viewThumb").classList.add("right");
+        } else {
+          viewMode = "sections";
+          document.getElementById("viewThumb").classList.remove("right");
+        }
+      }
+      function setVarsStatus(
+        name,
+        count,
+        { autoCount = 0, markLoaded = false } = {},
+      ) {
+        const safe = escHtml(name);
+        document.getElementById("varsStatus").innerHTML =
+          `<span class="filename" title="${safe}">${safe}</span>`;
+        const badge = document.getElementById("varsCountBadge");
+        if (badge) {
+          const auto =
+            autoCount > 0
+              ? ` <span class="count-auto">+${autoCount}</span>`
+              : "";
+          badge.innerHTML = `— <span class="count-number">${count}</span>${auto}`;
+          badge.style.display = "inline-block";
+        }
+        if (markLoaded)
+          document.getElementById("varsLoader").classList.add("loaded");
+      }
+      function processTemplateFile(file) {
+        const fullName = file.name;
+        templateFileName = fullName;
+        readFileAsText(file, "Error reading template file", (evt) => {
+          try {
+            templateSource = canonicalizeMarkers(
+              toInternalEOL(evt.target.result),
+            );
+            originalTemplateSource = templateSource;
+            sectionRecords = deriveRecordsFromTemplate(originalTemplateSource);
+            resetEditState();
+            setTemplateStatus(fullName);
+            applyAutoViewMode();
+            if (scanTemplateForErrors(templateSource))
+              showToast("Template file contains formatting errors");
+            render();
+            renderAutoDetectButtons();
+          } catch (err) {
+            console.error("Template Parse Error:", err);
+            showToast("Error rendering template");
+          }
+        });
+      }
+      function onVarsFileSelected(e) {
+        const file = e.target.files[0];
+        if (file) processVarsFile(file);
+        e.target.value = "";
+      }
+      function processVarsFile(file) {
+        readFileAsText(file, "Error reading vars file", (evt) => {
+          try {
+            const iniErrors = [];
+            variableDefs = parseINI(evt.target.result, iniErrors);
+            varsFromFile = structuredClone(variableDefs);
+            varsFileName = file.name;
+            const count = Object.keys(variableDefs).length;
+            const vBadge = document.getElementById("varsErrorBadge");
+            if (count === 0) {
+              showToast("No variables found — check INI format");
+              return;
+            }
+            if (iniErrors.length > 0) {
+              vBadge.style.display = "inline-flex";
+              showToast("Vars file contains formatting errors");
+            } else {
+              vBadge.style.display = "none";
+            }
+            setVarsStatus(file.name, count, { markLoaded: true });
+            buildForm();
+            if (templateSource !== null) render();
+          } catch (err) {
+            console.error("Vars Parse Error:", err);
+            showToast("Failed to parse variables file");
+          }
+        });
+      }
+      // File System Access API sidesteps the download danger-list for .ini/.config; falls back to blob download. Cancel is silent.
+      async function saveTextFile(
+        content,
+        suggestedName,
+        mimeType,
+        successMsg,
+      ) {
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await showSaveFilePicker({ suggestedName });
+            const writable = await handle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            return; // the Save As dialog is its own confirmation - no toast
+          } catch (e) {
+            if (e && e.name === "AbortError") return; // user cancelled
+            // any other failure (e.g. disabled by policy): fall through
+          }
+        }
+        const blob = new Blob([content], { type: mimeType });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = suggestedName;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+        if (successMsg) showToast(successMsg);
+      }
+
+      function saveSession() {
+        if (templateSource === null && Object.keys(variableDefs).length === 0) {
+          showToast("Nothing to save yet");
+          return;
+        }
+        const session = {
+          schemaVersion: SESSION_SCHEMA_VERSION,
+          templateSource,
+          originalTemplateSource,
+          templateFileName,
+          varsFromFile,
+          varsFileName,
+          variableDefs,
+          formValues,
+          // ids are runtime; strip before persisting.
+          sections: sectionRecords.map((r) => ({
+            name: r.name,
+            isImportant: r.isImportant,
+            baselineBody: r.baselineBody,
+            override: r.override,
+          })),
+        };
+        const hostname =
+          formValues.HOSTNAME ||
+          formValues.hostname ||
+          formValues.Hostname ||
+          outputStem() ||
+          "config";
+        saveTextFile(
+          JSON.stringify(session, null, 2),
+          `${hostname}.session.json`,
+          "application/json",
+          "Session saved to file",
+        );
+      }
+      function onSessionFileSelected(e) {
+        const file = e.target.files[0];
+        if (file) processSessionFile(file);
+        e.target.value = "";
+      }
+      function processSessionFile(file) {
+        readFileAsText(file, "Error reading session file", (evt) => {
+          try {
+            const session = JSON.parse(evt.target.result);
+            const validationError = validateSessionV1(session);
+            if (validationError) {
+              showToast(`Cannot load session: ${validationError}`);
+              return;
+            }
+            templateSource =
+              session.templateSource !== null
+                ? toInternalEOL(session.templateSource)
+                : null;
+            originalTemplateSource =
+              session.originalTemplateSource !== null
+                ? toInternalEOL(session.originalTemplateSource)
+                : null;
+            templateFileName = session.templateFileName;
+            varsFromFile = session.varsFromFile;
+            varsFileName = session.varsFileName;
+            variableDefs = session.variableDefs;
+            recompileRegexes(variableDefs);
+            recompileRegexes(varsFromFile);
+            for (const k of Object.keys(formValues)) delete formValues[k];
+            Object.assign(formValues, session.formValues);
+            sectionRecords = recordsFromSession(session.sections);
+            resetEditState(); // drop any open edit buffer before adopting loaded records
+            if (templateSource !== null) {
+              setTemplateStatus(templateFileName);
+            }
+            if (Object.keys(variableDefs).length > 0) {
+              setVarsStatus(
+                varsFileName || "auto-detected",
+                Object.keys(variableDefs).length,
+                { markLoaded: true },
+              );
+            }
+            applyAutoViewMode();
+            buildForm();
+            render();
+            showToast("Session loaded successfully");
+          } catch (err) {
+            console.error("Session Parse Error:", err);
+            showToast("Failed to load session JSON");
+          }
+        });
+      }
+      function autoDetectVars() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        const found = collectTemplateVarNames(assembleFullEditableText());
+        if (!found.size) {
+          showToast("No variables found in template");
+          return;
+        }
+        variableDefs = structuredClone(varsFromFile);
+        const missing = [];
+        for (const varName of found) {
+          if (!variableDefs[varName]) missing.push(varName);
+        }
+
+        const hasFileVars = Object.keys(varsFromFile).length > 0;
+        if (!missing.length && hasFileVars) {
+          setVarsStatus(varsFileName, Object.keys(varsFromFile).length);
+          showToast("All template variables are defined in vars");
+          buildForm();
+          render();
+          return;
+        }
+
+        for (const varName of missing) {
+          variableDefs[varName] = {
+            category: hasFileVars ? "Auto-detected" : "",
+            description: hasFileVars
+              ? "Found in template but not in vars file"
+              : "",
+            placeholder: "",
+            default: "",
+            required: !hasFileVars,
+            group: null,
+            type: null,
+            regex: null,
+            error: null,
+            choices: null,
+          };
+        }
+
+        if (hasFileVars) {
+          setVarsStatus(varsFileName, Object.keys(varsFromFile).length, {
+            autoCount: missing.length,
+          });
+        } else {
+          setVarsStatus("auto-detected", found.size, { markLoaded: true });
+        }
+        buildForm();
+        render();
+      }
+
+      function exportAutoVarsToINI() {
+        if (Object.keys(variableDefs).length === 0) return;
+
+        let ini = `# =============================================================================
+#  VARIABLES - Customize form fields shown to the technician
+# =============================================================================
+#  --- CORE FIELDS ---
+#  [VAR_NAME]            Variable name (used as {{ VAR_NAME }} in template)
+#  description =         Help text/label shown to the technician
+#  placeholder =         Example value shown grayed out in the field
+#  default =             Value pre-filled into the field
+#
+#  --- DATA TYPES & VALIDATION ---
+#  type =                int = restricts input to numbers only
+#  choices =             [opt1, opt2] = creates a dropdown menu
+#  regex =               Regex pattern (wrap in single quotes: '^[0-9]+$')
+#  error =               Custom error text if regex validation fails
+#
+#  --- FORM BEHAVIOR & LAYOUT ---
+#  category =            A visual heading in the UI to sort fields under
+#  required =            false = optional, doesn't count in progress bar
+#  group =               If any field in a group is filled, all become required
+# =============================================================================
+
+`;
+
+        for (const varName of Object.keys(variableDefs)) {
+          ini += `[${varName}]
+description = Enter ${varName}
+category = General
+# placeholder = example value
+# default = pre-filled value
+# type = int
+# choices = [Option1, Option2]
+# regex = '^[0-9]+$'
+# error = Invalid format
+# required = false
+# group =
+
+`;
+        }
+
+        const cleanBaseName = outputStem() || "auto_detected";
+        saveTextFile(
+          ini,
+          `${cleanBaseName}.vars.ini`,
+          "text/plain",
+          "Exported variables schema to INI",
+        );
+      }
+
+      let renderTimeout = null;
+      function debouncedRender() {
+        if (renderTimeout) clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => render(), 150);
+      }
+
+      function fastUpdatePreview(varName) {
+        // Query data-raw, not data-var: list spans refresh when any member changes.
+        const spans = document.querySelectorAll(".preview-var");
+        spans.forEach((span) => {
+          const rawContent = span.getAttribute("data-raw");
+          if (!rawContent) return;
+          if (!exprReferencesVars(rawContent).includes(varName)) return;
+          // renderExpr keeps this path in lockstep with jinjaRaw/jinjaDisplay.
+          span.textContent = renderExpr(rawContent).text;
+        });
+      }
+
+      function isFieldValueValid(value, config) {
+        const v = (value ?? "").trim();
+        if (!v) return true;
+        const re =
+          config && config.compiledRegex instanceof RegExp
+            ? config.compiledRegex
+            : null;
+        return re ? re.test(v) : true;
+      }
+      function applyValidity(inputEl, validMsg, value, config) {
+        const valid = isFieldValueValid(value, config);
+        inputEl.classList.toggle("invalid", !valid);
+        if (validMsg) {
+          validMsg.textContent = valid ? "" : config.error || "Invalid format";
+          validMsg.style.display = valid ? "none" : "";
+        }
+      }
+      function safeFieldId(varName) {
+        return varName.replace(/[^a-zA-Z0-9_-]/g, "_");
+      }
+      function buildSelectField(field, varName, config, safeId) {
+        const inputEl = document.createElement("select");
+        inputEl.id = `field-${safeId}`;
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = "";
+        emptyOpt.textContent = config.placeholder || "— select —";
+        emptyOpt.disabled = config.required === true;
+        emptyOpt.selected = true;
+        inputEl.appendChild(emptyOpt);
+
+        for (const choice of config.choices) {
+          const opt = document.createElement("option");
+          opt.value = choice;
+          opt.textContent = choice;
+          if (config.default === choice) opt.selected = true;
+          inputEl.appendChild(opt);
+        }
+
+        // seed so untouched dropdown emits default; undefined guard lets session value win
+        if (
+          formValues[varName] === undefined &&
+          config.choices.includes(config.default)
+        ) {
+          formValues[varName] = config.default;
+        }
+
+        inputEl.addEventListener("change", (e) => {
+          formValues[varName] = e.target.value;
+          inputEl.classList.toggle("filled", !!e.target.value);
+          debouncedRender();
+        });
+        field.appendChild(inputEl);
+        return inputEl;
+      }
+
+      function buildTextField(field, varName, config, safeId) {
+        const validationRE =
+          config.compiledRegex instanceof RegExp ? config.compiledRegex : null;
+        const inputEl = document.createElement("input");
+        inputEl.id = `field-${safeId}`;
+        inputEl.autocomplete = "off";
+        inputEl.placeholder = config.placeholder || "";
+        inputEl.type = "text";
+
+        // mirror dropdown seeding; undefined guard lets session value win
+        if (formValues[varName] === undefined && config.default) {
+          formValues[varName] = config.default;
+        }
+
+        if (config.type === "int") {
+          inputEl.inputMode = "numeric";
+          inputEl.pattern = "[0-9]*";
+        }
+
+        const validMsg = document.createElement("div");
+        validMsg.className = "validation-msg";
+        validMsg.style.display = "none";
+        validMsg.setAttribute("aria-live", "polite");
+
+        inputEl.addEventListener("input", (e) => {
+          let val = e.target.value;
+          if (config.type === "int") {
+            val = val.replace(/\D/g, "");
+            e.target.value = val;
+          }
+
+          const oldVal = formValues[varName] || "";
+          const newVal = val.trim();
+          formValues[varName] = newVal;
+          e.target.classList.toggle("filled", !!newVal);
+          applyValidity(e.target, validMsg, newVal, config);
+
+          if (!!oldVal !== !!newVal) debouncedRender();
+          else fastUpdatePreview(varName);
+        });
+
+        field.appendChild(inputEl);
+        if (validationRE) field.appendChild(validMsg);
+        // Validate now so an invalid default can't reach output unflagged.
+        applyValidity(inputEl, validMsg, formValues[varName], config);
+        return inputEl;
+      }
+
+      function buildForm() {
+        const container = document.getElementById("formFields");
+        container.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        let currentCategory = "";
+
+        for (const [varName, config] of Object.entries(variableDefs)) {
+          const safeId = safeFieldId(varName);
+
+          if (config.category && config.category !== currentCategory) {
+            currentCategory = config.category;
+            const divider = document.createElement("div");
+            divider.className = "section-label";
+            divider.textContent = currentCategory;
+            fragment.appendChild(divider);
+          }
+
+          const field = document.createElement("div");
+          field.className = "field";
+          const label = document.createElement("label");
+          label.setAttribute("for", `field-${safeId}`);
+          label.textContent = varName;
+          label.onclick = () => findVarInPreview(varName);
+
+          const star = document.createElement("span");
+          star.className = "req-star";
+          star.textContent = "*";
+          star.id = `req-star-${safeId}`;
+          label.appendChild(star);
+          field.appendChild(label);
+
+          if (config.description) {
+            const hint = document.createElement("div");
+            hint.className = "hint";
+            hint.textContent = config.description.replace(
+              /\\([nrt\\'"])/g,
+              (m, char) =>
+                ({ n: "\n", r: "\r", t: "\t", "\\": "\\", "'": "'", '"': '"' })[
+                  char
+                ],
+            );
+            field.appendChild(hint);
+          }
+
+          const inputEl = config.choices
+            ? buildSelectField(field, varName, config, safeId)
+            : buildTextField(field, varName, config, safeId);
+
+          fragment.appendChild(field);
+          if (formValues[varName] === undefined) formValues[varName] = ""; // undefined = never seen; "" = user cleared
+          if (formValues[varName]) {
+            inputEl.value = formValues[varName];
+            inputEl.classList.add("filled");
+          }
+        }
+
+        container.appendChild(fragment);
+        renderAutoDetectButtons();
+      }
+
+      function renderAutoDetectButtons() {
+        const container = document.getElementById("autoDetectIcons");
+        if (!container) return;
+        container.innerHTML = "";
+        if (templateSource === null) return;
+
+        const btn = document.createElement("button");
+        btn.className = "subtle-icon-btn mini-btn";
+        btn.onclick = autoDetectVars;
+        btn.title = "Auto-detect variables";
+        btn.innerHTML = `<svg><use href="#icon-lightning"></use></svg>`;
+        container.appendChild(btn);
+
+        if (
+          Object.keys(variableDefs).length > 0 &&
+          Object.keys(varsFromFile).length === 0
+        ) {
+          btn.title = "Re-detect variables";
+          const exportBtn = document.createElement("button");
+          exportBtn.className = "subtle-icon-btn mini-btn";
+          exportBtn.onclick = exportAutoVarsToINI;
+          exportBtn.title = "Export to INI";
+          exportBtn.innerHTML = `<svg><use href="#icon-download"></use></svg>`;
+          container.appendChild(exportBtn);
+        }
+      }
+
+      function updateProgressBar() {
+        const activeGroups = {};
+        for (const [varName, config] of Object.entries(variableDefs)) {
+          if (
+            config.group &&
+            formValues[varName] &&
+            formValues[varName].trim()
+          ) {
+            activeGroups[config.group] = true;
+          }
+        }
+
+        let total = 0;
+        let filled = 0;
+        for (const [varName, config] of Object.entries(variableDefs)) {
+          const isRequired =
+            config.required || (config.group && activeGroups[config.group]);
+          const safeId = safeFieldId(varName);
+          const starEl = document.getElementById(`req-star-${safeId}`);
+          if (starEl)
+            starEl.style.display = isRequired ? "inline-block" : "none";
+
+          if (!isRequired) continue;
+          total++;
+          const val = formValues[varName] ? formValues[varName].trim() : "";
+          if (val) {
+            if (config.compiledRegex instanceof RegExp) {
+              if (config.compiledRegex.test(val)) filled++;
+            } else {
+              filled++;
+            }
+          }
+        }
+
+        const pct = total > 0 ? (filled / total) * 100 : 100;
+        document.getElementById("progressFill").style.width = `${pct}%`;
+        document.getElementById("progressText").textContent =
+          `${filled} / ${total} fields filled`;
+      }
+
+      function focusVar(varName) {
+        const safeId = safeFieldId(varName);
+        let el = document.getElementById(`field-${safeId}`);
+
+        if (!el) {
+          variableDefs[varName] = {
+            category: "Auto-detected",
+            description: "Added from preview",
+            placeholder: "",
+            default: "",
+            required: true,
+            group: null,
+            type: null,
+            regex: null,
+            error: null,
+            choices: null,
+          };
+          buildForm();
+          el = document.getElementById(`field-${safeId}`);
+          showToast(`Added missing variable: ${varName}`);
+        }
+
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => el.focus(), 100);
+          const fieldContainer = el.closest(".field");
+          if (fieldContainer) {
+            fieldContainer.classList.add("flash-focus");
+            setTimeout(
+              () => fieldContainer.classList.remove("flash-focus"),
+              600,
+            );
+          }
+        }
+      }
+
+      function toggleView() {
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        viewMode = viewMode === "sections" ? "full" : "sections";
+        document
+          .getElementById("viewThumb")
+          .classList.toggle("right", viewMode === "full");
+        render();
+      }
+
+      function render() {
+        if (templateSource === null) return;
+        const container = document.getElementById("previewContainer");
+        const sections = getNamedSections();
+        const badgeColorMap = {};
+        if (viewMode === "full")
+          renderFullMode(container, sections, badgeColorMap);
+        else renderSectionMode(container, sections, badgeColorMap);
+        updateProgressBar();
+        updateTemplateErrorBadge();
+      }
+
+      function renderFullMode(container, sections, badgeColorMap) {
+        const isEditing = activeSectionEditors.has(FULL_EDIT_KEY);
+        const edited = hasEdits();
+        const headerClass = isEditing ? " is-editing" : edited ? " edited" : "";
+
+        let html = `<div class="config-section" id="section-full">
+                            <div class="section-header${headerClass}">
+                              <h3>Full Config</h3>
+                              <div class="btn-group">
+                                <span class="copied-badge" id="badge-full">Copied!</span>`;
+
+        if (isEditing) {
+          html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelFullEdit()"><svg><use href="#icon-close"></use></svg></button>
+                         <button class="header-icon-btn" title="Done Editing" onclick="toggleFullEdit()"><svg><use href="#icon-check"></use></svg></button>`;
+        } else {
+          if (edited)
+            html += `<button class="header-icon-btn" title="Reset Edits" onclick="resetAllEdits()"><svg><use href="#icon-reset"></use></svg></button>`;
+          html += `<button class="header-icon-btn" title="Edit" onclick="toggleFullEdit()"><svg><use href="#icon-edit"></use></svg></button>
+                         <div class="split-btn"><button class="btn-part copy-down" title="Copy Full Config" onclick="copyAll()"><svg><use href="#icon-copy"></use></svg></button></div>`;
+        }
+
+        html += `</div></div>`;
+
+        if (isEditing) {
+          const editText = fullModeEditBuffer || assembleFullEditableText();
+          const rows = Math.max(editText.split("\n").length + 2, 4);
+          html += `<textarea class="section-edit" id="editor-full" rows="${rows}" oninput="onFullEditInput(this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
+        } else {
+          html += `<pre>${jinjaDisplay(assembleFullEditableText().trim(), keywordGroups, badgeColorMap)}</pre>`;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
+      }
+
+      function renderSectionMode(container, sections, badgeColorMap) {
+        if (sections.length === 0) {
+          container.innerHTML = `<div class="empty-state" style="flex-direction: column;">
+                                         <div style="color: var(--text-dim); font-weight: 600;">No sections detected in this template.</div>
+                                         <div style="font-size: 12px; margin-top: 12px;">Toggle to <strong>Full</strong> view above, or add <code>!!! Section Name</code> markers to your template file.</div>
+                                       </div>`;
+          return;
+        }
+
+        let html = "";
+        for (let i = 0; i < sections.length; i++) {
+          const { id, name, isImportant, displayBody, isEdited } = sections[i];
+          const isEditing = activeSectionEditors.has(id);
+          let headerClass = isEditing
+            ? " is-editing"
+            : isEdited
+              ? " edited"
+              : "";
+          if (isImportant) headerClass += " important";
+
+          html += `<div class="config-section" id="section-${i}">
+                           <div class="section-header${headerClass}">
+                             <h3>${escHtml(name)}</h3>
+                             <div class="btn-group">
+                               <span class="copied-badge" id="badge-${i}">Copied!</span>`;
+
+          if (isEditing) {
+            html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelSectionEdit(${id})"><svg><use href="#icon-close"></use></svg></button>
+                           <button class="header-icon-btn" title="Done Editing" onclick="toggleSectionEdit(${id}, ${i})"><svg><use href="#icon-check"></use></svg></button>`;
+          } else {
+            if (isEdited)
+              html += `<button class="header-icon-btn" title="Reset Edit" onclick="resetSectionEdit(${id})"><svg><use href="#icon-reset"></use></svg></button>`;
+
+            html += `<button class="header-icon-btn" title="Edit" onclick="toggleSectionEdit(${id}, ${i})"><svg><use href="#icon-edit"></use></svg></button>`;
+
+            if (i === sections.length - 1) {
+              html += `<button class="header-icon-btn" title="Copy Section" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>`;
+            } else {
+              html += `<div class="split-btn">
+                               <button class="btn-part copy-only" title="Copy Only" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-down" title="Copy and Go to Next" onclick="copyAndGoDown(${id}, ${i})"><svg><use href="#icon-copy-down"></use></svg></button>
+                             </div>`;
+            }
+          }
+
+          html += `</div></div>`;
+
+          if (isEditing) {
+            const r = recordById(id);
+            const editText =
+              r && r.override !== null ? r.override : displayBody;
+            const rows = Math.max(editText.split("\n").length + 2, 4);
+            html += `<textarea class="section-edit" id="editor-sec-${i}" rows="${rows}" oninput="onSectionEditInput(${id}, this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
+          } else if (isEdited) {
+            const r = recordById(id);
+            html += `<pre>${jinjaDisplay((r ? recordEffectiveBody(r) : displayBody).trim(), keywordGroups, badgeColorMap)}</pre>`;
+          } else {
+            html += `<pre>${jinjaDisplay(displayBody.trim(), keywordGroups, badgeColorMap)}</pre>`;
+          }
+          html += `</div>`;
+        }
+        container.innerHTML = html;
+      }
+
+      function parseSections(template) {
+        const lines = template.split("\n");
+        const sections = [];
+        let current = { name: null, isImportant: false, lines: [] };
+        const nameCounts = {};
+
+        for (const line of lines) {
+          const match = line.match(SECTION_RE);
+          if (match) {
+            if (current.lines.length > 0 || current.name !== null)
+              sections.push(current);
+            let rawName = match[2].trim();
+            nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
+            let finalName =
+              nameCounts[rawName] > 1
+                ? `${rawName} (${nameCounts[rawName]})`
+                : rawName;
+            current = {
+              name: finalName,
+              rawName: rawName,
+              isImportant: match[1].length >= 5,
+              lines: [],
+            };
+          } else {
+            current.lines.push(line);
+          }
+        }
+        if (current.lines.length > 0 || current.name !== null)
+          sections.push(current);
+        return sections;
+      }
+
+      // Normalize marker spacing on load so assembleFromRecords is a fixed point; prevents phantom "(edited)" on fresh load.
+      function canonicalizeMarkers(text) {
+        return (text ?? "")
+          .split("\n")
+          .map((line) => {
+            const m = line.match(SECTION_RE);
+            if (!m) return line;
+            return (m[1].length >= 5 ? "!!!!! " : "!!! ") + m[2].trim(); // >=5 bangs = important (red header)
+          })
+          .join("\n");
+      }
+
+      function recordById(id) {
+        return sectionRecords.find((r) => r.id === id);
+      }
+
+      function getNamedSections() {
+        return getNamedRecords(sectionRecords);
+      }
+
+      function deriveRecordsFromTemplate(templateText) {
+        return parseSections(templateText).map((section) => ({
+          id: nextRecordId++,
+          name: section.name === null ? null : section.rawName,
+          isImportant: section.isImportant,
+          baselineBody: section.lines.join("\n"),
+          override: null,
+        }));
+      }
+
+      function validateSessionV1(session) {
+        if (session === null || typeof session !== "object")
+          return "Not a session object";
+        if (session.schemaVersion !== SESSION_SCHEMA_VERSION)
+          return `Unsupported session version: ${session.schemaVersion}`;
+        if (!Array.isArray(session.sections))
+          return "Session is missing its sections array";
+        for (const s of session.sections) {
+          if (s === null || typeof s !== "object")
+            return "Malformed section entry";
+          if (!(s.name === null || typeof s.name === "string"))
+            return "Section name must be a string or null";
+        }
+        return null;
+      }
+
+      function recordsFromSession(sections) {
+        return sections.map((s) => ({
+          id: nextRecordId++,
+          name: s.name === undefined ? null : s.name,
+          isImportant: s.isImportant === true,
+          baselineBody: s.baselineBody === undefined ? null : s.baselineBody,
+          override: s.override === undefined ? null : s.override,
+        }));
+      }
+
+      function recordEffectiveBody(record) {
+        return record.override !== null
+          ? record.override
+          : (record.baselineBody ?? "");
+      }
+
+      function trimBodyEnds(s) {
+        return (s ?? "").replace(/^\n+/, "").replace(/\n+$/, "");
+      }
+
+      // trim-tolerant: spacing-only diffs don't flag a section as edited.
+      function bodiesEquivalent(a, b) {
+        return trimBodyEnds(a) === trimBodyEnds(b);
+      }
+
+      // Last-position artifact: the last parsed block gains a trailing \n others don't.
+      function stripPositionalTrailingNewline(s) {
+        return (s ?? "").replace(/\n$/, "");
+      }
+
+      function recordIsEdited(record) {
+        return record.override !== null;
+      }
+
+      function assembleFromRecords(records) {
+        const parts = [];
+        for (const r of records) {
+          if (r.name !== null)
+            parts.push((r.isImportant ? "!!!!! " : "!!! ") + r.name);
+          parts.push(recordEffectiveBody(r));
+        }
+        return parts.join("\n");
+      }
+
+      function getNamedRecords(records) {
+        const named = [];
+        const nameCounts = {};
+        for (const r of records) {
+          if (r.name === null) continue;
+          const displayBody = trimBodyEnds(recordEffectiveBody(r));
+          if (!displayBody.trim()) continue;
+          nameCounts[r.name] = (nameCounts[r.name] || 0) + 1;
+          const displayName =
+            nameCounts[r.name] > 1
+              ? `${r.name} (${nameCounts[r.name]})`
+              : r.name;
+          named.push({
+            id: r.id,
+            name: displayName,
+            isImportant: r.isImportant,
+            displayBody,
+            isEdited: recordIsEdited(r),
+          });
+        }
+        return named;
+      }
+
+      function hasEdits() {
+        return (
+          sectionRecords.some(recordIsEdited) ||
+          assembleFromRecords(sectionRecords) !== originalTemplateSource
+        );
+      }
+
+      function assembleFullEditableText() {
+        return assembleFromRecords(sectionRecords);
+      }
+
+      // Gates the disassembler: a body edit with a typed !!! must split the section.
+      function containsSectionMarker(text) {
+        return (text ?? "").split("\n").some((line) => SECTION_RE.test(line));
+      }
+      function toggleSectionEdit(id, index) {
+        if (activeSectionEditors.has(id)) {
+          activeSectionEditors.delete(id);
+          delete sectionEditBackups[id];
+          const r = recordById(id);
+          // Body-only edit: normalize this record (trim-tolerant). A typed !!! marker needs the full disassembler to split.
+          if (r && r.override !== null) {
+            if (containsSectionMarker(r.override)) {
+              sectionRecords = disassembleFullEdit(
+                sectionRecords,
+                assembleFromRecords(sectionRecords),
+                true,
+              );
+            } else if (bodiesEquivalent(r.override, r.baselineBody)) {
+              r.override = null;
+            }
+          }
+          render();
+        } else {
+          const r = recordById(id);
+          sectionEditBackups[id] = r ? r.override : null;
+          activeSectionEditors.add(id);
+          render();
+          const ta = document.getElementById(`editor-sec-${index}`);
+          if (ta) {
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+            autoSizeTextarea(ta);
+          }
+        }
+      }
+
+      function cancelSectionEdit(id) {
+        const r = recordById(id);
+        if (r) r.override = sectionEditBackups[id] ?? null;
+        delete sectionEditBackups[id];
+        activeSectionEditors.delete(id);
+        render();
+      }
+
+      function onSectionEditInput(id, value) {
+        const r = recordById(id);
+        if (r) r.override = value;
+      }
+
+      function resetSectionEdit(id) {
+        const r = recordById(id);
+        if (r) {
+          if (r.baselineBody === null) {
+            // No baseline -> remove the section (nulling would leave an orphaned marker).
+            sectionRecords = sectionRecords.filter((rec) => rec.id !== id);
+          } else {
+            r.override = null;
+          }
+        }
+        delete sectionEditBackups[id];
+        activeSectionEditors.delete(id);
+        render();
+      }
+
+      function toggleFullEdit() {
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) {
+          commitFullModeEdit();
+          render();
+        } else {
+          fullModeEditBuffer = assembleFullEditableText();
+          activeSectionEditors.add(FULL_EDIT_KEY);
+          render();
+          const ta = document.getElementById("editor-full");
+          if (ta) {
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+            autoSizeTextarea(ta);
+          }
+        }
+      }
+
+      function cancelFullEdit() {
+        activeSectionEditors.delete(FULL_EDIT_KEY);
+        fullModeEditBuffer = "";
+        render();
+      }
+
+      function onFullEditInput(value) {
+        fullModeEditBuffer = value;
+      }
+
+      // Four-pass match: exact survivor -> name-stable -> guarded rename -> new/deleted. Identity only; never alters output.
+      function disassembleFullEdit(
+        priorRecords,
+        bufferText,
+        trimTolerant = false,
+      ) {
+        const blocks = parseSections(bufferText).map((s) => ({
+          name: s.name === null ? null : s.rawName,
+          isImportant: s.isImportant,
+          body: s.lines.join("\n"),
+        }));
+        const used = new Array(priorRecords.length).fill(false);
+        const assigned = new Array(blocks.length).fill(-1);
+
+        // Pass 1 - exact survivor.
+        for (let i = 0; i < blocks.length; i++) {
+          for (let j = 0; j < priorRecords.length; j++) {
+            if (used[j]) continue;
+            if (
+              blocks[i].name === priorRecords[j].name &&
+              blocks[i].body === recordEffectiveBody(priorRecords[j])
+            ) {
+              assigned[i] = j;
+              used[j] = true;
+              break;
+            }
+          }
+        }
+
+        // Pass 2 - name-stable body edit.
+        for (let i = 0; i < blocks.length; i++) {
+          if (assigned[i] !== -1) continue;
+          for (let j = 0; j < priorRecords.length; j++) {
+            if (used[j]) continue;
+            if (blocks[i].name === priorRecords[j].name) {
+              assigned[i] = j;
+              used[j] = true;
+              break;
+            }
+          }
+        }
+
+        // Pass 3 - guarded rename: same non-trivial body, exactly one unused record.
+        for (let i = 0; i < blocks.length; i++) {
+          if (assigned[i] !== -1) continue;
+          if (blocks[i].body.trim() === "") continue;
+          let match = -1;
+          let count = 0;
+          for (let j = 0; j < priorRecords.length; j++) {
+            if (used[j]) continue;
+            if (blocks[i].body === recordEffectiveBody(priorRecords[j])) {
+              match = j;
+              count++;
+            }
+          }
+          if (count === 1) {
+            assigned[i] = match;
+            used[match] = true;
+          }
+        }
+
+        // rename+body-edit is indistinguishable from delete+add; surface the guess
+        const unmatchedBlocks = assigned.filter((a) => a === -1).length;
+        const unusedPriors = used.filter((u) => !u).length;
+        if (unmatchedBlocks > 0 && unusedPriors > 0) {
+          console.warn(
+            `disassembleFullEdit: ${unmatchedBlocks} edited block(s) could not be matched to ${unusedPriors} leftover record(s); treating as new sections (prior edit identity not carried).`,
+          );
+        }
+
+        return blocks.map((b, i) => {
+          if (assigned[i] !== -1) {
+            const prior = priorRecords[assigned[i]];
+            // strip positional trailing-newline before comparing; stored values stay byte-exact
+            const curLast = i === blocks.length - 1;
+            const priorLast = assigned[i] === priorRecords.length - 1;
+            const curForCmp = curLast
+              ? stripPositionalTrailingNewline(b.body)
+              : b.body;
+            const baseForCmp = priorLast
+              ? stripPositionalTrailingNewline(prior.baselineBody)
+              : prior.baselineBody;
+            return {
+              id: prior.id,
+              name: b.name,
+              isImportant: b.isImportant,
+              baselineBody: prior.baselineBody,
+              override: (
+                trimTolerant
+                  ? bodiesEquivalent(b.body, prior.baselineBody)
+                  : curForCmp === baseForCmp
+              )
+                ? null
+                : b.body,
+            };
+          }
+          return {
+            id: nextRecordId++,
+            name: b.name,
+            isImportant: b.isImportant,
+            baselineBody: null,
+            override: b.body,
+          };
+        });
+      }
+
+      function commitFullModeEdit() {
+        activeSectionEditors.delete(FULL_EDIT_KEY);
+        sectionRecords = disassembleFullEdit(
+          sectionRecords,
+          fullModeEditBuffer,
+        );
+        fullModeEditBuffer = "";
+      }
+
+      // Clear all in-progress edit state; every load/reset path routes here.
+      function resetEditState() {
+        for (const k of Object.keys(sectionEditBackups))
+          delete sectionEditBackups[k];
+        activeSectionEditors.clear();
+        fullModeEditBuffer = "";
+      }
+      function resetAllEdits() {
+        if (originalTemplateSource !== null) {
+          templateSource = originalTemplateSource;
+          sectionRecords = deriveRecordsFromTemplate(originalTemplateSource);
+        }
+        resetEditState();
+        render();
+      }
+
+      function copySectionByName(id, index) {
+        const r = recordById(id);
+        if (!r || r.name === null) return;
+        const output = jinjaRaw(recordEffectiveBody(r)) + "\n";
+        navigator.clipboard
+          .writeText(output)
+          .then(() => flashBadge(`badge-${index}`))
+          .catch((err) => {
+            console.error("Clipboard Error:", err);
+            showToast("Failed to copy to clipboard");
+          });
+        document
+          .querySelectorAll(".config-section.last-copied")
+          .forEach((sec) => sec.classList.remove("last-copied"));
+        const currentSection = document.getElementById(`section-${index}`);
+        if (currentSection) currentSection.classList.add("last-copied");
+      }
+
+      function copyAndGoDown(id, index) {
+        copySectionByName(id, index);
+
+        const currentSection = document.getElementById(`section-${index}`);
+        const nextSection = document.getElementById(`section-${index + 1}`);
+        const container = document.querySelector(".preview-panel");
+
+        if (currentSection && nextSection && container) {
+          const distance =
+            nextSection.getBoundingClientRect().top -
+            currentSection.getBoundingClientRect().top;
+
+          container.scrollBy({ top: distance, behavior: "smooth" });
+        }
+      }
+
+      function copyAll() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        const output = jinjaRaw(assembleFullEditableText()) + "\n";
+
+        navigator.clipboard
+          .writeText(output)
+          .then(() => {
+            showToast("Copied full config");
+            flashBadge("badge-full");
+            document
+              .querySelectorAll(".config-section.last-copied")
+              .forEach((sec) => sec.classList.remove("last-copied"));
+            const fullSection = document.getElementById("section-full");
+            if (fullSection) fullSection.classList.add("last-copied");
+          })
+          .catch((err) => {
+            console.error("Clipboard Error:", err);
+            showToast("Failed to copy to clipboard");
+          });
+      }
+
+      function saveConfig() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        const hostname =
+          formValues.HOSTNAME ||
+          formValues.hostname ||
+          formValues.Hostname ||
+          outputStem() ||
+          "config";
+        const output = toWindowsEOL(
+          jinjaRaw(assembleFullEditableText()) + "\n",
+        );
+        saveTextFile(
+          output,
+          `${hostname}.config`,
+          "text/plain",
+          `Saved ${hostname}.config`,
+        );
+      }
+
+      function saveTemplate() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+
+        const filename = `${templateBasename() || "template"}.config`;
+
+        const headerText = `{# ===============================================================
+Switch Configuration Template
+JINJA2 SYNTAX (same as Ansible):
+{{  VAR  }}                              Variable substitution
+{{  VAR | default('fallback')  }}        Default if empty
+{{  VAR | upper  }}                      Uppercase
+{{  VAR | lower  }}                      Lowercase
+{{  VAR | trim  }}                       Remove leading/trailing spaces
+{{  [V1, V2, V3] | join(',')  }}         Join non-empty values
+{% if VAR %}...{% endif %}               Conditional block
+{% if VAR %}...{% else %}...{% endif %}  With else branch
+Comment blocks use opening {-# and closing #-} (without dashes)
+
+TOOL EXTENSIONS:
+!!! Section Name                         Copy-able section break
+!!!!! Important Section                  Renders header in red text
+!KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
+                                         any all-caps keyword works — e.g. !STIG: V-1234, !CIS: 1.5.2
+=============================================================== #}\n\n`;
+
+        const output = toWindowsEOL(headerText + assembleFullEditableText());
+
+        saveTextFile(
+          output,
+          filename,
+          "text/plain",
+          `Saved template: ${filename}`,
+        );
+      }
+
+      function resetAll() {
+        for (const varName of Object.keys(variableDefs)) {
+          formValues[varName] = "";
+          const safeId = safeFieldId(varName);
+          const el = document.getElementById(`field-${safeId}`);
+          if (!el) continue;
+          el.value = "";
+          el.classList.remove("filled", "invalid");
+          if (el.tagName === "SELECT") el.selectedIndex = 0;
+          const validMsg = el.parentNode.querySelector(".validation-msg");
+          if (validMsg) validMsg.style.display = "none";
+        }
+        resetAllEdits();
+      }
+
+      function clearTemplate() {
+        if (!templateSource) return;
+        if (
+          !confirm(
+            "Clear the loaded template? This will remove any manual edits.",
+          )
+        )
+          return;
+
+        templateSource = null;
+        originalTemplateSource = null;
+        templateFileName = "";
+        sectionRecords = [];
+        resetEditState();
+        viewMode = "sections";
+
+        document.getElementById("templateInput").value = "";
+        document.getElementById("templateLoader").classList.remove("loaded");
+        document.getElementById("templateStatus").innerHTML =
+          '<span class="not-loaded">No template loaded</span>';
+        document.getElementById("templateErrorBadge").style.display = "none";
+        document.getElementById("viewThumb").classList.remove("right");
+        document.getElementById("previewContainer").innerHTML =
+          '<div class="empty-state">Load a template to get started.</div>';
+        renderAutoDetectButtons();
+
+        if (Object.keys(varsFromFile).length === 0) {
+          variableDefs = {};
+          Object.keys(formValues).forEach((k) => delete formValues[k]);
+          document.getElementById("formFields").innerHTML = "";
+          document.getElementById("varsStatus").innerHTML =
+            '<span class="not-loaded">No vars loaded</span>';
+          document.getElementById("varsCountBadge").style.display = "none";
+        }
+        showToast("Template cleared");
+      }
+
+      function clearVariables() {
+        if (Object.keys(variableDefs).length === 0 && varsFileName === "")
+          return;
+        if (!confirm("Clear all variables and form inputs?")) return;
+
+        variableDefs = {};
+        varsFromFile = {};
+        varsFileName = "";
+        Object.keys(formValues).forEach((k) => delete formValues[k]);
+
+        document.getElementById("varsInput").value = "";
+        document.getElementById("varsLoader").classList.remove("loaded");
+        document.getElementById("varsStatus").innerHTML =
+          '<span class="not-loaded">No vars loaded</span>';
+        document.getElementById("varsErrorBadge").style.display = "none";
+
+        const varsBadge = document.getElementById("varsCountBadge");
+        if (varsBadge) {
+          varsBadge.style.display = "none";
+          varsBadge.innerHTML = "";
+        }
+
+        document.getElementById("formFields").innerHTML = "";
+        renderAutoDetectButtons();
+        updateProgressBar();
+        render();
+        showToast("Variables cleared");
+      }
+
+      function autoSizeTextarea(el) {
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+      }
+      function scrollToTop() {
+        const panel = document.querySelector(".preview-panel");
+        if (panel) panel.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      function openBadgeCopy(el) {
+        const popup = document.getElementById("badgeCopyPopup");
+        if (!popup) return;
+        popup.querySelector(".badge-copy-text").textContent =
+          el.dataset.marker || "";
+        popup.hidden = false;
+        const r = el.getBoundingClientRect();
+        const pr = popup.getBoundingClientRect();
+        let top = r.bottom + 6;
+        if (top + pr.height > window.innerHeight) top = r.top - pr.height - 6;
+        let left = r.left;
+        if (left + pr.width > window.innerWidth - 8)
+          left = window.innerWidth - pr.width - 8;
+        popup.style.top = `${Math.max(8, top)}px`;
+        popup.style.left = `${Math.max(8, left)}px`;
+      }
+
+      function closeBadgeCopy() {
+        const popup = document.getElementById("badgeCopyPopup");
+        if (popup) popup.hidden = true;
+      }
+
+      document.addEventListener("click", (e) => {
+        if (e.target.closest(".badge") || e.target.closest("#badgeCopyPopup"))
+          return;
+        closeBadgeCopy();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeBadgeCopy();
+      });
+      window.addEventListener("scroll", closeBadgeCopy, true);
+
+      function escHtml(s) {
+        return !s
+          ? ""
+          : s
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+      }
+      function escJSString(s) {
+        return !s
+          ? ""
+          : s
+              .replace(/\\/g, "\\\\")
+              .replace(/'/g, "\\'")
+              .replace(/"/g, "&quot;");
+      }
+      function escRegex(s) {
+        return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+      function isValuePresent(v) {
+        return v && v.trim() !== "";
+      }
+
+      function flashBadge(id) {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        badge.classList.add("show");
+        setTimeout(() => badge.classList.remove("show"), 1500);
+      }
+
+      function showToast(message) {
+        const el = document.getElementById("toast");
+        el.textContent = message;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 2000);
+      }
+
+      function openHelp() {
+        document.getElementById("helpLightbox").classList.add("show");
+      }
+      function closeHelp(e) {
+        if (!e || e.target === document.getElementById("helpLightbox"))
+          document.getElementById("helpLightbox").classList.remove("show");
+      }
+
+      const searchIndexes = {};
+      function findVarInPreview(varName) {
+        const instances = document.querySelectorAll(
+          `.preview-var[data-var="${CSS.escape(varName)}"]`,
+        );
+        if (instances.length === 0)
+          return showToast("Variable not found in current preview");
+
+        if (searchIndexes[varName] === undefined) searchIndexes[varName] = 0;
+        else searchIndexes[varName]++;
+        if (searchIndexes[varName] >= instances.length)
+          searchIndexes[varName] = 0;
+
+        const target = instances[searchIndexes[varName]];
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        const observer = new IntersectionObserver(
+          (entries, obs) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                target.classList.add("flash-search");
+                setTimeout(() => target.classList.remove("flash-search"), 800);
+                obs.disconnect();
+              }
+            });
+          },
+          { threshold: 0.5 },
+        );
+
+        observer.observe(target);
+        setTimeout(() => observer.disconnect(), 2000);
+      }
+
+      function calcMarquee(container) {
+        const textEl = container.firstElementChild;
+        if (!textEl) return;
+        const overflow = textEl.scrollWidth - container.clientWidth + 6;
+        if (overflow > 0) {
+          const duration = Math.max(overflow / 55 / 0.7, 2.5);
+          textEl.style.setProperty("--marquee-time", `${duration}s`);
+        }
+      }
+
+      function initialize() {
+        document
+          .getElementById("templateInput")
+          .addEventListener("change", onTemplateFileSelected);
+        document
+          .getElementById("varsInput")
+          .addEventListener("change", onVarsFileSelected);
+        document
+          .getElementById("sessionInput")
+          .addEventListener("change", onSessionFileSelected);
+
+        let lastMousedownTime = 0;
+        document
+          .getElementById("previewContainer")
+          .addEventListener("mousedown", (e) => {
+            const now = Date.now();
+            if (now - lastMousedownTime < 400) {
+              e.preventDefault();
+              const line = e.target.closest(".config-line");
+              if (!line) return;
+              const range = document.createRange();
+              range.selectNodeContents(line);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+            lastMousedownTime = now;
+          });
+
+        const dropZone = document.querySelector(".form-panel");
+        dropZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropZone.classList.add("drag-over");
+        });
+        dropZone.addEventListener("dragleave", (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("drag-over");
+        });
+        dropZone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("drag-over");
+          if (!e.dataTransfer.files.length) return;
+
+          let foundSession = false,
+            foundVars = false,
+            foundTemplate = false;
+          for (const file of e.dataTransfer.files) {
+            const ext = file.name.split(".").pop().toLowerCase();
+            if (ext === "json" && !foundSession) {
+              processSessionFile(file);
+              foundSession = true;
+              break;
+            } else if (["ini"].includes(ext) && !foundVars) {
+              processVarsFile(file);
+              foundVars = true;
+            } else if (!["ini", "json"].includes(ext) && !foundTemplate) {
+              processTemplateFile(file);
+              foundTemplate = true;
+            }
+          }
+        });
+
+        const previewPanel = document.querySelector(".preview-panel");
+        const scrollBtn = document.getElementById("scrollTopBtn");
+        previewPanel.addEventListener("scroll", () => {
+          if (previewPanel.scrollTop > 200) scrollBtn.classList.add("show");
+          else scrollBtn.classList.remove("show");
+        });
+
+        document
+          .getElementById("previewContainer")
+          .addEventListener("click", (e) => {
+            const target = e.target.closest(".preview-var");
+            if (target) {
+              const varName = target.getAttribute("data-var");
+              if (varName) focusVar(varName);
+            }
+          });
+      }
+
+      initialize();
+    </script>
+  </body>
+</html>
