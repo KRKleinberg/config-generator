@@ -2571,9 +2571,19 @@
       }
       // File System Access API avoids same-size stale-reload; falls back to hidden <input>. Cancel is silent.
       async function openTextFile(inputId, process) {
+        const input = document.getElementById(inputId);
         if (window.showOpenFilePicker) {
           try {
-            const [handle] = await showOpenFilePicker();
+            const exts = (input.accept || "")
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const options = exts.length
+              ? {
+                  types: [{ description: "Supported files", accept: { "text/plain": exts } }],
+                }
+              : {};
+            const [handle] = await showOpenFilePicker(options);
             const file = await handle.getFile();
             process(file);
             return;
@@ -2582,9 +2592,8 @@
             // any other failure (e.g. disabled by policy): fall through
           }
         }
-        document.getElementById(inputId).click();
+        input.click();
       }
-
       function onTemplateFileSelected(e) {
         const file = e.target.files[0];
         if (file) processTemplateFile(file);
