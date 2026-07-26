@@ -1155,6 +1155,28 @@
         color: var(--text-dim);
       }
 
+      .guide-footer {
+        margin-top: 28px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--text-hint);
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      .guide-footer a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+
+      .guide-footer a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
       .sop-content h3 {
         font-size: 15px;
         color: var(--text);
@@ -1918,6 +1940,20 @@
                 variable names will break the regex.
               </li>
             </ul>
+            <div class="guide-footer">
+              Config Generator
+              <span id="guideVersion"></span>
+              <br />
+              Copyright 2026 Kevin Kleinberg | Apache-2.0
+              <br />
+              <a
+                href="https://github.com/KRKleinberg/config-generator"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                github.com/KRKleinberg/config-generator
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -4254,6 +4290,16 @@ category = General
       }
 
       function initialize() {
+        // Version comes from the line-1 comment
+        const headerComment = [...document.childNodes].find(
+          (n) => n.nodeType === Node.COMMENT_NODE,
+        );
+        const version = (headerComment?.nodeValue || "").match(
+          /v\d{4}\.\d{2}\.\d{2}/,
+        );
+        if (version)
+          document.getElementById("guideVersion").textContent = version[0];
+
         document
           .getElementById("templateInput")
           .addEventListener("change", onTemplateFileSelected);
