@@ -5,8 +5,8 @@ A single-file, offline browser tool that turns a template and a variable definit
 ## Features
 
 - **Jinja2 templating** with the familiar Ansible subset: variable substitution, defaults, filters (`upper`, `lower`, `trim`, `join`), and `{% if %}/{% else %}` conditional blocks.
-- **Form generated from a vars file**, where each field defines its own help text, placeholder, default, and layout.
-- **Input validation** including regex patterns with custom error text, integer-only fields, and required vs. optional fields.
+- **Form generated automatically** from the template's variables, or from an optional vars file where each field defines its own help text, placeholder, default, and layout.
+- **Input validation** including regex patterns with custom error text, integer-only fields, and required vs. optional fields, plus template syntax checking that flags malformed Jinja before it reaches a device.
 - **Dropdowns and field groups**, including all-or-nothing linked groups where filling one field makes the rest required.
 - **Section breaks and headers** for organizing long configs, with optional red highlighting for critical sections.
 - **Inline compliance badges** (`!STIG:`, `!CIS:`, or any all-caps keyword), color-coded per keyword and automatically stripped when the config is copied.
@@ -20,4 +20,4 @@ Config data lives only in memory while the tab is open. No configurations or for
 
 ## Usage
 
-Open `config-generator.html`, load a template and a vars file, fill out the form, then copy or save the result. The included example files cover the full template and variable syntax.
+Open `config-generator.html`, load a template (and optionally a vars file), fill out the form, then copy or save the result. The included example files cover the full template and variable syntax.

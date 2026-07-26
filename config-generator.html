@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.06.08 -->
+<!-- Config Generator v2026.07.26 -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -1739,10 +1739,8 @@
                     <use href="#icon-lightning"></use>
                   </svg>
                 </span>
-                <strong>:</strong>
-                Click the lightning bolt icon next to the progress bar to
-                instantly generate missing form fields by scanning your
-                template.
+                : Form fields generate automatically from your template on load.
+                Click the lightning bolt to re-scan after editing the template.
               </li>
               <li>
                 <strong>Export INI</strong>
@@ -1761,10 +1759,6 @@
             </ul>
             <h4>Generating Configurations</h4>
             <ul>
-              <li>
-                Fill out the form fields on the left. The Preview panel on the
-                right will update in real-time.
-              </li>
               <li>
                 Click the
                 <strong>Reset</strong>
@@ -1912,6 +1906,13 @@
                 ).
               </li>
               <li>
+                <strong>Section Boundaries:</strong>
+                <code>{% if %}</code>
+                blocks must open and close within one section — spanning a
+                <code>!!!</code>
+                marker flags the error badge. Comments may span markers.
+              </li>
+              <li>
                 <strong>Variable Names:</strong>
                 Must be alphanumeric with underscores/hyphens. Spaces in
                 variable names will break the regex.
@@ -1941,7 +1942,8 @@
       const SECTION_RE = /^(!!!+)\s*(.+)$/;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
       const BADGE_RE = /!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
-      const CLEAN_BADGE_RE = /![A-Z][A-Z0-9_-]*:[^\n]+/g;
+      // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
+      const CLEAN_BADGE_RE = /![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
       const INNER_IF_ELSE_RE =
         /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
@@ -2217,7 +2219,10 @@
           description: item.description || "",
           placeholder: item.placeholder || "",
           default: item.default || "",
-          required: item.required !== "false",
+          required:
+            String(item.required ?? "")
+              .trim()
+              .toLowerCase() !== "false",
           group: item.group || null,
           type: item.type || null,
           regex: item.regex || null,
@@ -2266,11 +2271,16 @@
             .split(",")
             .map((s) => s.trim());
           value = varNames
-            .map((name) => formValues[name] || "")
+            .map((name) =>
+              typeof formValues[name] === "string" ? formValues[name] : "",
+            )
             .filter((v) => v.trim() !== "");
           isList = true;
         } else {
-          value = formValues[baseExpr] || "";
+          value =
+            typeof formValues[baseExpr] === "string"
+              ? formValues[baseExpr]
+              : "";
         }
         let filled = isList ? value.length > 0 : value.trim() !== "";
         for (const filter of filters) {
@@ -2302,6 +2312,10 @@
         }
         return { baseExpr, filters };
       }
+      // Var-name rule shared by auto-detect, span clicks, and the error scan.
+      function isValidVarName(name) {
+        return /^\w[\w.-]*$/.test(name);
+      }
       // All vars an expression depends on; exact tokens so VLAN_ID != VLAN.
       function exprReferencesVars(rawContent) {
         const { baseExpr } = parseExprParts((rawContent ?? "").trim());
@@ -2310,9 +2324,9 @@
             .slice(1, -1)
             .split(",")
             .map((s) => s.trim())
-            .filter(Boolean);
+            .filter(isValidVarName);
         }
-        return baseExpr ? [baseExpr] : [];
+        return isValidVarName(baseExpr) ? [baseExpr] : [];
       }
       function collectTemplateVarNames(templateText) {
         const source = (templateText ?? "").replace(JINJA_COMMENT_RE, "");
@@ -2323,7 +2337,9 @@
           for (const v of exprReferencesVars(match[1])) found.add(v);
         }
         const ifRE = /\{%\s*if\s+([\w.-]+)\s*%\}/g;
-        while ((match = ifRE.exec(source)) !== null) found.add(match[1]);
+        while ((match = ifRE.exec(source)) !== null) {
+          if (isValidVarName(match[1])) found.add(match[1]);
+        }
         return found;
       }
       function splitOnPipe(chain) {
@@ -2403,10 +2419,15 @@
               ? yes.replace(/^\n/, "").replace(/\n$/, "")
               : no.replace(/^\n/, "").replace(/\n$/, ""),
           );
-          result = result.replace(INNER_IF_RE, (_, v, content, _inner, tail) =>
-            isValuePresent(formValues[v])
-              ? content.replace(/^\n/, "").replace(/\n$/, "") + tail
-              : "",
+          result = result.replace(
+            INNER_IF_RE,
+            (_, v, content, _inner, tail, offset, str) => {
+              if (isValuePresent(formValues[v]))
+                return content.replace(/^\n/, "").replace(/\n$/, "") + tail;
+              // False: drop the tail newline only for a whole-line tag, else lines merge.
+              const atLineStart = offset === 0 || str[offset - 1] === "\n";
+              return atLineStart ? "" : tail;
+            },
           );
           iterations++;
         }
@@ -2415,6 +2436,27 @@
           showToast("Malformed {% if %} tags in template");
         }
         return result;
+      }
+      // Strip leading indent on output (serial-paste cost); banners stay verbatim.
+      const BANNER_START_RE = /^\s*banner\s+[\w-]+\s+(\S)/;
+      function stripLeadingIndent(text) {
+        const out = [];
+        let bannerDelim = null;
+        for (const line of (text ?? "").split("\n")) {
+          if (bannerDelim) {
+            out.push(line); // inside a banner: verbatim
+            if (line.includes(bannerDelim)) bannerDelim = null;
+            continue;
+          }
+          const m = line.match(BANNER_START_RE);
+          out.push(line.replace(/^\s+/, ""));
+          if (m) {
+            // Multi-line banner unless the delimiter recurs on this line.
+            const afterFirst = line.slice(line.indexOf(m[1]) + 1);
+            if (!afterFirst.includes(m[1])) bannerDelim = m[1];
+          }
+        }
+        return out.join("\n");
       }
       function cleanFormatting(text) {
         return text
@@ -2427,10 +2469,8 @@
       function renderExpr(content) {
         const trimmed = content.trim();
         const { text, filled } = evaluateExpression(content);
-        const baseVar = parseExprParts(trimmed)
-          .baseExpr.replace(/[\[\]]/g, "")
-          .split(",")[0]
-          .trim();
+        // Same resolver as auto-detect; "" = nothing valid, span unclickable.
+        const baseVar = exprReferencesVars(trimmed)[0] ?? "";
         return {
           text: filled ? text : simplifyExpression(trimmed),
           filled,
@@ -2445,7 +2485,7 @@
           (_, content) => renderExpr(content).text,
         );
         result = result.replace(CLEAN_BADGE_RE, "");
-        return cleanFormatting(result);
+        return stripLeadingIndent(cleanFormatting(result));
       }
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = template.replace(JINJA_COMMENT_RE, "");
@@ -2498,10 +2538,10 @@
           const cls = filled ? "var-filled" : "var-unfilled";
           const safeVar = escJSString(baseVar);
           const safeRaw = escHtml(rawContent);
-          result = result.replace(
-            `\x00EX${i}\x00`,
-            () =>
-              `<span class="${cls} preview-var" data-var="${safeVar}" data-raw="${safeRaw}" title="Click to edit ${escHtml(baseVar)}">${escHtml(displayText)}</span>`,
+          result = result.replace(`\x00EX${i}\x00`, () =>
+            baseVar
+              ? `<span class="${cls} preview-var" data-var="${safeVar}" data-raw="${safeRaw}" title="Click to edit ${escHtml(baseVar)}">${escHtml(displayText)}</span>`
+              : `<span class="${cls}" title="Invalid variable expression — check the template">${escHtml(displayText)}</span>`,
           );
         }
         for (let i = 0; i < badgeTokens.length; i++) {
@@ -2539,7 +2579,7 @@
             });
           }
         }
-        entries.sort((a, b) => b.word.length - a.word.length);
+        entries.sort((a, b) => b.word.length - a.word.length); // longest first: "port-channel" before "port"
         cachedKwGroupsRef = keywordGroups;
         cachedKwMap = entries;
         return entries;
@@ -2580,7 +2620,12 @@
               .filter(Boolean);
             const options = exts.length
               ? {
-                  types: [{ description: "Supported files", accept: { "text/plain": exts } }],
+                  types: [
+                    {
+                      description: "Supported files",
+                      accept: { "text/plain": exts },
+                    },
+                  ],
                 }
               : {};
             const [handle] = await showOpenFilePicker(options);
@@ -2601,6 +2646,8 @@
       }
       function scanTemplateForErrors(text) {
         const cleanText = text.replace(JINJA_COMMENT_RE, "");
+        // A {# or #} surviving the strip is unpaired (e.g. spans a section).
+        if (cleanText.includes("{#") || cleanText.includes("#}")) return true;
         const opensVars = (cleanText.match(/\{\{/g) || []).length;
         const closesVars = (cleanText.match(/\}\}/g) || []).length;
         const opensLogic = (cleanText.match(/\{%/g) || []).length;
@@ -2610,6 +2657,31 @@
           /\{%\s*(?!if\b|else\b|endif\b)[\w-]+\b/i,
         );
         if (unsupportedTagMatch) return true;
+        // {{ }} referencing no valid variable: auto-detect skips it, so flag it.
+        const exprScanRE = /\{\{(.+?)\}\}/g;
+        let exprMatch;
+        while ((exprMatch = exprScanRE.exec(cleanText)) !== null) {
+          const { baseExpr } = parseExprParts(exprMatch[1].trim());
+          if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
+            const members = baseExpr
+              .slice(1, -1)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (!members.length || !members.every(isValidVarName)) return true;
+          } else if (!isValidVarName(baseExpr)) {
+            return true;
+          }
+        }
+        // A {{ }} split across lines matches no expression regex; renders literally.
+        if (/\{\{|\}\}/.test(cleanText.replace(/\{\{(.+?)\}\}/g, "")))
+          return true;
+        // Only bare-var conditions are evaluatable; anything else renders literally.
+        const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/gi;
+        let condMatch;
+        while ((condMatch = ifCondRE.exec(cleanText)) !== null) {
+          if (!/^\s+[\w.-]+\s*$/.test(condMatch[1])) return true;
+        }
         let depth = 0;
         let elseFlags = [];
         const logicRegex = /\{%\s*(if|else|endif)\b/gi;
@@ -2632,7 +2704,12 @@
       }
       function updateTemplateErrorBadge() {
         if (templateSource === null) return;
-        const hasErrors = scanTemplateForErrors(assembleFullEditableText());
+        // Per-body scan too: {% if %} spanning !!! breaks section copy (limitation).
+        const hasErrors =
+          scanTemplateForErrors(assembleFullEditableText()) ||
+          sectionRecords.some((r) =>
+            scanTemplateForErrors(recordEffectiveBody(r)),
+          );
         document.getElementById("templateErrorBadge").style.display = hasErrors
           ? "inline-flex"
           : "none";
@@ -2693,12 +2770,13 @@
       }
       function processTemplateFile(file) {
         const fullName = file.name;
-        templateFileName = fullName;
         readFileAsText(file, "Error reading template file", (evt) => {
           try {
             templateSource = canonicalizeMarkers(
               toInternalEOL(evt.target.result),
             );
+            // Committed only on a successful read.
+            templateFileName = fullName;
             originalTemplateSource = templateSource;
             sectionRecords = deriveRecordsFromTemplate(originalTemplateSource);
             resetEditState();
@@ -2708,6 +2786,8 @@
               showToast("Template file contains formatting errors");
             render();
             renderAutoDetectButtons();
+            // Auto-generate the form on load; lightning re-detects after edits.
+            autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Template Parse Error:", err);
             showToast("Error rendering template");
@@ -2740,7 +2820,11 @@
             }
             setVarsStatus(file.name, count, { markLoaded: true });
             buildForm();
-            if (templateSource !== null) render();
+            if (templateSource !== null) {
+              render();
+              // Same auto-merge as template load, so load order doesn't matter.
+              autoDetectVars({ quiet: true });
+            }
           } catch (err) {
             console.error("Vars Parse Error:", err);
             showToast("Failed to parse variables file");
@@ -2862,26 +2946,27 @@
           }
         });
       }
-      function autoDetectVars() {
+      // quiet: automatic runs skip the informational toasts.
+      function autoDetectVars({ quiet = false } = {}) {
         if (templateSource === null) {
-          showToast("Load a template first");
+          if (!quiet) showToast("Load a template first");
           return;
         }
         const found = collectTemplateVarNames(assembleFullEditableText());
         if (!found.size) {
-          showToast("No variables found in template");
+          if (!quiet) showToast("No variables found in template");
           return;
         }
         variableDefs = structuredClone(varsFromFile);
         const missing = [];
         for (const varName of found) {
-          if (!variableDefs[varName]) missing.push(varName);
+          if (!Object.hasOwn(variableDefs, varName)) missing.push(varName);
         }
 
         const hasFileVars = Object.keys(varsFromFile).length > 0;
         if (!missing.length && hasFileVars) {
           setVarsStatus(varsFileName, Object.keys(varsFromFile).length);
-          showToast("All template variables are defined in vars");
+          if (!quiet) showToast("All template variables are defined in vars");
           buildForm();
           render();
           return;
@@ -2985,7 +3070,7 @@ category = General
       }
 
       function isFieldValueValid(value, config) {
-        const v = (value ?? "").trim();
+        const v = typeof value === "string" ? value.trim() : "";
         if (!v) return true;
         const re =
           config && config.compiledRegex instanceof RegExp
@@ -3024,7 +3109,7 @@ category = General
 
         // seed so untouched dropdown emits default; undefined guard lets session value win
         if (
-          formValues[varName] === undefined &&
+          !Object.hasOwn(formValues, varName) &&
           config.choices.includes(config.default)
         ) {
           formValues[varName] = config.default;
@@ -3049,7 +3134,7 @@ category = General
         inputEl.type = "text";
 
         // mirror dropdown seeding; undefined guard lets session value win
-        if (formValues[varName] === undefined && config.default) {
+        if (!Object.hasOwn(formValues, varName) && config.default) {
           formValues[varName] = config.default;
         }
 
@@ -3076,6 +3161,7 @@ category = General
           e.target.classList.toggle("filled", !!newVal);
           applyValidity(e.target, validMsg, newVal, config);
 
+          // presence flip can change {% if %} blocks -> full render
           if (!!oldVal !== !!newVal) debouncedRender();
           else fastUpdatePreview(varName);
         });
@@ -3136,8 +3222,8 @@ category = General
             : buildTextField(field, varName, config, safeId);
 
           fragment.appendChild(field);
-          if (formValues[varName] === undefined) formValues[varName] = ""; // undefined = never seen; "" = user cleared
-          if (formValues[varName]) {
+          // No blanket "" init: own-"" = user cleared; pre-init blocked late defaults.
+          if (typeof formValues[varName] === "string" && formValues[varName]) {
             inputEl.value = formValues[varName];
             inputEl.classList.add("filled");
           }
@@ -3155,7 +3241,7 @@ category = General
 
         const btn = document.createElement("button");
         btn.className = "subtle-icon-btn mini-btn";
-        btn.onclick = autoDetectVars;
+        btn.onclick = () => autoDetectVars();
         btn.title = "Auto-detect variables";
         btn.innerHTML = `<svg><use href="#icon-lightning"></use></svg>`;
         container.appendChild(btn);
@@ -3177,11 +3263,7 @@ category = General
       function updateProgressBar() {
         const activeGroups = {};
         for (const [varName, config] of Object.entries(variableDefs)) {
-          if (
-            config.group &&
-            formValues[varName] &&
-            formValues[varName].trim()
-          ) {
+          if (config.group && isValuePresent(formValues[varName])) {
             activeGroups[config.group] = true;
           }
         }
@@ -3198,7 +3280,10 @@ category = General
 
           if (!isRequired) continue;
           total++;
-          const val = formValues[varName] ? formValues[varName].trim() : "";
+          const val =
+            typeof formValues[varName] === "string"
+              ? formValues[varName].trim()
+              : "";
           if (val) {
             if (config.compiledRegex instanceof RegExp) {
               if (config.compiledRegex.test(val)) filled++;
@@ -3370,14 +3455,40 @@ category = General
         container.innerHTML = html;
       }
 
+      // A !!! marker only counts on a line starting OUTSIDE a {# #} comment;
+      // comments don't nest (matches JINJA_COMMENT_RE).
+      function linesWithCommentState(text) {
+        const out = [];
+        let inComment = false;
+        for (const line of (text ?? "").split("\n")) {
+          out.push({ line, startsInComment: inComment });
+          let idx = 0;
+          while (idx < line.length) {
+            if (!inComment) {
+              const open = line.indexOf("{#", idx);
+              if (open === -1) break;
+              inComment = true;
+              idx = open + 2;
+            } else {
+              const close = line.indexOf("#}", idx);
+              if (close === -1) break;
+              inComment = false;
+              idx = close + 2;
+            }
+          }
+        }
+        return out;
+      }
+
       function parseSections(template) {
-        const lines = template.split("\n");
         const sections = [];
         let current = { name: null, isImportant: false, lines: [] };
         const nameCounts = {};
 
-        for (const line of lines) {
-          const match = line.match(SECTION_RE);
+        for (const { line, startsInComment } of linesWithCommentState(
+          template,
+        )) {
+          const match = startsInComment ? null : line.match(SECTION_RE);
           if (match) {
             if (current.lines.length > 0 || current.name !== null)
               sections.push(current);
@@ -3404,9 +3515,9 @@ category = General
 
       // Normalize marker spacing on load so assembleFromRecords is a fixed point; prevents phantom "(edited)" on fresh load.
       function canonicalizeMarkers(text) {
-        return (text ?? "")
-          .split("\n")
-          .map((line) => {
+        return linesWithCommentState(text)
+          .map(({ line, startsInComment }) => {
+            if (startsInComment) return line; // comment content, not a marker
             const m = line.match(SECTION_RE);
             if (!m) return line;
             return (m[1].length >= 5 ? "!!!!! " : "!!! ") + m[2].trim(); // >=5 bangs = important (red header)
@@ -3437,6 +3548,30 @@ category = General
           return "Not a session object";
         if (session.schemaVersion !== SESSION_SCHEMA_VERSION)
           return `Unsupported session version: ${session.schemaVersion}`;
+        // Validate every consumed key up front — fail loud, load nothing.
+        if (
+          !(
+            session.templateSource === null ||
+            typeof session.templateSource === "string"
+          )
+        )
+          return "templateSource must be a string or null";
+        if (
+          !(
+            session.originalTemplateSource === null ||
+            typeof session.originalTemplateSource === "string"
+          )
+        )
+          return "originalTemplateSource must be a string or null";
+        if (typeof session.templateFileName !== "string")
+          return "templateFileName must be a string";
+        if (typeof session.varsFileName !== "string")
+          return "varsFileName must be a string";
+        for (const key of ["variableDefs", "varsFromFile", "formValues"]) {
+          const v = session[key];
+          if (v === null || typeof v !== "object" || Array.isArray(v))
+            return `${key} must be an object`;
+        }
         if (!Array.isArray(session.sections))
           return "Session is missing its sections array";
         for (const s of session.sections) {
@@ -3495,10 +3630,28 @@ category = General
       function getNamedRecords(records) {
         const named = [];
         const nameCounts = {};
+        let anyNamed = false;
         for (const r of records) {
-          if (r.name === null) continue;
           const displayBody = trimBodyEnds(recordEffectiveBody(r));
+          if (r.name === null) {
+            // Card for pre-marker content so section copy can't omit it.
+            const meaningful = displayBody
+              .replace(JINJA_COMMENT_RE, "")
+              .replace(CLEAN_BADGE_RE, "")
+              .trim();
+            if (!meaningful) continue;
+            named.push({
+              id: r.id,
+              name: "Start",
+              isImportant: false,
+              displayBody,
+              isEdited: recordIsEdited(r),
+              isPreamble: true,
+            });
+            continue;
+          }
           if (!displayBody.trim()) continue;
+          anyNamed = true;
           nameCounts[r.name] = (nameCounts[r.name] || 0) + 1;
           const displayName =
             nameCounts[r.name] > 1
@@ -3512,7 +3665,8 @@ category = General
             isEdited: recordIsEdited(r),
           });
         }
-        return named;
+        // No named sections must still count as sectionless (applyAutoViewMode).
+        return anyNamed ? named : named.filter((s) => !s.isPreamble);
       }
 
       function hasEdits() {
@@ -3528,7 +3682,10 @@ category = General
 
       // Gates the disassembler: a body edit with a typed !!! must split the section.
       function containsSectionMarker(text) {
-        return (text ?? "").split("\n").some((line) => SECTION_RE.test(line));
+        return linesWithCommentState(text).some(
+          ({ line, startsInComment }) =>
+            !startsInComment && SECTION_RE.test(line),
+        );
       }
       function toggleSectionEdit(id, index) {
         if (activeSectionEditors.has(id)) {
@@ -3750,11 +3907,15 @@ category = General
 
       function copySectionByName(id, index) {
         const r = recordById(id);
-        if (!r || r.name === null) return;
+        if (!r) return;
         const output = jinjaRaw(recordEffectiveBody(r)) + "\n";
         navigator.clipboard
           .writeText(output)
-          .then(() => flashBadge(`badge-${index}`))
+          .then(() => {
+            flashBadge(`badge-${index}`);
+            if (output.includes("{{"))
+              showToast("Warning: copied text has unfilled {{ }} fields");
+          })
           .catch((err) => {
             console.error("Clipboard Error:", err);
             showToast("Failed to copy to clipboard");
@@ -3793,7 +3954,11 @@ category = General
         navigator.clipboard
           .writeText(output)
           .then(() => {
-            showToast("Copied full config");
+            showToast(
+              output.includes("{{")
+                ? "Copied — warning: unfilled {{ }} fields included"
+                : "Copied full config",
+            );
             flashBadge("badge-full");
             document
               .querySelectorAll(".config-section.last-copied")
@@ -3826,7 +3991,9 @@ category = General
           output,
           `${hostname}.config`,
           "text/plain",
-          `Saved ${hostname}.config`,
+          output.includes("{{")
+            ? `Saved ${hostname}.config — warning: unfilled {{ }} fields`
+            : `Saved ${hostname}.config`,
         );
       }
 
@@ -3839,27 +4006,32 @@ category = General
 
         const filename = `${templateBasename() || "template"}.config`;
 
+        // Indented so older tool copies don't parse the "!!!" examples as markers.
         const headerText = `{# ===============================================================
-Switch Configuration Template
-JINJA2 SYNTAX (same as Ansible):
-{{  VAR  }}                              Variable substitution
-{{  VAR | default('fallback')  }}        Default if empty
-{{  VAR | upper  }}                      Uppercase
-{{  VAR | lower  }}                      Lowercase
-{{  VAR | trim  }}                       Remove leading/trailing spaces
-{{  [V1, V2, V3] | join(',')  }}         Join non-empty values
-{% if VAR %}...{% endif %}               Conditional block
-{% if VAR %}...{% else %}...{% endif %}  With else branch
-Comment blocks use opening {-# and closing #-} (without dashes)
+   Switch Configuration Template
+   JINJA2 SYNTAX (same as Ansible):
+   {{  VAR  }}                              Variable substitution
+   {{  VAR | default('fallback')  }}        Default if empty
+   {{  VAR | upper  }}                      Uppercase
+   {{  VAR | lower  }}                      Lowercase
+   {{  VAR | trim  }}                       Remove leading/trailing spaces
+   {{  [V1, V2, V3] | join(',')  }}         Join non-empty values
+   {% if VAR %}...{% endif %}               Conditional block
+   {% if VAR %}...{% else %}...{% endif %}  With else branch
+   Comment blocks use opening {-# and closing #-} (without dashes)
 
-TOOL EXTENSIONS:
-!!! Section Name                         Copy-able section break
-!!!!! Important Section                  Renders header in red text
-!KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
-                                         any all-caps keyword works — e.g. !STIG: V-1234, !CIS: 1.5.2
+   TOOL EXTENSIONS:
+   !!! Section Name                         Copy-able section break
+   !!!!! Important Section                  Renders header in red text
+   !KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
+                                            any all-caps keyword works — e.g. !STIG: V-1234, !CIS: 1.5.2
 =============================================================== #}\n\n`;
 
-        const output = toWindowsEOL(headerText + assembleFullEditableText());
+        // Don't stack a second header on save -> load -> save.
+        const body = assembleFullEditableText();
+        const hasHeader =
+          /^\s*\{#[\s\S]{0,200}Switch Configuration Template/.test(body);
+        const output = toWindowsEOL(hasHeader ? body : headerText + body);
 
         saveTextFile(
           output,
@@ -4011,8 +4183,9 @@ TOOL EXTENSIONS:
       function escRegex(s) {
         return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
+      // Strings only: inherited props from proto-named vars would crash .trim().
       function isValuePresent(v) {
-        return v && v.trim() !== "";
+        return typeof v === "string" && v.trim() !== "";
       }
 
       function flashBadge(id) {
@@ -4107,6 +4280,24 @@ TOOL EXTENSIONS:
               sel.addRange(range);
             }
             lastMousedownTime = now;
+          });
+
+        // Manual copies get a trailing newline so a pasted line executes.
+        document
+          .getElementById("previewContainer")
+          .addEventListener("copy", (e) => {
+            if (e.target.closest("textarea")) return;
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed) return;
+            const frag = sel.getRangeAt(0).cloneContents();
+            // cloneContents ignores user-select: none, so drop pills here
+            frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
+            const text = (frag.textContent ?? "").replace(/\n+$/, "");
+            if (!text.trim()) return;
+            e.clipboardData.setData("text/plain", text + "\n");
+            e.preventDefault();
+            if (text.includes("{{"))
+              showToast("Warning: copied text has unfilled {{ }} fields");
           });
 
         const dropZone = document.querySelector(".form-panel");
