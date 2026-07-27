@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.07.26 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.07.27 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -4338,7 +4338,12 @@ category = General
             const frag = sel.getRangeAt(0).cloneContents();
             // cloneContents ignores user-select: none, so drop pills here
             frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
-            const text = (frag.textContent ?? "").replace(/\n+$/, "");
+            const lineEls = frag.querySelectorAll(".config-line");
+            const text = (
+              lineEls.length
+                ? [...lineEls].map((l) => l.textContent).join("\n")
+                : (frag.textContent ?? "")
+            ).replace(/\n+$/, "");
             if (!text.trim()) return;
             e.clipboardData.setData("text/plain", text + "\n");
             e.preventDefault();
