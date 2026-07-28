@@ -1870,10 +1870,12 @@
                 to copy a section or the full config to your clipboard. Badges
                 (e.g.,
                 <code>!STIG: V-123456</code>
-                ) and all
+                ) and
                 <code>!</code>
-                comment lines are stripped from the copied text (banners are
-                preserved).
+                comment lines are stripped from the copied text; a bare
+                <code>!</code>
+                line passes through so it can answer device prompts (banners
+                are preserved).
               </li>
               <li>
                 <strong>Saving:</strong>
@@ -2514,7 +2516,11 @@
             if (!afterFirst.includes(m[1])) bannerDelim = m[1];
             continue;
           }
-          if (/^\s*!/.test(line)) continue; // full-line comment: drop the line
+          if (/^\s*!\s*$/.test(line)) {
+            out.push("!"); // bare ! passes through: answers device prompts on paste
+            continue;
+          }
+          if (/^\s*!/.test(line)) continue; // comment line (has text): drop
           out.push(line.replace(/\s+!.*$/, "").replace(/^\s+/, ""));
         }
         return out.join("\n");
