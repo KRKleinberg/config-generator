@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.07.27 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.07.28 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -1761,8 +1761,9 @@
                     <use href="#icon-lightning"></use>
                   </svg>
                 </span>
-                : Form fields generate automatically from your template on load.
-                Click the lightning bolt to re-scan after editing the template.
+                : Form fields generate automatically from your template on
+                load. Click the lightning bolt to re-scan after editing the
+                template.
               </li>
               <li>
                 <strong>Export INI</strong>
@@ -1772,8 +1773,8 @@
                   </svg>
                 </span>
                 <strong>:</strong>
-                If you use Auto-Detect without a variables file loaded, a
-                download icon appears next to it. Click it to generate a
+                If fields were auto-detected without a variables file, a
+                download icon appears next to the lightning bolt. Click it to generate a
                 boilerplate
                 <code>.vars.ini</code>
                 schema file for template maintainers.
@@ -1781,17 +1782,6 @@
             </ul>
             <h4>Generating Configurations</h4>
             <ul>
-              <li>
-                Click the
-                <strong>Reset</strong>
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-reset"></use>
-                  </svg>
-                </span>
-                icon above the form to clear all your typed inputs without
-                removing your loaded files.
-              </li>
               <li>
                 Fields marked with a
                 <span style="color: var(--warn)">*</span>
@@ -1803,6 +1793,17 @@
                 <code>{{ VARIABLE }}</code>
                 in the Preview panel to automatically scroll to and flash its
                 corresponding input field on the left.
+              </li>
+              <li>
+                Click the
+                <strong>Reset</strong>
+                <span class="guide-btn">
+                  <svg class="guide-icon">
+                    <use href="#icon-reset"></use>
+                  </svg>
+                </span>
+                icon above the form to clear all form inputs without removing
+                your loaded files.
               </li>
             </ul>
             <h4>Manual Editing</h4>
@@ -1869,7 +1870,10 @@
                 to copy a section or the full config to your clipboard. Badges
                 (e.g.,
                 <code>!STIG: V-123456</code>
-                ) are automatically stripped from the copied text.
+                ) and all
+                <code>!</code>
+                comment lines are stripped from the copied text (banners are
+                preserved).
               </li>
               <li>
                 <strong>Saving:</strong>
@@ -1941,8 +1945,7 @@
               </li>
             </ul>
             <div class="guide-footer">
-              Config Generator
-              <span id="guideVersion"></span>
+              Config Generator <span id="guideVersion"></span>
               <br />
               &copy; 2026 Kevin Kleinberg | Apache-2.0
               <br />
@@ -1975,11 +1978,14 @@
       let templateFileName = "";
       let varsFromFile = {};
       let varsFileName = "";
+      let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
       const SECTION_RE = /^(!!!+)\s*(.+)$/;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
-      const BADGE_RE = /!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
+      // (?<![^\s]) = line start or after whitespace: a glued bang is a value
+      // (P@ss!NOTE:1), never a badge - same rule as inline comments.
+      const BADGE_RE = /(?<![^\s])!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
       // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
-      const CLEAN_BADGE_RE = /![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
+      const CLEAN_BADGE_RE = /(?<![^\s])![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
       const INNER_IF_ELSE_RE =
         /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
@@ -2443,7 +2449,9 @@
           ? `{{ ${expr.substring(0, pipe).trim()} }}`
           : `{{ ${expr} }}`;
       }
-      function processConditionals(template, formValues) {
+      // opts.commentFalse: whole-line false blocks render as "! " comments
+      // instead of vanishing (preview only - jinjaRaw omits them as before).
+      function processConditionals(template, formValues, opts = {}) {
         let result = template;
         let prev = "";
         let iterations = 0;
@@ -2460,6 +2468,18 @@
             (_, v, content, _inner, tail, offset, str) => {
               if (isValuePresent(formValues[v]))
                 return content.replace(/^\n/, "").replace(/\n$/, "") + tail;
+              if (opts.commentFalse) {
+                const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
+                if (/^\s*$/.test(str.slice(lineStart, offset))) {
+                  const body = content.replace(/^\n/, "").replace(/\n$/, "");
+                  return (
+                    body
+                      .split("\n")
+                      .map((l) => (l.trim() === "" ? l : "! " + l))
+                      .join("\n") + tail
+                  );
+                }
+              }
               // False: drop the tail newline only for a whole-line tag, else lines merge.
               const atLineStart = offset === 0 || str[offset - 1] === "\n";
               return atLineStart ? "" : tail;
@@ -2473,9 +2493,11 @@
         }
         return result;
       }
-      // Strip leading indent on output (serial-paste cost); banners stay verbatim.
-      const BANNER_START_RE = /^\s*banner\s+[\w-]+\s+(\S)/;
-      function stripLeadingIndent(text) {
+      // Output: drop ! comment lines and whitespace-preceded inline comments,
+      // then strip leading indent. Glued bangs are values; banners verbatim.
+      const BANNER_START_RE =
+        /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/;
+      function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
         for (const line of (text ?? "").split("\n")) {
@@ -2485,12 +2507,15 @@
             continue;
           }
           const m = line.match(BANNER_START_RE);
-          out.push(line.replace(/^\s+/, ""));
           if (m) {
+            out.push(line.replace(/^\s+/, ""));
             // Multi-line banner unless the delimiter recurs on this line.
             const afterFirst = line.slice(line.indexOf(m[1]) + 1);
             if (!afterFirst.includes(m[1])) bannerDelim = m[1];
+            continue;
           }
+          if (/^\s*!/.test(line)) continue; // full-line comment: drop the line
+          out.push(line.replace(/\s+!.*$/, "").replace(/^\s+/, ""));
         }
         return out.join("\n");
       }
@@ -2516,16 +2541,22 @@
       function jinjaRaw(template) {
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues);
-        result = result.replace(
-          /\{\{(.+?)\}\}/g,
-          (_, content) => renderExpr(content).text,
-        );
+        // Values are tokenized through the badge/comment strips so user input
+        // (secrets with bangs, badge-shaped text) is never mutilated - only
+        // template-authored annotations strip.
+        const rendered = [];
+        result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
+          rendered.push(renderExpr(content).text);
+          return `\x00RV${rendered.length - 1}\x00`;
+        });
         result = result.replace(CLEAN_BADGE_RE, "");
-        return stripLeadingIndent(cleanFormatting(result));
+        result = cleanOutputLines(result);
+        result = result.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
+        return cleanFormatting(result);
       }
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = template.replace(JINJA_COMMENT_RE, "");
-        result = processConditionals(result, formValues);
+        result = processConditionals(result, formValues, { commentFalse: true });
         // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
         const exprTokens = [];
         result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
@@ -2654,17 +2685,17 @@
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean);
-            const options = exts.length
-              ? {
-                  types: [
-                    {
-                      description: "Supported files",
-                      accept: { "text/plain": exts },
-                    },
-                  ],
-                }
-              : {};
+            const options = {};
+            if (lastPickedHandle) options.startIn = lastPickedHandle;
+            if (exts.length)
+              options.types = [
+                {
+                  description: "Supported files",
+                  accept: { "text/plain": exts },
+                },
+              ];
             const [handle] = await showOpenFilePicker(options);
+            lastPickedHandle = handle;
             const file = await handle.getFile();
             process(file);
             return;
@@ -2876,7 +2907,10 @@
       ) {
         if (window.showSaveFilePicker) {
           try {
-            const handle = await showSaveFilePicker({ suggestedName });
+            const saveOptions = { suggestedName };
+            if (lastPickedHandle) saveOptions.startIn = lastPickedHandle;
+            const handle = await showSaveFilePicker(saveOptions);
+            lastPickedHandle = handle;
             const writable = await handle.createWritable();
             await writable.write(content);
             await writable.close();
@@ -3678,7 +3712,7 @@ category = General
             if (!meaningful) continue;
             named.push({
               id: r.id,
-              name: "Start",
+              name: "Setup",
               isImportant: false,
               displayBody,
               isEdited: recordIsEdited(r),
@@ -4290,16 +4324,6 @@ category = General
       }
 
       function initialize() {
-        // Version comes from the line-1 comment
-        const headerComment = [...document.childNodes].find(
-          (n) => n.nodeType === Node.COMMENT_NODE,
-        );
-        const version = (headerComment?.nodeValue || "").match(
-          /v\d{4}\.\d{2}\.\d{2}/,
-        );
-        if (version)
-          document.getElementById("guideVersion").textContent = version[0];
-
         document
           .getElementById("templateInput")
           .addEventListener("change", onTemplateFileSelected);
@@ -4338,6 +4362,8 @@ category = General
             const frag = sel.getRangeAt(0).cloneContents();
             // cloneContents ignores user-select: none, so drop pills here
             frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
+            // Lines are block spans containing no newline chars, so plain
+            // textContent would flatten a multi-line selection onto one line.
             const lineEls = frag.querySelectorAll(".config-line");
             const text = (
               lineEls.length
@@ -4400,6 +4426,21 @@ category = General
               if (varName) focusVar(varName);
             }
           });
+
+        // Footer version derives from the line-1 comment (a document child
+        // node) so releases bump one place; guarded - must never abort setup.
+        try {
+          const versionEl = document.getElementById("guideVersion");
+          const headerComment = [...document.childNodes].find(
+            (n) => n.nodeType === 8,
+          );
+          const version = (headerComment?.nodeValue || "").match(
+            /v\d{4}\.\d{2}\.\d{2}/,
+          );
+          if (versionEl && version) versionEl.textContent = version[0];
+        } catch (e) {
+          console.warn("Version lookup failed:", e);
+        }
       }
 
       initialize();
