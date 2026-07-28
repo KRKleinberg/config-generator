@@ -1,6 +1,6 @@
 # Config Generator
 
-A single-file, offline browser tool that turns a template and a variable definition file into standardized Cisco IOS switch configurations. Fill out a generated form, and the tool produces a clean, validated config ready to paste into a terminal.
+A single-file, offline browser tool that turns a Jinja template (and optional variable definitions) into standardized Cisco IOS switch configurations. Fill out a generated form, and the tool produces a clean, validated config ready to paste into a terminal.
 
 ## Features
 
@@ -9,7 +9,7 @@ A single-file, offline browser tool that turns a template and a variable definit
 - **Input validation** including regex patterns with custom error text, integer-only fields, and required vs. optional fields, plus template syntax checking that flags malformed Jinja before it reaches a device.
 - **Dropdowns and field groups**, including all-or-nothing linked groups where filling one field makes the rest required.
 - **Section breaks and headers** for organizing long configs, with optional red highlighting for critical sections.
-- **Inline compliance badges** (`!STIG:`, `!CIS:`, or any all-caps keyword), color-coded per keyword and automatically stripped when the config is copied.
+- **Inline compliance badges** (`!STIG:`, `!CIS:`, or any all-caps keyword), color-coded per keyword and stripped—along with all template comments—when the config is copied.
 - **Live preview** of the rendered config as the form is filled.
 - **Save and load sessions** to pick up where you left off, plus saving configs and templates to disk.
 - **Fully offline and self-contained.** One HTML file, no install, no build step, no network.
@@ -21,3 +21,7 @@ Config data lives only in memory while the tab is open. No configurations or for
 ## Usage
 
 Open `config-generator.html`, load a template (and optionally a vars file), fill out the form, then copy or save the result. The included example files cover the full template and variable syntax.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 Kevin Kleinberg.
