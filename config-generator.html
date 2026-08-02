@@ -2957,11 +2957,12 @@
         const trimmed = content.trim();
         const { text, filled } = evaluateExpression(content);
         // Same resolver as auto-detect; "" = nothing valid, span unclickable.
-        const baseVar = exprReferencesVars(trimmed)[0] ?? "";
+        const vars = exprReferencesVars(trimmed);
         return {
           text: filled ? text : simplifyExpression(trimmed),
           filled,
-          baseVar,
+          baseVar: vars[0] ?? "",
+          vars,
         };
       }
       function jinjaRaw(template) {
@@ -2988,12 +2989,13 @@
         // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
         const exprTokens = [];
         result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
-          const { text, filled, baseVar } = renderExpr(content);
+          const { text, filled, baseVar, vars } = renderExpr(content);
           const token = `\x00EX${exprTokens.length}\x00`;
           exprTokens.push({
             displayText: text,
             filled,
             baseVar,
+            vars,
             rawContent: content,
           });
           return token;
@@ -3029,13 +3031,15 @@
           result = applyKeywordHighlighting(result, keywordGroups);
         }
         for (let i = 0; i < exprTokens.length; i++) {
-          const { displayText, filled, baseVar, rawContent } = exprTokens[i];
+          const { displayText, filled, baseVar, vars, rawContent } =
+            exprTokens[i];
           const cls = filled ? "var-filled" : "var-unfilled";
           const safeVar = escJSString(baseVar);
+          const safeVars = escJSString((vars || []).join(" "));
           const safeRaw = escHtml(rawContent);
           result = result.replace(`\x00EX${i}\x00`, () =>
             baseVar
-              ? `<span class="${cls} preview-var" data-var="${safeVar}" data-raw="${safeRaw}" title="Click to edit ${escHtml(baseVar)}">${escHtml(displayText)}</span>`
+              ? `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${escHtml(displayText)}</span>`
               : `<span class="${cls}" title="Invalid variable expression — check the template">${escHtml(displayText)}</span>`,
           );
         }
@@ -4725,9 +4729,21 @@ category = General
       }
 
       const searchIndexes = {};
+      const exprVarIndexes = new WeakMap();
+      // Joined expressions reference several vars; each click advances to the next.
+      function nextExprVar(span) {
+        const list = (span.getAttribute("data-vars") || "")
+          .split(" ")
+          .filter(Boolean);
+        if (list.length < 2) return span.getAttribute("data-var");
+        const i = (exprVarIndexes.get(span) ?? -1) + 1;
+        const next = i % list.length;
+        exprVarIndexes.set(span, next);
+        return list[next];
+      }
       function findVarInPreview(varName) {
         const instances = document.querySelectorAll(
-          `.preview-var[data-var="${CSS.escape(varName)}"]`,
+          `.preview-var[data-vars~="${CSS.escape(varName)}"]`,
         );
         if (instances.length === 0)
           return showToast("Variable not found in current preview");
@@ -4866,7 +4882,7 @@ category = General
           .addEventListener("click", (e) => {
             const target = e.target.closest(".preview-var");
             if (target) {
-              const varName = target.getAttribute("data-var");
+              const varName = nextExprVar(target);
               if (varName) focusVar(varName);
             }
           });
