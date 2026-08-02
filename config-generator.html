@@ -3671,7 +3671,7 @@ category = General
           const oldVal = formValues[varName] || "";
           const newVal = val.trim();
           formValues[varName] = newVal;
-          clearLastCopied();
+          refreshLastCopied();
           e.target.classList.toggle("filled", !!newVal);
           applyValidity(e.target, validMsg, newVal, config);
 
@@ -3866,6 +3866,7 @@ category = General
         if (viewMode === "full")
           renderFullMode(container, sections, badgeColorMap);
         else renderSectionMode(container, sections, badgeColorMap);
+        refreshLastCopied();
         updateProgressBar();
         updateTemplateErrorBadge();
       }
@@ -4244,7 +4245,7 @@ category = General
       function onSectionEditInput(id, value) {
         const r = recordById(id);
         if (r) r.override = value;
-        clearLastCopied();
+        refreshLastCopied();
       }
 
       function resetSectionEdit(id) {
@@ -4287,7 +4288,7 @@ category = General
 
       function onFullEditInput(value) {
         fullModeEditBuffer = value;
-        clearLastCopied();
+        refreshLastCopied();
       }
 
       // Four-pass match: exact survivor -> name-stable -> guarded rename -> new/deleted. Identity only; never alters output.
@@ -4421,10 +4422,37 @@ category = General
         render();
       }
 
+      let lastCopied = null;
+
       function clearLastCopied() {
+        lastCopied = null;
         document
           .querySelectorAll(".config-section.last-copied")
           .forEach((sec) => sec.classList.remove("last-copied"));
+      }
+
+      function copiedTextFor(mark) {
+        if (mark.kind === "full")
+          return jinjaRaw(assembleFullEditableText()) + "\n";
+        const r = recordById(mark.id);
+        return r ? jinjaRaw(recordEffectiveBody(r)) + "\n" : null;
+      }
+
+      // Marker survives edits elsewhere; only the copied section going stale drops it.
+      function refreshLastCopied() {
+        if (!lastCopied) return;
+        let current = null;
+        try {
+          current = copiedTextFor(lastCopied);
+        } catch (err) {
+          current = null;
+        }
+        if (current !== lastCopied.text) {
+          clearLastCopied();
+          return;
+        }
+        const el = document.getElementById(lastCopied.elementId);
+        if (el) el.classList.add("last-copied");
       }
 
       function copySectionByName(id, index) {
@@ -4443,6 +4471,12 @@ category = General
             showToast("Failed to copy to clipboard");
           });
         clearLastCopied();
+        lastCopied = {
+          kind: "section",
+          id,
+          text: output,
+          elementId: `section-${index}`,
+        };
         const currentSection = document.getElementById(`section-${index}`);
         if (currentSection) currentSection.classList.add("last-copied");
       }
@@ -4481,6 +4515,11 @@ category = General
             );
             flashBadge("badge-full");
             clearLastCopied();
+            lastCopied = {
+              kind: "full",
+              text: output,
+              elementId: "section-full",
+            };
             const fullSection = document.getElementById("section-full");
             if (fullSection) fullSection.classList.add("last-copied");
           })
