@@ -16,6 +16,7 @@
         --surface: #050609;
         --surface-alt: #090b11;
         --surface-raised: #0f121a;
+        --surface-sunken: #020203;
         --border: #171a22;
         --text: #d5d7dd;
         --text-dim: #848a97;
@@ -169,8 +170,8 @@
         font-size: 12px;
         color: var(--text-hint);
         line-height: 1.5;
-        margin-top: 20px;
-        margin-bottom: 28px;
+        margin-top: 24px;
+        margin-bottom: 24px;
       }
 
       .instructions ol {
@@ -186,6 +187,10 @@
         align-items: flex-start;
         gap: 10px;
         margin-bottom: 9px;
+      }
+
+      .instructions li:last-child {
+        margin-bottom: 0;
       }
 
       .instructions li::before {
@@ -250,7 +255,7 @@
       }
 
       .file-loader {
-        background: var(--surface-alt);
+        background: var(--surface-sunken);
         border: 1px dashed var(--border);
         border-radius: var(--radius);
         padding: 14px 16px;
@@ -258,11 +263,6 @@
         display: flex;
         align-items: center;
         gap: 12px;
-      }
-
-      .file-loader.loaded {
-        border-color: rgba(var(--rgb-success), 0.3);
-        background: rgba(var(--rgb-success), 0.04);
       }
 
       .file-loader .clear-file-btn {
@@ -433,7 +433,7 @@
       .field input,
       .field select {
         width: 100%;
-        background: var(--surface-alt);
+        background: var(--surface-sunken);
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 9px 12px;
@@ -454,10 +454,8 @@
         font-size: 12px;
       }
 
-      .field input.filled,
       .field select.filled {
         border-color: rgba(var(--rgb-success), 0.3);
-        background-color: rgba(var(--rgb-success), 0.04);
       }
 
       .field input.invalid {
@@ -511,7 +509,7 @@
       }
 
       .progress-bar {
-        background: var(--surface-alt);
+        background: var(--surface-sunken);
         border-radius: 4px;
         height: 6px;
         margin: 16px 0 6px;
@@ -770,7 +768,7 @@
         align-items: center;
         width: 156px;
         height: 32px;
-        background: var(--surface-alt);
+        background: var(--bg);
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 2px;
@@ -878,7 +876,7 @@
 
       .section-edit {
         width: 100%;
-        background: var(--surface-alt);
+        background: var(--bg);
         color: var(--text);
         font-family: var(--mono);
         font-size: 12.5px;
@@ -1223,7 +1221,7 @@
       }
 
       .sop-content pre {
-        background: var(--surface-alt);
+        background: var(--bg);
         border: 1px solid var(--border);
         padding: 12px;
         border-radius: 6px;
