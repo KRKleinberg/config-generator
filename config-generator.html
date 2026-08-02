@@ -3667,6 +3667,7 @@ category = General
           const oldVal = formValues[varName] || "";
           const newVal = val.trim();
           formValues[varName] = newVal;
+          clearLastCopied();
           e.target.classList.toggle("filled", !!newVal);
           applyValidity(e.target, validMsg, newVal, config);
 
@@ -4239,6 +4240,7 @@ category = General
       function onSectionEditInput(id, value) {
         const r = recordById(id);
         if (r) r.override = value;
+        clearLastCopied();
       }
 
       function resetSectionEdit(id) {
@@ -4281,6 +4283,7 @@ category = General
 
       function onFullEditInput(value) {
         fullModeEditBuffer = value;
+        clearLastCopied();
       }
 
       // Four-pass match: exact survivor -> name-stable -> guarded rename -> new/deleted. Identity only; never alters output.
@@ -4414,6 +4417,12 @@ category = General
         render();
       }
 
+      function clearLastCopied() {
+        document
+          .querySelectorAll(".config-section.last-copied")
+          .forEach((sec) => sec.classList.remove("last-copied"));
+      }
+
       function copySectionByName(id, index) {
         const r = recordById(id);
         if (!r) return;
@@ -4429,9 +4438,7 @@ category = General
             console.error("Clipboard Error:", err);
             showToast("Failed to copy to clipboard");
           });
-        document
-          .querySelectorAll(".config-section.last-copied")
-          .forEach((sec) => sec.classList.remove("last-copied"));
+        clearLastCopied();
         const currentSection = document.getElementById(`section-${index}`);
         if (currentSection) currentSection.classList.add("last-copied");
       }
@@ -4469,9 +4476,7 @@ category = General
                 : "Copied full config",
             );
             flashBadge("badge-full");
-            document
-              .querySelectorAll(".config-section.last-copied")
-              .forEach((sec) => sec.classList.remove("last-copied"));
+            clearLastCopied();
             const fullSection = document.getElementById("section-full");
             if (fullSection) fullSection.classList.add("last-copied");
           })
