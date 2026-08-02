@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.07.28 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.08.02 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -13,17 +13,18 @@
     <style>
       :root {
         --bg: #000000;
-        --surface: #111111;
-        --surface-alt: #0a0a0a;
-        --border: #2a2d3a;
-        --text: #e2e4ea;
-        --text-dim: #8b8fa3;
-        --text-hint: #6b6f82;
+        --surface: #050609;
+        --surface-alt: #090b11;
+        --surface-raised: #0f121a;
+        --border: #171a22;
+        --text: #d5d7dd;
+        --text-dim: #848a97;
+        --text-hint: #636879;
         --rgb-accent: 59, 130, 246;
         --rgb-accent-dim: 37, 99, 235;
-        --rgb-success: 96, 165, 250;
-        --rgb-warn: 245, 158, 11;
-        --rgb-error: 239, 68, 68;
+        --rgb-success: 68, 130, 210;
+        --rgb-warn: 202, 137, 26;
+        --rgb-error: 216, 99, 99;
         --rgb-white: 255, 255, 255;
         --rgb-black: 0, 0, 0;
         --accent: rgb(var(--rgb-accent));
@@ -174,12 +175,34 @@
 
       .instructions ol {
         margin: 0;
-        padding-left: 14px;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
       }
 
       .instructions li {
-        margin-bottom: 6px;
-        padding-left: 4px;
+        counter-increment: step;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 9px;
+      }
+
+      .instructions li::before {
+        content: counter(step);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(var(--rgb-accent), 0.13);
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
       }
 
       .panel-header {
@@ -410,7 +433,7 @@
       .field input,
       .field select {
         width: 100%;
-        background: var(--bg);
+        background: var(--surface-alt);
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 9px 12px;
@@ -488,7 +511,7 @@
       }
 
       .progress-bar {
-        background: var(--bg);
+        background: var(--surface-alt);
         border-radius: 4px;
         height: 6px;
         margin: 16px 0 6px;
@@ -747,7 +770,7 @@
         align-items: center;
         width: 156px;
         height: 32px;
-        background: var(--bg);
+        background: var(--surface-alt);
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 2px;
@@ -855,7 +878,7 @@
 
       .section-edit {
         width: 100%;
-        background: var(--bg);
+        background: var(--surface-alt);
         color: var(--text);
         font-family: var(--mono);
         font-size: 12.5px;
@@ -1147,7 +1170,7 @@
       }
 
       .lightbox-body {
-        padding: 32px 40px;
+        padding: 20px 40px 32px;
         overflow-y: auto;
         flex: 1;
         font-size: 14px;
@@ -1177,18 +1200,6 @@
         text-decoration: underline;
       }
 
-      .sop-content h3 {
-        font-size: 15px;
-        color: var(--text);
-        margin: 24px 0 12px 0;
-        padding-bottom: 6px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .sop-content h3:first-child {
-        margin-top: 0;
-      }
-
       .sop-content h4 {
         font-size: 13px;
         color: var(--accent);
@@ -1199,15 +1210,6 @@
 
       .sop-content p {
         margin-bottom: 12px;
-      }
-
-      .sop-content ul,
-      .sop-content ol {
-        margin: 0 0 16px 24px;
-      }
-
-      .sop-content li {
-        margin-bottom: 6px;
       }
 
       .sop-content code {
@@ -1231,6 +1233,226 @@
         font-size: 12px;
         line-height: 1.5;
         color: var(--text);
+      }
+
+      .guide-h4-first {
+        margin-top: 0;
+      }
+
+      .guide-intro {
+        margin-top: -4px;
+        color: var(--text-hint);
+        font-size: 13px;
+        line-height: 1.55;
+        margin-bottom: 18px;
+      }
+
+      .quick-start {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        gap: 0;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 0;
+        margin-bottom: 8px;
+      }
+
+      .qs-step {
+        flex: 0 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.4;
+        color: var(--text);
+      }
+
+      .qs-step > svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--accent);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+
+      .qs-arrow {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        stroke: var(--text-hint);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        transform: rotate(90deg);
+      }
+
+      .guide-group {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        interpolate-size: allow-keywords;
+      }
+
+      .guide-section + .guide-section {
+        border-top: 1px solid var(--border);
+      }
+
+      .guide-section summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--surface-alt);
+      }
+
+      .guide-section summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .guide-chev {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        stroke: var(--text-hint);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        transform: rotate(90deg);
+        transition: transform 0.25s ease;
+      }
+
+      .guide-section[open] .guide-chev {
+        transform: rotate(180deg);
+      }
+
+      .guide-section[open] summary {
+        border-bottom: 1px solid var(--border);
+      }
+
+      .guide-section::details-content {
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition:
+          height 0.25s ease,
+          opacity 0.25s ease,
+          content-visibility 0.25s allow-discrete;
+      }
+
+      .guide-section[open]::details-content {
+        height: auto;
+        opacity: 1;
+      }
+
+      .guide-body {
+        padding: 14px;
+        background: var(--surface);
+      }
+
+      .guide-note {
+        font-size: 13px;
+        margin: 0 0 12px 0;
+      }
+
+      .keep-together {
+        white-space: nowrap;
+      }
+
+      .guide-note-after {
+        margin: 12px 0 0 0;
+      }
+
+      .guide-defs {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .guide-defs dt {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 5px;
+      }
+
+      .guide-defs dd {
+        margin: 0;
+        padding-bottom: 11px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-dim);
+        line-height: 1.6;
+      }
+
+      .guide-defs dd + dt {
+        margin-top: 11px;
+      }
+
+      .guide-defs dd:last-child {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      .guide-table-wrap {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface-alt);
+      }
+
+      .guide-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .guide-table th {
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-dim);
+        background: var(--surface-raised);
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .guide-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        line-height: 1.6;
+      }
+
+      .guide-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .guide-table td:first-child {
+        color: var(--text);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .guide-table td:first-child code {
+        font-weight: 400;
+      }
+
+      @media (max-width: 640px) {
+        .guide-table td:first-child {
+          white-space: normal;
+        }
       }
 
       .guide-btn {
@@ -1717,237 +1939,437 @@
         </div>
         <div class="lightbox-body">
           <div class="sop-content">
-            <h3>Config Generator Guide</h3>
-            <p>
-              This tool is designed to generate error-free, standardized network
-              configurations entirely locally within your browser. No data is
-              transmitted over the network. No data persists in the browser
-              after this tab is closed.
+            <h4 class="guide-h4-first">Overview</h4>
+            <p class="guide-intro">
+              Generates standardized network configurations entirely in your
+              browser. Nothing is sent over the network and nothing persists
+              after this tab closes. Save a session to keep your progress.
             </p>
-            <h4>Workspace & Files</h4>
-            <ul>
-              <li>
-                <strong>Template File:</strong>
-                Click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-load"></use>
+            <div class="quick-start">
+              <div class="qs-step">
+                <svg><use href="#icon-load"></use></svg>
+                <span>Load a template</span>
+              </div>
+              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
+              <div class="qs-step">
+                <svg><use href="#icon-lightning"></use></svg>
+                <span>Load or detect variables</span>
+              </div>
+              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
+              <div class="qs-step">
+                <svg><use href="#icon-edit"></use></svg>
+                <span>Fill out the form</span>
+              </div>
+              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
+              <div class="qs-step">
+                <svg><use href="#icon-copy"></use></svg>
+                <span>Copy or save the config</span>
+              </div>
+            </div>
+            <h4>Using the Tool</h4>
+            <div class="guide-group">
+              <details class="guide-section" name="guide-acc" open>
+                <summary>
+                  Files and loading
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                <strong>Load</strong>
-                under Template to upload a Jinja-formatted configuration file.
-                <em>
-                  Note: If your template does not contain
-                  <code>!!! Section Name</code>
-                  markers, the preview will automatically switch to Full mode.
-                </em>
-              </li>
-              <li>
-                <strong>Variables File (Optional):</strong>
-                Click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-load"></use>
+                </summary>
+                <div class="guide-body">
+                  <dl class="guide-defs">
+                    <dt>Template</dt>
+                    <dd>
+                      The configuration itself, with
+                      <code>{{ VARIABLE }}</code>
+                      entries where values go.
+                    </dd>
+                    <dt>Variables</dt>
+                    <dd>
+                      An optional
+                      <code>.vars.ini</code>
+                      that gives each field its hint, dropdown, and validation.
+                    </dd>
+                    <dt>
+                      Auto-detect
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-lightning"></use>
+                        </svg>
+                      </span>
+                    </dt>
+                    <dd>
+                      Runs automatically when a template loads, building a form
+                      field for every variable it finds. Auto-detected fields
+                      have no hints, dropdowns, or validation. If a
+                      <code>.vars.ini</code>
+                      exists for your template, load it. Click it to re-detect
+                      after editing the template; new variables do not appear on
+                      their own.
+                    </dd>
+                    <dt>Drag and drop</dt>
+                    <dd>
+                      Drop files anywhere on the form panel:
+                      <code>.session.json</code>
+                      restores a session,
+                      <code>.ini</code>
+                      loads variables, anything else loads as a template.
+                    </dd>
+                  </dl>
+                </div>
+              </details>
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Filling out the form
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                <strong>Load</strong>
-                under Variables to upload an INI file to define the form
-                structure, descriptions, dropdowns, and regex validation.
-              </li>
-              <li>
-                <strong>Auto-Detect</strong>
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-lightning"></use>
+                </summary>
+                <div class="guide-body">
+                  <dl class="guide-defs">
+                    <dt>Find a variable</dt>
+                    <dd>
+                      Click a field label to jump to that variable in the
+                      preview; click again to cycle through each place it
+                      appears. Click any highlighted
+                      <code>{{ VARIABLE }}</code>
+                      in the preview to jump back to its input field.
+                    </dd>
+                    <dt>Linked groups</dt>
+                    <dd>
+                      If any field in a linked group is filled, the whole group
+                      becomes required.
+                    </dd>
+                  </dl>
+                </div>
+              </details>
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Manual edits
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                : Form fields generate automatically from your template on
-                load. Click the lightning bolt to re-scan after editing the
-                template.
-              </li>
-              <li>
-                <strong>Export INI</strong>
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-download"></use>
+                </summary>
+                <div class="guide-body">
+                  <dl class="guide-defs">
+                    <dt>Template-level edits</dt>
+                    <dd>
+                      Edits apply to the template text, not the final output:
+                      <code>{{ VARIABLE }}</code>
+                      entries keep working inside an edited section and form
+                      changes still flow through. You can even add a new
+                      variable and click Auto-detect
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-lightning"></use>
+                        </svg>
+                      </span>
+                      to get a field for it.
+                    </dd>
+                    <dt>
+                      Reset
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-reset"></use>
+                        </svg>
+                      </span>
+                    </dt>
+                    <dd>
+                      On an edited section: restores that section's template
+                      output. Above the form: clears every input AND reverts all
+                      manual edits at once. Loaded files stay.
+                    </dd>
+                  </dl>
+                </div>
+              </details>
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Copying and output
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                <strong>:</strong>
-                If fields were auto-detected without a variables file, a
-                download icon appears next to the lightning bolt. Click it to generate a
-                boilerplate
-                <code>.vars.ini</code>
-                schema file for template maintainers.
-              </li>
-            </ul>
-            <h4>Generating Configurations</h4>
-            <ul>
-              <li>
-                Fields marked with a
-                <span style="color: var(--warn)">*</span>
-                are required and can be dynamically updated based on which
-                fields are filled.
-              </li>
-              <li>
-                Click any highlighted
-                <code>{{ VARIABLE }}</code>
-                in the Preview panel to automatically scroll to and flash its
-                corresponding input field on the left.
-              </li>
-              <li>
-                Click the
-                <strong>Reset</strong>
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-reset"></use>
+                </summary>
+                <div class="guide-body">
+                  <dl class="guide-defs">
+                    <dt>Auto-cleaning</dt>
+                    <dd>
+                      <code>!KEYWORD:</code>
+                      badges and
+                      <code>!</code>
+                      comments are stripped from copied and saved text. A bare
+                      <code>!</code>
+                      line passes through to answer device prompts; banner
+                      blocks are left untouched.
+                    </dd>
+                    <dt>Unfilled variables</dt>
+                    <dd>
+                      Come out as literal
+                      <code>{{ VARIABLE }}</code>
+                      text. Fill every amber variable before pasting to a
+                      device.
+                    </dd>
+                  </dl>
+                </div>
+              </details>
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Saving your work
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                icon above the form to clear all form inputs without removing
-                your loaded files.
-              </li>
-            </ul>
-            <h4>Manual Editing</h4>
-            <p>
-              If a specific deployment requires a unique command not covered by
-              the template, you can manually edit the output.
-            </p>
-            <ul>
-              <li>
-                <strong>Section Mode:</strong>
-                Click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-edit"></use>
+                </summary>
+                <div class="guide-body">
+                  <p class="guide-note">
+                    Three save buttons, three different files:
+                  </p>
+                  <dl class="guide-defs">
+                    <dt>
+                      Save Config
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-save"></use>
+                        </svg>
+                      </span>
+                    </dt>
+                    <dd>
+                      (Top right) The finished, device-ready configuration.
+                    </dd>
+                    <dt>
+                      Save Template
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-save"></use>
+                        </svg>
+                      </span>
+                    </dt>
+                    <dd>
+                      (Top right) The template itself, with its
+                      <code>{{ VARIABLE }}</code>
+                      entries intact and your manual edits baked in. Use it to
+                      make a recurring edit permanent or to hand changes back to
+                      the template maintainer.
+                    </dd>
+                    <dt>
+                      Save Session
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-save"></use>
+                        </svg>
+                      </span>
+                    </dt>
+                    <dd>
+                      (Top left) Your whole workspace: loaded files, form
+                      inputs, and manual edits, saved as one
+                      <code>.session.json</code>
+                      file. This is the only way progress survives closing the
+                      tab.
+                    </dd>
+                  </dl>
+                </div>
+              </details>
+            </div>
+            <h4>Maintaining Templates</h4>
+            <div class="guide-group">
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Writing templates
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                on any specific section header to edit just that block of text.
-              </li>
-              <li>
-                <strong>Full Mode:</strong>
-                Toggle the view to
-                <em>Full</em>
-                at the top right, then click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-edit"></use>
+                </summary>
+                <div class="guide-body">
+                  <div class="guide-table-wrap">
+                    <table class="guide-table">
+                      <thead>
+                        <tr>
+                          <th>Syntax</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><code>{{ VAR }}</code></td>
+                          <td>Substitutes a value.</td>
+                        </tr>
+                        <tr>
+                          <td><code>{{ VAR | filter }}</code></td>
+                          <td>
+                            Supported filters:
+                            <code>default('x')</code>
+                            ,
+                            <code>upper</code>
+                            ,
+                            <code>lower</code>
+                            ,
+                            <code>trim</code>
+                            .
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>{{ [V1, V2] | join(',') }}</code></td>
+                          <td>Joins the non-empty values.</td>
+                        </tr>
+                        <tr>
+                          <td><code>{% if VAR %} {% else %}</code></td>
+                          <td>
+                            Branches on whether VAR is filled. Existence checks
+                            only. There is no
+                            <code>==</code>
+                            comparison; use a
+                            <code>choices</code>
+                            dropdown and one field per branch instead. An if
+                            block must open and close within one section.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>{# comment #}</code></td>
+                          <td>
+                            Stripped from output. May span section markers;
+                            cannot nest.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>!!! Section Name</code></td>
+                          <td>
+                            Splits the preview into copyable sections. Five
+                            bangs (
+                            <code>!!!!!</code>
+                            ) render the header in red for critical sections.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>!KEYWORD: v1, v2</code></td>
+                          <td>
+                            End-of-line colored badges (e.g.,
+                            <code>!STIG: V-1234</code>
+                            ). Any all-caps keyword works; badges are stripped
+                            from output. End of line only.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </details>
+              <details class="guide-section" name="guide-acc">
+                <summary>
+                  Writing vars.ini
+                  <svg class="guide-chev">
+                    <use href="#icon-chevron-up"></use>
                   </svg>
-                </span>
-                to edit the entire configuration as a single text file.
-              </li>
-              <li>
-                If you edit a section, a yellow
-                <code>(edited)</code>
-                badge will appear. To revert to the template's automated output,
-                click the
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-reset"></use>
-                  </svg>
-                </span>
-                reset button on that specific section.
-              </li>
-              <li>
-                After editing, you can save the edited template by clicking the
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-save"></use>
-                  </svg>
-                </span>
-                <strong>Save Template</strong>
-                button in the top right.
-              </li>
-            </ul>
-            <h4>Exporting & Sessions</h4>
-            <ul>
-              <li>
-                <strong>Copying:</strong>
-                Click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-copy"></use>
-                  </svg>
-                </span>
-                to copy a section or the full config to your clipboard. Badges
-                (e.g.,
-                <code>!STIG: V-123456</code>
-                ) and
-                <code>!</code>
-                comment lines are stripped from the copied text; a bare
-                <code>!</code>
-                line passes through so it can answer device prompts (banners
-                are preserved).
-              </li>
-              <li>
-                <strong>Saving:</strong>
-                Click
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-save"></use>
-                  </svg>
-                </span>
-                <strong>Save Config</strong>
-                in the top right to save the filled in config to your files.
-              </li>
-              <li>
-                <strong>Sessions:</strong>
-                Use the
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-save"></use>
-                  </svg>
-                </span>
-                <strong>Save Session</strong>
-                icon (top left) to save your current progress as a
-                <code>.session.json</code>
-                file. This saves your loaded templates, variables, form inputs,
-                and manual edits so you can safely close your browser and resume
-                work later using the
-                <span class="guide-btn">
-                  <svg class="guide-icon">
-                    <use href="#icon-load"></use>
-                  </svg>
-                </span>
-                <strong>Load</strong>
-                icon.
-              </li>
-            </ul>
-            <h4>Limitations</h4>
-            <ul>
-              <li>
-                <strong>INI Constraints:</strong>
-                Variables are defined as flat
-                <code>[VAR_NAME]</code>
-                sections of
-                <code>key = value</code>
-                lines. Nested structures are not supported, and
-                <code>choices</code>
-                must be an inline list (
-                <code>[opt1, opt2]</code>
-                ). Unrecognized keys are ignored with a warning.
-              </li>
-              <li>
-                <strong>Jinja Constraints:</strong>
-                Conditionals only support existence checks (e.g.,
-                <code>{% if VARIABLE %}</code>
-                ). They do not support equality checks (e.g.,
-                <code>{% if VARIABLE == 'value' %}</code>
-                ).
-              </li>
-              <li>
-                <strong>Section Boundaries:</strong>
-                <code>{% if %}</code>
-                blocks must open and close within one section — spanning a
-                <code>!!!</code>
-                marker flags the error badge. Comments may span markers.
-              </li>
-              <li>
-                <strong>Variable Names:</strong>
-                Must be alphanumeric with underscores/hyphens. Spaces in
-                variable names will break the regex.
-              </li>
-            </ul>
+                </summary>
+                <div class="guide-body">
+                  <p class="guide-note">
+                    One flat
+                    <code>[VAR_NAME]</code>
+                    section per variable, with
+                    <code>key = value</code>
+                    lines below it. Unrecognized keys are ignored with a
+                    warning. Variable names may contain letters, digits,
+                    underscores, and hyphens. Spaces are not allowed.
+                  </p>
+                  <div class="guide-table-wrap">
+                    <table class="guide-table">
+                      <thead>
+                        <tr>
+                          <th>Key</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><code>description</code></td>
+                          <td>
+                            Hint shown under the field.
+                            <code>\n</code>
+                            and
+                            <code>\t</code>
+                            insert line breaks.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>placeholder</code></td>
+                          <td>Grey example text. Never submitted.</td>
+                        </tr>
+                        <tr>
+                          <td><code>default</code></td>
+                          <td>Real value prefilled into the field.</td>
+                        </tr>
+                        <tr>
+                          <td><code>type</code></td>
+                          <td>
+                            <code>int</code>
+                            restricts input to numbers.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>choices</code></td>
+                          <td>
+                            <code>[opt1, opt2]</code>
+                            renders a dropdown. Inline list only.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>regex</code></td>
+                          <td>Validation pattern, wrapped in single quotes.</td>
+                        </tr>
+                        <tr>
+                          <td><code>error</code></td>
+                          <td>Message shown when the regex rejects a value.</td>
+                        </tr>
+                        <tr>
+                          <td><code>category</code></td>
+                          <td>
+                            Heading the field is grouped under in the form.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>required</code></td>
+                          <td>
+                            <code>false</code>
+                            makes the field optional.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>group</code></td>
+                          <td>
+                            If any field in a group is filled, all become
+                            required.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="guide-note guide-note-after">
+                    <strong>Starter file:</strong>
+                    run
+                    <span class="keep-together">
+                      Auto-detect
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-lightning"></use>
+                        </svg>
+                      </span>
+                    </span>
+                    with no variables file loaded, then click the
+                    <span class="keep-together">
+                      download icon
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-download"></use>
+                        </svg>
+                      </span>
+                    </span>
+                    beside it to export a boilerplate
+                    <code>.vars.ini</code>
+                    covering the template's variables. Fill in the hints and
+                    validation by hand.
+                  </p>
+                </div>
+              </details>
+            </div>
             <div class="guide-footer">
-              Config Generator <span id="guideVersion"></span>
+              Config Generator
+              <span id="guideVersion"></span>
               <br />
               &copy; 2026 Kevin Kleinberg | Apache-2.0
               <br />
@@ -2562,7 +2984,9 @@
       }
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = template.replace(JINJA_COMMENT_RE, "");
-        result = processConditionals(result, formValues, { commentFalse: true });
+        result = processConditionals(result, formValues, {
+          commentFalse: true,
+        });
         // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
         const exprTokens = [];
         result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
@@ -3030,6 +3454,17 @@
         }
         const found = collectTemplateVarNames(assembleFullEditableText());
         if (!found.size) {
+          variableDefs = structuredClone(varsFromFile);
+          const fileCount = Object.keys(varsFromFile).length;
+          if (fileCount) {
+            setVarsStatus(varsFileName, fileCount);
+          } else {
+            document.getElementById("varsStatus").innerHTML =
+              '<span class="not-loaded">No vars loaded</span>';
+            document.getElementById("varsCountBadge").style.display = "none";
+          }
+          buildForm();
+          render();
           if (!quiet) showToast("No variables found in template");
           return;
         }
@@ -3460,7 +3895,7 @@ category = General
           const rows = Math.max(editText.split("\n").length + 2, 4);
           html += `<textarea class="section-edit" id="editor-full" rows="${rows}" oninput="onFullEditInput(this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
         } else {
-          html += `<pre>${jinjaDisplay(assembleFullEditableText().trim(), keywordGroups, badgeColorMap)}</pre>`;
+          html += `<pre>${jinjaDisplay(trimBodyEnds(assembleFullEditableText()), keywordGroups, badgeColorMap)}</pre>`;
         }
 
         html += `</div>`;
@@ -3522,9 +3957,9 @@ category = General
             html += `<textarea class="section-edit" id="editor-sec-${i}" rows="${rows}" oninput="onSectionEditInput(${id}, this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
           } else if (isEdited) {
             const r = recordById(id);
-            html += `<pre>${jinjaDisplay((r ? recordEffectiveBody(r) : displayBody).trim(), keywordGroups, badgeColorMap)}</pre>`;
+            html += `<pre>${jinjaDisplay(trimBodyEnds(r ? recordEffectiveBody(r) : displayBody), keywordGroups, badgeColorMap)}</pre>`;
           } else {
-            html += `<pre>${jinjaDisplay(displayBody.trim(), keywordGroups, badgeColorMap)}</pre>`;
+            html += `<pre>${jinjaDisplay(trimBodyEnds(displayBody), keywordGroups, badgeColorMap)}</pre>`;
           }
           html += `</div>`;
         }
