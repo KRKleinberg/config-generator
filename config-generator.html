@@ -13,11 +13,11 @@
     <style>
       :root {
         --bg: #000000;
-        --surface-sunken: #090c12;
-        --surface: #0f131b;
-        --surface-alt: #171c26;
-        --surface-raised: #202634;
-        --border: #2b3242;
+        --surface: #050609;
+        --surface-alt: #090b11;
+        --surface-raised: #0f121a;
+        --surface-sunken: #020203;
+        --border: #171a22;
         --text: #d5d7dd;
         --text-dim: #848a97;
         --text-hint: #636879;
@@ -4516,11 +4516,7 @@ category = General
             );
             flashBadge("badge-full");
             clearLastCopied();
-            lastCopied = {
-              kind: "full",
-              text: output,
-              elementId: "section-full",
-            };
+            lastCopied = { kind: "full", text: output, elementId: "section-full" };
             const fullSection = document.getElementById("section-full");
             if (fullSection) fullSection.classList.add("last-copied");
           })
