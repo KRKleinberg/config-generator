@@ -13,20 +13,20 @@
     <style>
       :root {
         --bg: #000000;
-        --surface-sunken: #06070a;
-        --surface: #0a0c10;
-        --surface-alt: #0f1218;
-        --surface-raised: #151920;
-        --border: #202530;
+        --surface-sunken: #060709;
+        --surface: #0a0b0e;
+        --surface-alt: #0f1115;
+        --surface-raised: #15181d;
+        --border: #20242c;
         --text: #d5d7dd;
-        --text-dim: #888d9a;
-        --text-hint: #6e7382;
+        --text-dim: #8a8e96;
+        --text-hint: #70747e;
         --rgb-accent: 59, 130, 246;
         --rgb-accent-dim: 37, 99, 235;
         --rgb-success: 68, 130, 210;
         --rgb-warn: 202, 137, 26;
         --rgb-error: 216, 99, 99;
-        --rgb-slate: 160, 168, 185;
+        --rgb-slate: 165, 170, 180;
         --rgb-marquee: 76, 175, 80;
         --rgb-black: 0, 0, 0;
         --accent: rgb(var(--rgb-accent));
@@ -512,8 +512,9 @@
 
       .progress-bar {
         background: var(--surface-sunken);
+        border: 1px solid rgba(var(--rgb-accent), 0.3);
         border-radius: 4px;
-        height: 6px;
+        height: 8px;
         margin: 16px 0 6px;
         overflow: hidden;
       }
