@@ -535,7 +535,6 @@
 
       .progress-bar {
         background: var(--surface-sunken);
-        border: 1px solid rgba(var(--rgb-accent), 0.3);
         border-radius: 4px;
         height: 8px;
         margin: 16px 0 6px;
@@ -544,6 +543,10 @@
 
       .progress-fill {
         height: 100%;
+        /* Nothing loaded = nothing to fill = ready. updateProgressBar sets an
+           inline width from here on; min-width == height keeps 0% a dot. */
+        width: 100%;
+        min-width: 8px;
         background: var(--accent);
         border-radius: 4px;
         transition: width 0.3s ease;
