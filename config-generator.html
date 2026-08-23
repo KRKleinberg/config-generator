@@ -2453,6 +2453,8 @@
         {
           name: "Interfaces",
           color: "var(--syn-interface)",
+          // names carry a unit/slot suffix: GigabitEthernet1/0/24, Vlan10, Po1
+          numbered: true,
           words: [
             "interface",
             "ethernet",
@@ -3099,26 +3101,36 @@
           )
           .join("");
       }
+      // One alternation, longest word first, matched in a single pass. Sequential
+      // per-word replaces re-matched their own output, so "access-list" came out
+      // as a blue "access" glued to a khaki "-list".
       function getKeywordMap(keywordGroups) {
         if (keywordGroups === cachedKwGroupsRef && cachedKwMap)
           return cachedKwMap;
+        const colors = {};
         const entries = [];
         for (const group of keywordGroups) {
           for (const word of group.words) {
-            entries.push({
-              word: word.toLowerCase(),
-              color: group.color,
-              pattern: new RegExp(`(?<!\\w)(${escRegex(word)})(?!\\w)`, "gi"),
-            });
+            const w = word.toLowerCase();
+            if (Object.hasOwn(colors, w)) continue; // first group wins
+            colors[w] = group.color;
+            entries.push({ w, numbered: group.numbered === true });
           }
         }
-        entries.sort((a, b) => b.word.length - a.word.length); // longest first: "port-channel" before "port"
+        entries.sort((a, b) => b.w.length - a.w.length); // "port-channel" before "port"
+        const alts = entries.map(
+          ({ w, numbered }) =>
+            escRegex(w) + (numbered ? "(?:\\d+(?:[/.:]\\d+)*)?" : ""),
+        );
         cachedKwGroupsRef = keywordGroups;
-        cachedKwMap = entries;
-        return entries;
+        cachedKwMap = {
+          pattern: new RegExp(`(?<!\\w)(${alts.join("|")})(?!\\w)`, "gi"),
+          colors,
+        };
+        return cachedKwMap;
       }
       function applyKeywordHighlighting(html, keywordGroups) {
-        const map = getKeywordMap(keywordGroups);
+        const { pattern, colors } = getKeywordMap(keywordGroups);
         const lines = html.split("\n");
         for (let i = 0; i < lines.length; i++) {
           let line = lines[i];
@@ -3131,12 +3143,13 @@
             line = line.slice(0, commentIdx);
           }
           if (line.trim().length > 0) {
-            for (const entry of map) {
-              line = line.replace(
-                entry.pattern,
-                (m) => `<span style="color:${entry.color}">${m}</span>`,
-              );
-            }
+            line = line.replace(pattern, (m) => {
+              const lower = m.toLowerCase();
+              // numbered match: drop the trailing slot to find the base word
+              const color =
+                colors[lower] ?? colors[lower.replace(/[\d/.:]+$/, "")];
+              return color ? `<span style="color:${color}">${m}</span>` : m;
+            });
           }
           lines[i] = line + commentHtml;
         }
