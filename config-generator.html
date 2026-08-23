@@ -1082,7 +1082,7 @@
       .config-section.last-copied::after {
         content: "";
         position: absolute;
-        top: calc(var(--section-header-h) + 1px);
+        top: var(--section-header-h);
         left: 0;
         right: 0;
         bottom: 0;
@@ -1106,6 +1106,10 @@
           0 100%,
           100% 0;
         animation: marching-ants 0.6s linear infinite;
+      }
+
+      .config-section:has(.section-edit)::after {
+        content: none;
       }
 
       @keyframes marching-ants {
