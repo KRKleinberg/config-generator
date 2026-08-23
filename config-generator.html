@@ -61,8 +61,12 @@
 
         --mono: Consolas, "Courier New", monospace;
         --sans: Segoe UI, Tahoma, Geneva, sans-serif;
+        --radius-sm: 4px;
         --radius: 8px;
+        --radius-lg: 10px;
         --section-header-h: 40px;
+        --panel-pad-y: 28px;
+        --panel-pad-x: 28px;
       }
 
       * {
@@ -90,7 +94,7 @@
 
       ::-webkit-scrollbar-thumb {
         background: var(--border);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
       }
 
       ::-webkit-scrollbar-thumb:hover {
@@ -101,22 +105,6 @@
         display: grid;
         grid-template-columns: 420px 1fr;
         min-height: 100vh;
-      }
-
-      @media (max-width: 900px) {
-        .layout {
-          grid-template-columns: 1fr;
-          grid-template-rows: auto 1fr;
-        }
-
-        .form-panel {
-          border-right: none;
-          border-bottom: 1px solid var(--border);
-        }
-
-        .preview-panel {
-          min-height: 60vh;
-        }
       }
 
       @media (max-width: 1100px) {
@@ -142,13 +130,42 @@
       .form-panel {
         background: var(--surface);
         border-right: 1px solid var(--border);
-        padding: 28px 24px;
+        padding: var(--panel-pad-y) var(--panel-pad-x);
       }
 
       .preview-panel {
-        padding: 28px 32px;
+        padding: var(--panel-pad-y) var(--panel-pad-x);
         display: flex;
         flex-direction: column;
+      }
+
+      /* Must follow the base panel rules: same specificity, later wins. */
+      @media (max-width: 900px) {
+        :root {
+          --panel-pad-x: 20px;
+        }
+
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: auto 1fr;
+        }
+
+        /* min-width: 0 - without overflow, min-content becomes the floor. */
+        .form-panel,
+        .preview-panel {
+          max-height: none;
+          overflow-y: visible;
+          min-width: 0;
+        }
+
+        .form-panel {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .preview-panel {
+          min-height: 60vh;
+        }
       }
 
       .form-panel.drag-over {
@@ -417,7 +434,7 @@
       .field.flash-focus {
         background: rgba(var(--rgb-accent), 0.15);
         box-shadow: 0 0 0 6px rgba(var(--rgb-accent), 0.15);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
       }
 
       .field label {
@@ -517,20 +534,20 @@
       .preview-var:hover {
         filter: brightness(1.3);
         box-shadow: 0 2px 8px rgba(var(--rgb-black), 0.5);
-        border-radius: 3px;
+        border-radius: var(--radius-sm);
       }
 
       .preview-var.flash-search {
         background: var(--accent) !important;
         color: var(--on-accent) !important;
         box-shadow: 0 0 0 4px var(--accent) !important;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         transition: all 0.3s ease;
       }
 
       .progress-bar {
         background: var(--surface-sunken);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         height: 8px;
         margin: 16px 0 6px;
         overflow: hidden;
@@ -542,7 +559,7 @@
         width: 100%;
         min-width: 8px;
         background: var(--accent);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         transition: width 0.3s ease;
       }
 
@@ -627,7 +644,7 @@
         color: var(--text-hint);
         width: 28px;
         height: 28px;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
       }
 
       .subtle-icon-btn:hover {
@@ -841,7 +858,7 @@
       .config-section {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 10px;
+        border-radius: var(--radius-lg);
         margin-bottom: 12px;
         overflow: hidden;
       }
@@ -932,7 +949,7 @@
         width: max-content;
         padding: 0 22px 0 4px;
         margin: 0 -4px;
-        border-radius: 3px;
+        border-radius: var(--radius-sm);
       }
 
       .config-line:hover {
@@ -948,7 +965,7 @@
         background: var(--warn-dim);
         font-weight: 600;
         padding: 1px 0px;
-        border-radius: 3px;
+        border-radius: var(--radius-sm);
       }
 
       .var-filled {
@@ -956,7 +973,7 @@
         background: var(--success-dim);
         font-weight: 600;
         padding: 1px 0px;
-        border-radius: 3px;
+        border-radius: var(--radius-sm);
       }
 
       .badge-group {
@@ -972,7 +989,7 @@
         font-size: 11px;
         font-weight: 700;
         line-height: 1.2;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         margin-left: 6px;
         letter-spacing: 0.5px;
         font-family: var(--mono);
@@ -980,7 +997,7 @@
         cursor: pointer;
         background: rgba(var(--badge-rgb), 0.18);
         color: var(--badge-fg);
-        transition: background 0.12s ease;
+        transition: background 0.15s ease;
       }
       .badge-c0 {
         --badge-rgb: var(--rgb-badge-0);
@@ -1043,7 +1060,7 @@
         padding: 6px 8px;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: var(--radius);
         box-shadow: 0 6px 20px rgba(var(--rgb-black), 0.55);
       }
       .badge-copy-popup[hidden] {
@@ -1071,7 +1088,7 @@
         bottom: 0;
         pointer-events: none;
         z-index: 10;
-        border-radius: 0 0 10px 10px;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
         background-image:
           linear-gradient(90deg, rgb(var(--rgb-success)) 50%, transparent 50%),
           linear-gradient(90deg, rgb(var(--rgb-success)) 50%, transparent 50%),
@@ -1239,7 +1256,7 @@
         background: var(--surface-alt);
         border: 1px solid var(--border);
         padding: 2px 6px;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         font-family: var(--mono);
         font-size: 12px;
         color: var(--syn-command);
@@ -1249,7 +1266,7 @@
         background: var(--bg);
         border: 1px solid var(--border);
         padding: 12px;
-        border-radius: 6px;
+        border-radius: var(--radius);
         overflow-x: auto;
         margin-bottom: 16px;
         font-family: var(--mono);
@@ -1277,7 +1294,7 @@
         gap: 12px;
         background: var(--surface-alt);
         border: 1px solid var(--border);
-        border-radius: 10px;
+        border-radius: var(--radius-lg);
         padding: 14px 12px;
         margin-bottom: 8px;
       }
@@ -1318,7 +1335,7 @@
 
       .guide-group {
         border: 1px solid var(--border);
-        border-radius: 10px;
+        border-radius: var(--radius-lg);
         overflow: hidden;
         interpolate-size: allow-keywords;
       }
@@ -1429,7 +1446,7 @@
 
       .guide-table-wrap {
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--radius);
         overflow: hidden;
         background: var(--surface-alt);
       }
@@ -1484,7 +1501,7 @@
         width: 24px;
         height: 24px;
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         background: var(--surface-alt);
         color: var(--text);
         vertical-align: middle;
@@ -1548,7 +1565,7 @@
         color: var(--text-hint);
         font-size: 14px;
         border: 1px dashed var(--border);
-        border-radius: 10px;
+        border-radius: var(--radius-lg);
         padding: 40px;
         text-align: center;
         line-height: 1.6;
@@ -1569,15 +1586,15 @@
         background: var(--border);
         color: var(--text);
         padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 11.5px;
+        border-radius: var(--radius);
+        font-size: 12px;
         font-weight: 600;
         font-family: var(--sans);
         white-space: pre-wrap;
         min-width: max-content;
         text-align: left;
         z-index: 100;
-        box-shadow: 0 6px 16px rgba(var(--rgb-black), 0.8);
+        box-shadow: 0 6px 16px rgba(var(--rgb-black), 0.55);
         opacity: 0;
         visibility: hidden;
         transition:
@@ -4625,14 +4642,16 @@ category = General
 
         const currentSection = document.getElementById(`section-${index}`);
         const nextSection = document.getElementById(`section-${index + 1}`);
-        const container = document.querySelector(".preview-panel");
+        const scroller = pageScrolls()
+          ? window
+          : document.querySelector(".preview-panel");
 
-        if (currentSection && nextSection && container) {
+        if (currentSection && nextSection && scroller) {
           const distance =
             nextSection.getBoundingClientRect().top -
             currentSection.getBoundingClientRect().top;
 
-          container.scrollBy({ top: distance, behavior: "smooth" });
+          scroller.scrollBy({ top: distance, behavior: "smooth" });
         }
       }
 
@@ -4827,7 +4846,14 @@ category = General
         el.style.height = "auto";
         el.style.height = `${el.scrollHeight}px`;
       }
+      function pageScrolls() {
+        return window.matchMedia("(max-width: 900px)").matches;
+      }
       function scrollToTop() {
+        if (pageScrolls()) {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
         const panel = document.querySelector(".preview-panel");
         if (panel) panel.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -5055,10 +5081,13 @@ category = General
 
         const previewPanel = document.querySelector(".preview-panel");
         const scrollBtn = document.getElementById("scrollTopBtn");
-        previewPanel.addEventListener("scroll", () => {
-          if (previewPanel.scrollTop > 200) scrollBtn.classList.add("show");
-          else scrollBtn.classList.remove("show");
-        });
+        const syncScrollBtn = () => {
+          const y = pageScrolls() ? window.scrollY : previewPanel.scrollTop;
+          scrollBtn.classList.toggle("show", y > 200);
+        };
+        previewPanel.addEventListener("scroll", syncScrollBtn);
+        window.addEventListener("scroll", syncScrollBtn);
+        window.addEventListener("resize", syncScrollBtn);
 
         document
           .getElementById("previewContainer")
