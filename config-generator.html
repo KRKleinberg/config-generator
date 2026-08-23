@@ -24,7 +24,7 @@
         --rgb-accent: 59, 130, 246;
         --rgb-accent-dim: 37, 99, 235;
         --rgb-success: 96, 165, 250;
-        --rgb-warn: 202, 137, 26;
+        --rgb-warn: 221, 154, 31;
         --rgb-error: 229, 83, 75;
         --rgb-slate: 165, 170, 180;
         --rgb-black: 0, 0, 0;
@@ -51,13 +51,13 @@
         --badge-fg-4: #c084fc;
 
         /* Consumed by keywordGroups in the script, not by any CSS rule. */
-        --syn-interface: #4ec9b0;
-        --syn-good: #8fce7d;
-        --syn-bad: #d16969;
-        --syn-secure: #ce9178;
-        --syn-acl: #dcdcaa;
-        --syn-service: #c586c0;
-        --syn-command: #569cd6;
+        --syn-interface: #08b9b3;
+        --syn-good: #6cb580;
+        --syn-bad: #e98d80;
+        --syn-secure: #cf9c61;
+        --syn-acl: #a3ab61;
+        --syn-service: #b898de;
+        --syn-command: #44acd4;
 
         --mono: Consolas, "Courier New", monospace;
         --sans: Segoe UI, Tahoma, Geneva, sans-serif;
@@ -950,6 +950,7 @@
       .var-unfilled {
         color: var(--warn);
         background: var(--warn-dim);
+        font-weight: 600;
         padding: 1px 0px;
         border-radius: 3px;
       }
@@ -957,6 +958,7 @@
       .var-filled {
         color: var(--success);
         background: var(--success-dim);
+        font-weight: 600;
         padding: 1px 0px;
         border-radius: 3px;
       }
@@ -2475,7 +2477,6 @@
             "aux",
             "po",
             "mgmt",
-            "management",
             "null",
             "nvi",
             "vfc",
@@ -2492,26 +2493,22 @@
             "yes",
             "permit",
             "ok",
-            "on",
             "enabled",
             "up",
             "running",
             "success",
             "passed",
-            "complete",
             "active",
             "established",
             "connected",
             "forwarding",
             "trusted",
             "trust",
-            "allow",
             "allowed",
             "reachable",
             "valid",
             "synchronized",
             "primary",
-            "ready",
           ],
         },
         {
@@ -2534,7 +2531,6 @@
             "deny",
             "denied",
             "down",
-            "not",
             "initializing",
             "off",
             "err-disabled",
@@ -2677,23 +2673,19 @@
           ],
         },
         {
-          name: "Config Commands & Misc",
+          name: "Config Commands",
           color: "var(--syn-command)",
           words: [
             "hostname",
-            "ip",
-            "address",
             "default-gateway",
-            "route",
             "name-server",
             "domain-name",
-            "domain",
-            "switchport",
-            "mode",
-            "access",
+            "route",
             "trunk",
-            "voice",
             "native",
+            "dot1q",
+            "isl",
+            "encapsulation",
             "channel-group",
             "spanning-tree",
             "portfast",
@@ -2702,72 +2694,31 @@
             "loopguard",
             "uplinkfast",
             "storm-control",
-            "dot1q",
-            "isl",
-            "encapsulation",
+            "udld",
+            "errdisable",
+            "recovery",
             "duplex",
             "speed",
             "negotiation",
-            "passive",
-            "desirable",
-            "auto",
-            "class",
-            "policy",
-            "service",
-            "parameter",
-            "match",
-            "class-map",
-            "policy-map",
-            "description",
-            "remark",
-            "mtu",
-            "bw",
-            "dly",
-            "version",
-            "device",
-            "local",
-            "platform",
-            "port",
-            "uptime",
-            "neighbor",
-            "exit",
-            "end",
-            "configure",
-            "terminal",
-            "write",
-            "memory",
-            "copy",
-            "running-config",
-            "startup-config",
-            "boot",
-            "system",
-            "clock",
-            "timezone",
-            "logging",
-            "buffered",
-            "monitor",
-            "exec-timeout",
-            "transport",
-            "input",
-            "output",
-            "priority",
-            "bandwidth",
-            "delay",
-            "name",
-            "maximum",
-            "aging",
-            "errdisable",
-            "recovery",
-            "udld",
             "flowcontrol",
             "media-type",
+            "mtu",
+            "bandwidth",
+            "delay",
+            "class-map",
+            "policy-map",
+            "priority",
             "standby",
             "track",
             "redundancy",
+            "logging",
+            "clock",
+            "timezone",
+            "exec-timeout",
+            "transport",
+            "boot",
             "license",
             "archive",
-            "alias",
-            "enable",
           ],
         },
       ];
