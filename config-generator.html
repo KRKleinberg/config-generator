@@ -23,11 +23,10 @@
         --text-hint: #70747e;
         --rgb-accent: 59, 130, 246;
         --rgb-accent-dim: 37, 99, 235;
-        --rgb-success: 68, 130, 210;
+        --rgb-success: 96, 165, 250;
         --rgb-warn: 202, 137, 26;
-        --rgb-error: 216, 99, 99;
+        --rgb-error: 229, 83, 75;
         --rgb-slate: 165, 170, 180;
-        --rgb-marquee: 76, 175, 80;
         --rgb-black: 0, 0, 0;
         --accent: rgb(var(--rgb-accent));
         --accent-dim: rgb(var(--rgb-accent-dim));
@@ -37,6 +36,30 @@
         --warn: rgb(var(--rgb-warn));
         --warn-dim: rgba(var(--rgb-warn), 0.15);
         --error: rgb(var(--rgb-error));
+        --on-accent: #ffffff;
+
+        /* Badge slots, cycled by keyword first-appearance order.
+           Count must match BADGE_COLOR_COUNT in the script. */
+        --rgb-badge-0: 14, 165, 233;
+        --badge-fg-0: #38bdf8;
+        --rgb-badge-1: 244, 63, 94;
+        --badge-fg-1: #fb7185;
+        --rgb-badge-2: 234, 179, 8;
+        --badge-fg-2: #facc15;
+        --rgb-badge-3: 16, 185, 129;
+        --badge-fg-3: #34d399;
+        --rgb-badge-4: 168, 85, 247;
+        --badge-fg-4: #c084fc;
+
+        /* Config syntax highlighting; read by keywordGroups in the script. */
+        --syn-interface: #4ec9b0;
+        --syn-good: #8fce7d;
+        --syn-bad: #d16969;
+        --syn-secure: #ce9178;
+        --syn-acl: #dcdcaa;
+        --syn-service: #c586c0;
+        --syn-command: #569cd6;
+
         --mono: Consolas, "Courier New", monospace;
         --sans: Segoe UI, Tahoma, Geneva, sans-serif;
         --radius: 8px;
@@ -160,7 +183,7 @@
         font-family: var(--mono);
         font-weight: 700;
         font-size: 20px;
-        color: #fff;
+        color: var(--on-accent);
       }
 
       .brand h1 {
@@ -296,7 +319,7 @@
       }
 
       .file-loader.loaded .clear-file-btn:hover {
-        color: #ffffff;
+        color: var(--text);
       }
 
       .clear-file-btn svg {
@@ -472,7 +495,7 @@
       .field select {
         cursor: pointer;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b6f82'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2370747e'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 12px center;
       }
@@ -504,7 +527,7 @@
 
       .preview-var.flash-search {
         background: var(--accent) !important;
-        color: #fff !important;
+        color: var(--on-accent) !important;
         box-shadow: 0 0 0 4px var(--accent) !important;
         border-radius: 2px;
         transition: all 0.3s ease;
@@ -588,7 +611,7 @@
       .btn-primary {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: var(--on-accent);
       }
 
       .btn-primary:hover {
@@ -807,7 +830,7 @@
       }
 
       #viewLabelSections {
-        color: #fff;
+        color: var(--on-accent);
       }
 
       .view-toggle-thumb.right ~ #viewLabelSections {
@@ -815,7 +838,7 @@
       }
 
       .view-toggle-thumb.right ~ #viewLabelFull {
-        color: #fff;
+        color: var(--on-accent);
       }
 
       .config-section {
@@ -868,7 +891,7 @@
       }
 
       .section-header.important h3 {
-        color: #ff7e7e;
+        color: var(--error);
       }
 
       .section-header .btn-group {
@@ -879,7 +902,7 @@
 
       .section-edit {
         width: 100%;
-        background: var(--bg);
+        background: var(--surface);
         color: var(--text);
         font-family: var(--mono);
         font-size: 12.5px;
@@ -920,7 +943,7 @@
       }
 
       .ios-comment {
-        color: #6a9955;
+        color: var(--text-dim);
       }
 
       .var-unfilled {
@@ -961,24 +984,24 @@
         transition: background 0.12s ease;
       }
       .badge-c0 {
-        --badge-rgb: 14, 165, 233;
-        --badge-fg: #38bdf8;
+        --badge-rgb: var(--rgb-badge-0);
+        --badge-fg: var(--badge-fg-0);
       }
       .badge-c1 {
-        --badge-rgb: 244, 63, 94;
-        --badge-fg: #fb7185;
+        --badge-rgb: var(--rgb-badge-1);
+        --badge-fg: var(--badge-fg-1);
       }
       .badge-c2 {
-        --badge-rgb: 249, 115, 22;
-        --badge-fg: #fb923c;
+        --badge-rgb: var(--rgb-badge-2);
+        --badge-fg: var(--badge-fg-2);
       }
       .badge-c3 {
-        --badge-rgb: 16, 185, 129;
-        --badge-fg: #34d399;
+        --badge-rgb: var(--rgb-badge-3);
+        --badge-fg: var(--badge-fg-3);
       }
       .badge-c4 {
-        --badge-rgb: 168, 85, 247;
-        --badge-fg: #c084fc;
+        --badge-rgb: var(--rgb-badge-4);
+        --badge-fg: var(--badge-fg-4);
       }
       .badge-group.badge-alone {
         margin-left: 0;
@@ -993,7 +1016,7 @@
       .badge-kw {
         display: inline-flex;
         align-items: center;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(var(--rgb-black), 0.4);
         color: var(--badge-fg);
         padding: 2px 14px 2px 8px;
         clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
@@ -1022,7 +1045,7 @@
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 6px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+        box-shadow: 0 6px 20px rgba(var(--rgb-black), 0.55);
       }
       .badge-copy-popup[hidden] {
         display: none;
@@ -1051,10 +1074,10 @@
         z-index: 10;
         border-radius: 0 0 10px 10px;
         background-image:
-          linear-gradient(90deg, rgb(var(--rgb-marquee)) 50%, transparent 50%),
-          linear-gradient(90deg, rgb(var(--rgb-marquee)) 50%, transparent 50%),
-          linear-gradient(0deg, rgb(var(--rgb-marquee)) 50%, transparent 50%),
-          linear-gradient(0deg, rgb(var(--rgb-marquee)) 50%, transparent 50%);
+          linear-gradient(90deg, rgb(var(--rgb-success)) 50%, transparent 50%),
+          linear-gradient(90deg, rgb(var(--rgb-success)) 50%, transparent 50%),
+          linear-gradient(0deg, rgb(var(--rgb-success)) 50%, transparent 50%),
+          linear-gradient(0deg, rgb(var(--rgb-success)) 50%, transparent 50%);
         background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
         background-size:
           16px 2px,
@@ -1220,7 +1243,7 @@
         border-radius: 4px;
         font-family: var(--mono);
         font-size: 12px;
-        color: var(--success);
+        color: var(--text);
       }
 
       .sop-content pre {
@@ -1499,8 +1522,9 @@
         position: fixed;
         bottom: 24px;
         right: 24px;
-        background: var(--success);
-        color: #fff;
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        color: var(--text);
         padding: 10px 18px;
         border-radius: var(--radius);
         font-size: 13px;
@@ -2425,7 +2449,7 @@
       const keywordGroups = [
         {
           name: "Interfaces",
-          color: "#4ec9b0",
+          color: "var(--syn-interface)",
           words: [
             "interface",
             "ethernet",
@@ -2450,7 +2474,7 @@
         },
         {
           name: "Good Words & Permits",
-          color: "#86efac",
+          color: "var(--syn-good)",
           words: [
             "yes",
             "permit",
@@ -2467,7 +2491,7 @@
         },
         {
           name: "Bad Words & Denies",
-          color: "#f87171",
+          color: "var(--syn-bad)",
           words: [
             "err",
             "fail",
@@ -2496,7 +2520,7 @@
         },
         {
           name: "Security & Credentials",
-          color: "#ce9178",
+          color: "var(--syn-secure)",
           words: [
             "wwn",
             "pwwn",
@@ -2510,7 +2534,7 @@
         },
         {
           name: "Access Lists",
-          color: "#dcdcaa",
+          color: "var(--syn-acl)",
           words: [
             "access-list",
             "access-class",
@@ -2524,7 +2548,7 @@
         },
         {
           name: "Services & Protocols",
-          color: "#c586c0",
+          color: "var(--syn-service)",
           words: [
             "ftp",
             "tcp",
@@ -2548,7 +2572,7 @@
         },
         {
           name: "Config Commands & Misc",
-          color: "#569cd6",
+          color: "var(--syn-command)",
           words: [
             "hostname",
             "ip",
