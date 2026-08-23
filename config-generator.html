@@ -38,8 +38,7 @@
         --error: rgb(var(--rgb-error));
         --on-accent: #ffffff;
 
-        /* Badge slots, cycled by keyword first-appearance order.
-           Count must match BADGE_COLOR_COUNT in the script. */
+        /* Count must match BADGE_COLOR_COUNT in the script. */
         --rgb-badge-0: 14, 165, 233;
         --badge-fg-0: #38bdf8;
         --rgb-badge-1: 244, 63, 94;
@@ -51,7 +50,7 @@
         --rgb-badge-4: 168, 85, 247;
         --badge-fg-4: #c084fc;
 
-        /* Config syntax highlighting; read by keywordGroups in the script. */
+        /* Consumed by keywordGroups in the script, not by any CSS rule. */
         --syn-interface: #4ec9b0;
         --syn-good: #8fce7d;
         --syn-bad: #d16969;
@@ -543,8 +542,7 @@
 
       .progress-fill {
         height: 100%;
-        /* Nothing loaded = nothing to fill = ready. updateProgressBar sets an
-           inline width from here on; min-width == height keeps 0% a dot. */
+        /* 100% = nothing loaded, nothing to fill; min-width == height draws 0% as a dot. */
         width: 100%;
         min-width: 8px;
         background: var(--accent);
@@ -2453,8 +2451,7 @@
         {
           name: "Interfaces",
           color: "var(--syn-interface)",
-          // names carry a unit/slot suffix: GigabitEthernet1/0/24, Vlan10, Po1
-          numbered: true,
+          numbered: true, // GigabitEthernet1/0/24, Vlan10, Po1
           words: [
             "interface",
             "ethernet",
@@ -3252,9 +3249,7 @@
           )
           .join("");
       }
-      // One alternation, longest word first, matched in a single pass. Sequential
-      // per-word replaces re-matched their own output, so "access-list" came out
-      // as a blue "access" glued to a khaki "-list".
+      // Single pass: per-word replaces re-matched their own output ("access-list" -> "access" + "-list").
       function getKeywordMap(keywordGroups) {
         if (keywordGroups === cachedKwGroupsRef && cachedKwMap)
           return cachedKwMap;
@@ -3296,7 +3291,6 @@
           if (line.trim().length > 0) {
             line = line.replace(pattern, (m) => {
               const lower = m.toLowerCase();
-              // numbered match: drop the trailing slot to find the base word
               const color =
                 colors[lower] ?? colors[lower.replace(/[\d/.:]+$/, "")];
               return color ? `<span style="color:${color}">${m}</span>` : m;
