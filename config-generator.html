@@ -478,10 +478,6 @@
         font-size: 12px;
       }
 
-      .field select.filled {
-        border-color: rgba(var(--rgb-success), 0.3);
-      }
-
       .field input.invalid {
         border-color: rgba(var(--rgb-error), 0.5);
         background-color: rgba(var(--rgb-error), 0.04);
@@ -3773,7 +3769,6 @@ category = General
 
         inputEl.addEventListener("change", (e) => {
           formValues[varName] = e.target.value;
-          inputEl.classList.toggle("filled", !!e.target.value);
           debouncedRender();
         });
         field.appendChild(inputEl);
@@ -3815,7 +3810,6 @@ category = General
           const newVal = val.trim();
           formValues[varName] = newVal;
           refreshLastCopied();
-          e.target.classList.toggle("filled", !!newVal);
           applyValidity(e.target, validMsg, newVal, config);
 
           // presence flip can change {% if %} blocks -> full render
@@ -3882,7 +3876,6 @@ category = General
           // No blanket "" init: own-"" = user cleared; pre-init blocked late defaults.
           if (typeof formValues[varName] === "string" && formValues[varName]) {
             inputEl.value = formValues[varName];
-            inputEl.classList.add("filled");
           }
         }
 
@@ -4756,7 +4749,7 @@ category = General
           const el = document.getElementById(`field-${safeId}`);
           if (!el) continue;
           el.value = "";
-          el.classList.remove("filled", "invalid");
+          el.classList.remove("invalid");
           if (el.tagName === "SELECT") el.selectedIndex = 0;
           const validMsg = el.parentNode.querySelector(".validation-msg");
           if (validMsg) validMsg.style.display = "none";
