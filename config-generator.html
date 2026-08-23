@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.08.03 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.08.24 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -1658,6 +1658,11 @@
         <symbol id="icon-copy-down" viewBox="0 0 24 24">
           <line x1="12" y1="3" x2="12" y2="21"></line>
           <polyline points="19 14 12 21 5 14"></polyline>
+        </symbol>
+        <symbol id="icon-copy-top" viewBox="0 0 24 24">
+          <line x1="5" y1="3" x2="19" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="4"></line>
+          <polyline points="5 11 12 4 19 11"></polyline>
         </symbol>
         <symbol id="icon-book" viewBox="0 0 24 24">
           <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -3944,7 +3949,10 @@ category = General
             html += `<button class="header-icon-btn" title="Edit" onclick="toggleSectionEdit(${id}, ${i})"><svg><use href="#icon-edit"></use></svg></button>`;
 
             if (i === sections.length - 1) {
-              html += `<button class="header-icon-btn" title="Copy Section" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>`;
+              html += `<div class="split-btn">
+                               <button class="btn-part copy-only" title="Copy Only" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-down" title="Copy and Go to Top" onclick="copyAndGoTop(${id}, ${i})"><svg><use href="#icon-copy-top"></use></svg></button>
+                             </div>`;
             } else {
               html += `<div class="split-btn">
                                <button class="btn-part copy-only" title="Copy Only" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
@@ -4499,6 +4507,11 @@ category = General
         }
       }
 
+      function copyAndGoTop(id, index) {
+        copySectionByName(id, index);
+        scrollToTop();
+      }
+
       function copyAll() {
         if (templateSource === null) {
           showToast("Load a template first");
@@ -4517,7 +4530,11 @@ category = General
             );
             flashBadge("badge-full");
             clearLastCopied();
-            lastCopied = { kind: "full", text: output, elementId: "section-full" };
+            lastCopied = {
+              kind: "full",
+              text: output,
+              elementId: "section-full",
+            };
             const fullSection = document.getElementById("section-full");
             if (fullSection) fullSection.classList.add("last-copied");
           })
