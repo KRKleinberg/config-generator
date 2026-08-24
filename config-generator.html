@@ -2047,14 +2047,11 @@
                       </span>
                     </dt>
                     <dd>
-                      Runs automatically when a template loads and again when
-                      any manual edit is committed, so the form always matches
-                      the template's variables. Auto-detected fields have no
-                      hints, dropdowns, or validation. If a
+                      Keeps the form in sync with the template: fields appear
+                      and disappear as its variables change. Auto-detected
+                      fields have no hints, dropdowns, or validation, so load a
                       <code>.vars.ini</code>
-                      exists for your template, load it. The button re-syncs the
-                      form by hand, e.g. after clearing variables or loading an
-                      older session.
+                      if one exists. The button forces a re-sync.
                     </dd>
                     <dt>Drag and drop</dt>
                     <dd>
@@ -2106,9 +2103,7 @@
                       Edits apply to the template text, not the final output:
                       <code>{{ VARIABLE }}</code>
                       entries keep working inside an edited section and form
-                      changes still flow through. Add a new variable and its
-                      field appears when you finish editing; remove the last use
-                      of one and its field goes away.
+                      changes still flow through.
                     </dd>
                     <dt>
                       Reset
