@@ -4818,6 +4818,12 @@ category = General
           document.getElementById("varsStatus").innerHTML =
             '<span class="not-loaded">No vars loaded</span>';
           document.getElementById("varsCountBadge").style.display = "none";
+        } else {
+          // Drop merged auto-detected extras; only the vars file remains.
+          variableDefs = structuredClone(varsFromFile);
+          buildForm();
+          setVarsStatus(varsFileName, Object.keys(varsFromFile).length);
+          updateProgressBar();
         }
         showToast("Template cleared");
       }
