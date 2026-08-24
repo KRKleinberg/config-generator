@@ -2047,13 +2047,14 @@
                       </span>
                     </dt>
                     <dd>
-                      Runs automatically when a template loads, building a form
-                      field for every variable it finds. Auto-detected fields
-                      have no hints, dropdowns, or validation. If a
+                      Runs automatically when a template loads and again when
+                      any manual edit is committed, so the form always matches
+                      the template's variables. Auto-detected fields have no
+                      hints, dropdowns, or validation. If a
                       <code>.vars.ini</code>
-                      exists for your template, load it. Click it to re-detect
-                      after editing the template; new variables do not appear on
-                      their own.
+                      exists for your template, load it. The button re-syncs the
+                      form by hand, e.g. after clearing variables or loading an
+                      older session.
                     </dd>
                     <dt>Drag and drop</dt>
                     <dd>
@@ -2105,14 +2106,9 @@
                       Edits apply to the template text, not the final output:
                       <code>{{ VARIABLE }}</code>
                       entries keep working inside an edited section and form
-                      changes still flow through. You can even add a new
-                      variable and click Auto-detect
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-lightning"></use>
-                        </svg>
-                      </span>
-                      to get a field for it.
+                      changes still flow through. Add a new variable and its
+                      field appears when you finish editing; remove the last use
+                      of one and its field goes away.
                     </dd>
                     <dt>
                       Reset
@@ -2390,16 +2386,7 @@
                   </div>
                   <p class="guide-note guide-note-after">
                     <strong>Starter file:</strong>
-                    run
-                    <span class="keep-together">
-                      Auto-detect
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-lightning"></use>
-                        </svg>
-                      </span>
-                    </span>
-                    with no variables file loaded, then click the
+                    load a template with no variables file, then click the
                     <span class="keep-together">
                       download icon
                       <span class="guide-btn">
@@ -2408,7 +2395,7 @@
                         </svg>
                       </span>
                     </span>
-                    beside it to export a boilerplate
+                    beside the lightning to export a boilerplate
                     <code>.vars.ini</code>
                     covering the template's variables. Fill in the hints and
                     validation by hand.
