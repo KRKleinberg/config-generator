@@ -3835,7 +3835,11 @@ category = General
 
           // presence flip can change {% if %} blocks -> full render
           if (!!oldVal !== !!newVal) debouncedRender();
-          else fastUpdatePreview(varName);
+          else {
+            fastUpdatePreview(varName);
+            // regex validity can flip while presence does not
+            updateProgressBar();
+          }
         });
 
         field.appendChild(inputEl);
