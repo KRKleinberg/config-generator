@@ -4383,7 +4383,7 @@ category = General
               r.override = null;
             }
           }
-          render();
+          autoDetectVars({ quiet: true });
         } else {
           const r = recordById(id);
           sectionEditBackups[id] = r ? r.override : null;
@@ -4424,13 +4424,12 @@ category = General
         }
         delete sectionEditBackups[id];
         activeSectionEditors.delete(id);
-        render();
+        autoDetectVars({ quiet: true });
       }
 
       function toggleFullEdit() {
         if (activeSectionEditors.has(FULL_EDIT_KEY)) {
           commitFullModeEdit();
-          render();
         } else {
           fullModeEditBuffer = assembleFullEditableText();
           activeSectionEditors.add(FULL_EDIT_KEY);
@@ -4568,6 +4567,8 @@ category = General
           fullModeEditBuffer,
         );
         fullModeEditBuffer = "";
+        // Committed text may add or drop variables; resync the form.
+        autoDetectVars({ quiet: true });
       }
 
       // Clear all in-progress edit state; every load/reset path routes here.
@@ -4583,7 +4584,7 @@ category = General
           sectionRecords = deriveRecordsFromTemplate(originalTemplateSource);
         }
         resetEditState();
-        render();
+        autoDetectVars({ quiet: true });
       }
 
       let lastCopied = null;
