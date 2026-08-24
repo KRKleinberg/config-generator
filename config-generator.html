@@ -3076,7 +3076,7 @@
         let bannerDelim = null;
         for (const line of (text ?? "").split("\n")) {
           if (bannerDelim) {
-            out.push(line); // inside a banner: verbatim
+            out.push(line);
             if (line.includes(bannerDelim)) bannerDelim = null;
             continue;
           }
@@ -3092,7 +3092,7 @@
             out.push("!"); // bare ! passes through: answers device prompts on paste
             continue;
           }
-          if (/^\s*!/.test(line)) continue; // comment line (has text): drop
+          if (/^\s*!/.test(line)) continue;
           out.push(line.replace(/\s+!.*$/, "").replace(/^\s+/, ""));
         }
         return out.join("\n");
@@ -3121,8 +3121,7 @@
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues);
         // Values are tokenized through the badge/comment strips so user input
-        // (secrets with bangs, badge-shaped text) is never mutilated - only
-        // template-authored annotations strip.
+        // (secrets with bangs, badge-shaped text) is never mutilated.
         const rendered = [];
         result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
           rendered.push(renderExpr(content).text);
@@ -4200,7 +4199,7 @@ category = General
             if (startsInComment) return line; // comment content, not a marker
             const m = line.match(SECTION_RE);
             if (!m) return line;
-            return (m[1].length >= 5 ? "!!!!! " : "!!! ") + m[2].trim(); // >=5 bangs = important (red header)
+            return (m[1].length >= 5 ? "!!!!! " : "!!! ") + m[2].trim();
           })
           .join("\n");
       }
@@ -4228,7 +4227,7 @@ category = General
           return "Not a session object";
         if (session.schemaVersion !== SESSION_SCHEMA_VERSION)
           return `Unsupported session version: ${session.schemaVersion}`;
-        // Validate every consumed key up front — fail loud, load nothing.
+        // Validate every consumed key up front: fail loud, load nothing.
         if (
           !(
             session.templateSource === null ||
@@ -4753,7 +4752,7 @@ category = General
    !!! Section Name                         Copy-able section break
    !!!!! Important Section                  Renders header in red text
    !KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
-                                            any all-caps keyword works — e.g. !STIG: V-1234, !CIS: 1.5.2
+                                            any all-caps keyword works, e.g. !STIG: V-1234, !CIS: 1.5.2
 =============================================================== #}\n\n`;
 
         // Don't stack a second header on save -> load -> save.
