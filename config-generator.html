@@ -4630,20 +4630,20 @@ category = General
             flashBadge(`badge-${index}`);
             if (output.includes("{{"))
               showToast("Warning: copied text has unfilled {{ }} fields");
+            clearLastCopied();
+            lastCopied = {
+              kind: "section",
+              id,
+              text: output,
+              elementId: `section-${index}`,
+            };
+            const currentSection = document.getElementById(`section-${index}`);
+            if (currentSection) currentSection.classList.add("last-copied");
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
             showToast("Failed to copy to clipboard");
           });
-        clearLastCopied();
-        lastCopied = {
-          kind: "section",
-          id,
-          text: output,
-          elementId: `section-${index}`,
-        };
-        const currentSection = document.getElementById(`section-${index}`);
-        if (currentSection) currentSection.classList.add("last-copied");
       }
 
       function copyAndGoDown(id, index) {
