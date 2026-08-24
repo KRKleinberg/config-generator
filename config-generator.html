@@ -3895,7 +3895,8 @@ category = General
 
           fragment.appendChild(field);
           // No blanket "" init: own-"" = user cleared; pre-init blocked late defaults.
-          if (typeof formValues[varName] === "string" && formValues[varName]) {
+          // Own "" is written so a cleared dropdown cannot display its default.
+          if (typeof formValues[varName] === "string") {
             inputEl.value = formValues[varName];
           }
         }
