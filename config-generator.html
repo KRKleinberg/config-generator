@@ -2124,8 +2124,8 @@
                     </dt>
                     <dd>
                       On an edited section: restores that section's template
-                      output. Above the form: clears every input AND reverts all
-                      manual edits at once. Loaded files stay.
+                      output. Above the form: clears every input. Loaded files
+                      and manual edits stay.
                     </dd>
                   </dl>
                 </div>
@@ -4781,7 +4781,7 @@ category = General
           const validMsg = el.parentNode.querySelector(".validation-msg");
           if (validMsg) validMsg.style.display = "none";
         }
-        resetAllEdits();
+        render();
       }
 
       function clearTemplate() {
