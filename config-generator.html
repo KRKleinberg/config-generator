@@ -3059,7 +3059,7 @@
         /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/;
       // Free-form-arg commands (secrets, keys, descriptions): mid-line ! is data, not a comment.
       const FREEFORM_CMD_RE =
-        /^\s*(?:description|remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:community|contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
+        /^\s*(?:description|remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
