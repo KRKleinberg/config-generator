@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.08.24 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.08.26 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -2135,7 +2135,11 @@
                       <code>!KEYWORD:</code>
                       badges and
                       <code>!</code>
-                      comments are stripped from copied and saved text. A bare
+                      comments are stripped from copied and saved text, except
+                      on commands that take free-form text (passwords, keys,
+                      descriptions, remarks), where a mid-line
+                      <code>!</code>
+                      is kept as part of the value. A bare
                       <code>!</code>
                       line passes through to answer device prompts; banner
                       blocks are left untouched.
@@ -2437,7 +2441,7 @@
       const SECTION_RE = /^(!!!+)\s*(.+)$/;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
       // (?<![^\s]) = line start or after whitespace: a glued bang is a value
-      // (P@ss!NOTE:1), never a badge - same rule as inline comments.
+      // (P@ss!NOTE:1), never a badge.
       const BADGE_RE = /(?<![^\s])!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
       // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
       const CLEAN_BADGE_RE = /(?<![^\s])![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
@@ -3053,6 +3057,9 @@
       // then strip leading indent. Glued bangs are values; banners verbatim.
       const BANNER_START_RE =
         /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/;
+      // Free-form-arg commands (secrets, keys, descriptions): mid-line ! is data, not a comment.
+      const FREEFORM_CMD_RE =
+        /^\s*(?:description|remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:community|contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
@@ -3075,6 +3082,10 @@
             continue;
           }
           if (/^\s*!/.test(line)) continue;
+          if (FREEFORM_CMD_RE.test(line)) {
+            out.push(line.replace(/^\s+/, ""));
+            continue;
+          }
           out.push(line.replace(/\s+!.*$/, "").replace(/^\s+/, ""));
         }
         return out.join("\n");
@@ -3230,7 +3241,10 @@
         for (let i = 0; i < lines.length; i++) {
           let line = lines[i];
           let commentHtml = "";
-          const commentMatch = line.match(/(?:^|\s)!/);
+          // Free-form-arg lines only comment at line start; must match cleanOutputLines.
+          const commentMatch = line.match(
+            FREEFORM_CMD_RE.test(line) ? /^\s*!/ : /(?:^|\s)!/,
+          );
           if (commentMatch) {
             const commentIdx = line.indexOf("!", commentMatch.index);
             const rawComment = line.slice(commentIdx);
