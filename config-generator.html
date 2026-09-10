@@ -1256,6 +1256,8 @@
 
       .dialect-menu .dialect-flag {
         margin-left: auto;
+        align-self: center;
+        top: 0;
       }
 
       .dialect-menu button {
@@ -3686,9 +3688,7 @@
         badge.innerHTML = DIALECT.experimental
           ? `${escHtml(DIALECT.short)}<span class="dialect-flag">BETA</span>`
           : escHtml(DIALECT.short);
-        badge.title = DIALECT.experimental
-          ? `${DIALECT.label} — beta: verify output on a device`
-          : "Switch platform";
+        badge.title = "Switch platform";
 
         // Guide examples are written in IOS syntax; swap their comment leaders for the dialect's.
         document.querySelectorAll("[data-syntax]").forEach((el) => {
@@ -3703,7 +3703,7 @@
         menu.innerHTML = Object.entries(DIALECTS)
           .map(
             ([key, d]) =>
-              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="dialect-short">${escHtml(d.short)}</span><span class="dialect-label">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag" title="Beta: verify output on a device">BETA</span>' : ""}</button>`,
+              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="dialect-short">${escHtml(d.short)}</span><span class="dialect-label">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag">BETA</span>' : ""}</button>`,
           )
           .join("");
         placePopup(menu, e.currentTarget.getBoundingClientRect());
