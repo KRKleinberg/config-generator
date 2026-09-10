@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.08.26 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.09.10 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -272,17 +272,26 @@
         margin-top: 1px;
       }
 
-      .vars-count {
+      /* "— N" suffix after an uppercase header; the number carries the color. */
+      .vars-count,
+      .warn-popup-count {
         color: var(--text-dim);
         font-family: var(--mono);
         font-weight: 600;
         font-size: 11px;
         text-transform: none;
+      }
+
+      .vars-count {
         display: none;
       }
 
-      .vars-count .count-number {
+      .count-number {
         color: var(--success);
+      }
+
+      .warn-popup-title .count-number {
+        color: var(--warn);
       }
 
       .vars-count .count-auto {
@@ -608,7 +617,8 @@
       .btn svg,
       .subtle-icon-btn svg,
       .header-icon-btn svg,
-      .split-btn .btn-part svg {
+      .split-btn .btn-part svg,
+      .header-warn svg {
         width: 15px;
         height: 15px;
         stroke: currentColor;
@@ -636,6 +646,18 @@
       .btn-sm {
         padding: 5px 10px;
         font-size: 11px;
+      }
+
+      /* Borderless accent action for file slots; the card supplies the edge. */
+      .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+        color: var(--success);
+      }
+
+      .btn-ghost:hover {
+        background: var(--success-dim);
+        border-color: transparent;
       }
 
       .subtle-icon-btn {
@@ -914,25 +936,97 @@
         gap: 0;
       }
 
+      /* Editor: a transparent textarea over a mirror <pre> that draws the same
+         text highlighted. Both share every metric below so the caret lands on
+         the glyph it appears over. */
+      .editor-wrap {
+        position: relative;
+        display: grid;
+        background: var(--surface-sunken);
+      }
+
+      .editor-mirror,
       .section-edit {
-        width: 100%;
-        background: var(--surface);
-        color: var(--text);
+        margin: 0;
+        border: none;
+        padding: 14px 18px;
         font-family: var(--mono);
         font-size: 12.5px;
         line-height: 1.65;
-        border: none;
-        padding: 14px 18px;
-        resize: none;
-        outline: none;
         tab-size: 2;
         white-space: pre;
+      }
+
+      /* Sits under the textarea; stays hit-testable so elementsFromPoint can
+         find a mark beneath the pointer. */
+      .editor-mirror {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        color: var(--text);
+      }
+
+      /* Caret's line (same tint as a hovered preview line) and the jump pulse. */
+      .editor-cursor-line,
+      .editor-flash {
+        position: absolute;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+      }
+
+      .editor-cursor-line {
+        background: rgba(var(--rgb-slate), 0.05);
+      }
+
+      .section-edit {
+        position: relative;
+        width: 100%;
+        background: transparent;
+        color: transparent;
+        caret-color: var(--text);
+        resize: none;
+        outline: none;
         overflow-x: auto;
         overflow-y: hidden;
       }
 
+      .section-edit::selection {
+        background: rgba(var(--rgb-accent), 0.35);
+      }
+
+      .tpl-jinja {
+        color: var(--success);
+      }
+
+      .mirror-line {
+        display: block;
+        position: relative;
+      }
+
+      /* Same edge marker as a preview line, at the card's edge. */
+      .mirror-line.line-warn::before {
+        content: "";
+        position: absolute;
+        left: -18px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--warn);
+      }
+
+      /* Text-decoration skips whitespace-only spans, so the editor draws its
+         squiggle as a background instead; it shows under a tab or NBSP too. */
+      .editor-mirror .risk-char {
+        text-decoration: none;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3' viewBox='0 0 6 3'%3E%3Cpath d='M0 2.2 Q1.5 0 3 2.2 T6 2.2' fill='none' stroke='%23dd9a1f' stroke-width='1'/%3E%3C/svg%3E")
+          repeat-x bottom / 6px 3px;
+        padding-bottom: 1px;
+      }
+
       .config-section pre {
-        padding: 14px 18px;
+        --pad-x: 18px;
+        padding: 14px var(--pad-x);
         font-family: var(--mono);
         font-size: 12.5px;
         line-height: 1.65;
@@ -943,17 +1037,58 @@
         overflow-x: auto;
       }
 
-      .config-line {
+      /* Widest-line width, bled through the pre padding to the card edge. */
+      .config-lines {
         display: block;
-        min-width: 100%;
         width: max-content;
-        padding: 0 22px 0 4px;
-        margin: 0 -4px;
-        border-radius: var(--radius-sm);
+        min-width: calc(100% + 2 * var(--pad-x));
+        margin: 0 calc(-1 * var(--pad-x));
+      }
+
+      .config-line {
+        position: relative;
+        display: block;
+        padding: 0 22px 0 var(--pad-x);
       }
 
       .config-line:hover {
         background: rgba(var(--rgb-slate), 0.05);
+      }
+
+      /* Edge marker only: scannable as a column, no wash over the text. */
+      .config-line.line-warn::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--warn);
+      }
+
+      .risk-char {
+        text-decoration: underline wavy var(--warn);
+        text-decoration-skip-ink: none;
+        text-underline-offset: 3px;
+        cursor: help;
+      }
+
+      /* Inside a chip the click wins; the popup still opens on hover. */
+      .preview-var .risk-char {
+        cursor: pointer;
+      }
+
+      .esc-char {
+        color: var(--text-hint);
+        cursor: help;
+      }
+
+      .header-warn {
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        color: var(--warn);
+        cursor: help;
       }
 
       .ios-comment {
@@ -1050,18 +1185,164 @@
         opacity: 0.3;
         transform: skewX(25deg);
       }
-      .badge-copy-popup {
+      /* Two-column grid: the gutter sizes to its widest label so bodies align. */
+      .warn-popup {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        max-width: 520px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding: 8px 12px;
+        user-select: text;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text);
+      }
+
+      .warn-popup[hidden] {
+        display: none;
+      }
+
+      .warn-popup-title {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--warn);
+      }
+
+      .warn-row {
+        display: contents;
+      }
+
+      .warn-row > span {
+        padding: 3px 0;
+        border-top: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+
+      /* Outranks the .warn-row > span padding shorthand; 4/2 nudges Consolas
+         digits onto the Segoe baseline without changing the cell height. */
+      .warn-row > .warn-row-ln {
+        padding: 4px 10px 2px 0;
+        min-width: 2.5em;
+        white-space: nowrap;
+        font-family: var(--mono);
+        color: var(--text-hint);
+      }
+
+      .warn-row-full {
+        grid-column: 1 / -1;
+      }
+
+      .warn-group {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0 2px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--success);
+      }
+
+      /* The name truncates; the rule keeps its minimum. */
+      .warn-group > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .warn-group::after {
+        content: "";
+        flex: 1 0 24px;
+        height: 1px;
+        background: var(--border);
+      }
+
+      .warn-group:first-of-type {
+        margin-top: 2px;
+      }
+
+      .warn-group + .warn-row > span {
+        border-top: 0;
+      }
+
+      .warn-row-link > span {
+        cursor: pointer;
+      }
+
+      .warn-row-link:hover > span {
+        background: rgba(var(--rgb-slate), 0.05);
+      }
+
+      /* Inset shadow overlays the line's own background instead of replacing it. */
+      @keyframes jump-flash {
+        0%,
+        40% {
+          box-shadow: inset 0 0 0 100vmax rgba(var(--rgb-warn), 0.35);
+        }
+        100% {
+          box-shadow: inset 0 0 0 100vmax transparent;
+        }
+      }
+
+      .flash-jump {
+        animation: jump-flash 1.4s ease-out;
+      }
+
+      /* Token colors follow the preview palette the way an INI file reads in an
+         editor: key = bad (red), name = secure (orange), value = command (indigo), char = plain. */
+      .warn-row code {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        padding: 0 4px;
+        border-radius: var(--radius-sm);
+        font-family: var(--mono);
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      .warn-key {
+        color: var(--syn-bad);
+      }
+
+      .warn-val {
+        color: var(--syn-command);
+      }
+
+      .warn-char {
+        color: var(--text);
+      }
+
+      .warn-name {
+        color: var(--syn-secure);
+      }
+
+      .badge-copy-popup,
+      .warn-popup {
         position: fixed;
         z-index: 100;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 6px 20px rgba(var(--rgb-black), 0.55);
+      }
+
+      .badge-copy-popup {
         display: flex;
         align-items: center;
         gap: 8px;
         max-width: 440px;
         padding: 6px 8px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: 0 6px 20px rgba(var(--rgb-black), 0.55);
       }
       .badge-copy-popup[hidden] {
         display: none;
@@ -1106,6 +1387,11 @@
           0 100%,
           100% 0;
         animation: marching-ants 0.6s linear infinite;
+      }
+
+      /* An open editor is a focused input: accent border, no copied-ants. */
+      .config-section:has(.section-edit) {
+        border-color: var(--border-focus);
       }
 
       .config-section:has(.section-edit)::after {
@@ -1256,7 +1542,8 @@
         margin-bottom: 12px;
       }
 
-      .sop-content code {
+      .sop-content code,
+      .empty-state code {
         background: var(--surface-alt);
         border: 1px solid var(--border);
         padding: 2px 6px;
@@ -1561,9 +1848,40 @@
         transform: translateY(0);
       }
 
+      .toast.warn {
+        border-color: var(--warn);
+        color: var(--warn);
+      }
+
+      .toast.error {
+        border-color: var(--error);
+        color: var(--error);
+      }
+
+      .empty-title {
+        color: var(--text-dim);
+        font-weight: 600;
+      }
+
+      .empty-hint {
+        font-size: 12px;
+      }
+
+      .empty-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .empty-state code {
+        font-size: 13px;
+      }
+
       .empty-state {
         flex: 1;
         display: flex;
+        flex-direction: column;
+        gap: 14px;
         align-items: center;
         justify-content: center;
         color: var(--text-hint);
@@ -1573,62 +1891,6 @@
         padding: 40px;
         text-align: center;
         line-height: 1.6;
-      }
-
-      .tooltip-trigger {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-      }
-
-      .tooltip-trigger::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: 100%;
-        right: -4px;
-        margin-bottom: 8px;
-        background: var(--border);
-        color: var(--text);
-        padding: 8px 12px;
-        border-radius: var(--radius);
-        font-size: 12px;
-        font-weight: 600;
-        font-family: var(--sans);
-        white-space: pre-wrap;
-        min-width: max-content;
-        text-align: left;
-        z-index: 100;
-        box-shadow: 0 6px 16px rgba(var(--rgb-black), 0.55);
-        opacity: 0;
-        visibility: hidden;
-        transition:
-          opacity 0.1s ease,
-          visibility 0.1s ease;
-        pointer-events: none;
-      }
-
-      .tooltip-trigger::before {
-        content: "";
-        position: absolute;
-        bottom: 100%;
-        right: 2px;
-        margin-bottom: 4px;
-        border-width: 5px;
-        border-style: solid;
-        border-color: var(--border) transparent transparent transparent;
-        z-index: 101;
-        opacity: 0;
-        visibility: hidden;
-        transition:
-          opacity 0.1s ease,
-          visibility 0.1s ease;
-        pointer-events: none;
-      }
-
-      .tooltip-trigger:hover::after,
-      .tooltip-trigger:hover::before {
-        opacity: 1;
-        visibility: visible;
       }
 
       .hidden {
@@ -1778,8 +2040,7 @@
           Template
           <span
             id="templateErrorBadge"
-            class="tooltip-trigger"
-            data-tooltip="Contains formatting errors"
+            data-warns=""
             style="
               display: none;
               color: var(--warn);
@@ -1823,7 +2084,7 @@
               </svg>
             </button>
             <button
-              class="btn btn-sm"
+              class="btn btn-sm btn-ghost"
               onclick="openTextFile('templateInput', processTemplateFile)"
             >
               <svg>
@@ -1844,8 +2105,7 @@
           <span id="varsCountBadge" class="vars-count"></span>
           <span
             id="varsErrorBadge"
-            class="tooltip-trigger"
-            data-tooltip="Contains formatting errors"
+            data-warns=""
             style="
               display: none;
               color: var(--warn);
@@ -1889,7 +2149,7 @@
               </svg>
             </button>
             <button
-              class="btn btn-sm"
+              class="btn btn-sm btn-ghost"
               onclick="openTextFile('varsInput', processVarsFile)"
             >
               <svg>
@@ -1952,8 +2212,24 @@
           </div>
         </div>
         <div id="previewContainer">
-          <div class="empty-state">Load a template to get started.</div>
+          <div class="empty-state">
+            <div class="empty-title">Load a template to get started.</div>
+            <div class="empty-actions">
+              <button class="btn" onclick="newTemplate()">
+                <svg><use href="#icon-edit"></use></svg>
+                Create Template
+              </button>
+              <button
+                class="btn btn-primary"
+                onclick="openTextFile('templateInput', processTemplateFile)"
+              >
+                <svg><use href="#icon-load"></use></svg>
+                Load Template
+              </button>
+            </div>
+          </div>
         </div>
+        <div id="warnPopup" class="warn-popup" hidden></div>
         <div id="badgeCopyPopup" class="badge-copy-popup" hidden>
           <span class="badge-copy-text"></span>
         </div>
@@ -2103,7 +2379,8 @@
                       Edits apply to the template text, not the final output:
                       <code>{{ VARIABLE }}</code>
                       entries keep working inside an edited section and form
-                      changes still flow through.
+                      changes still flow through. Switching between Sections
+                      and Full commits any open editor.
                     </dd>
                     <dt>
                       Reset
@@ -2309,7 +2586,8 @@
                     <code>key = value</code>
                     lines below it. Unrecognized keys are ignored with a
                     warning. Variable names may contain letters, digits,
-                    underscores, and hyphens. Spaces are not allowed.
+                    underscores, dots, and hyphens, and must start with a
+                    letter, digit, or underscore. Spaces are not allowed.
                   </p>
                   <div class="guide-table-wrap">
                     <table class="guide-table">
@@ -2422,6 +2700,14 @@
     </div>
     <script>
       "use strict";
+      // ---- Site configuration ----
+      const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
+      const LINT_TEMPLATE = true; // template structure badge
+      const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
+      const MAX_DESCRIPTION_LEN = 240; // IOS-XE limit; confirm with `description ?`
+      const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
+      const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
+      // ----------------------------
       let variableDefs = {};
       let templateSource = null;
       let originalTemplateSource = null;
@@ -2445,7 +2731,41 @@
       const BADGE_RE = /(?<![^\s])!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
       // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
       const CLEAN_BADGE_RE = /(?<![^\s])![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
+      // Written at the top of every saved or new template. Indented so older
+      // tool copies don't parse the "!!!" examples as markers.
+      const TEMPLATE_HEADER = `{# ===============================================================
+   Switch Configuration Template
+   JINJA2 SYNTAX (same as Ansible):
+   {{  VAR  }}                              Variable substitution
+   {{  VAR | default('fallback')  }}        Default if empty
+   {{  VAR | upper  }}                      Uppercase
+   {{  VAR | lower  }}                      Lowercase
+   {{  VAR | trim  }}                       Remove leading/trailing spaces
+   {{  [V1, V2, V3] | join(',')  }}         Join non-empty values
+   {% if VAR %}...{% endif %}               Conditional block
+   {% if VAR %}...{% else %}...{% endif %}  With else branch
+   Comment blocks use opening {-# and closing #-} (without dashes)
+
+   TOOL EXTENSIONS:
+   !!! Section Name                         Copy-able section break
+   !!!!! Important Section                  Renders header in red text
+   !KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
+                                            any all-caps keyword works, e.g. !STIG: V-1234, !CIS: 1.5.2
+=============================================================== #}\n\n`;
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
+      // Recognized .vars.ini keys; shared by the parser and warn-row coloring.
+      const INI_KEYS = new Set([
+        "description",
+        "placeholder",
+        "default",
+        "type",
+        "choices",
+        "regex",
+        "error",
+        "category",
+        "required",
+        "group",
+      ]);
       const INNER_IF_ELSE_RE =
         /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
       const INNER_IF_RE =
@@ -2726,19 +3046,9 @@
         },
       ];
       function parseINI(text, errorList = []) {
-        const KNOWN_KEYS = new Set([
-          "description",
-          "placeholder",
-          "default",
-          "type",
-          "choices",
-          "regex",
-          "error",
-          "category",
-          "required",
-          "group",
-        ]);
         const result = {};
+        const groupLines = {};
+        const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = text.split("\n");
         let currentItem = null;
         for (let i = 0; i < lines.length; i++) {
@@ -2766,7 +3076,11 @@
             const headerMatch = line.match(/^\s*\[\s*(.+?)\s*\]\s*$/);
             if (headerMatch) {
               if (currentItem) commitINIItem(result, currentItem, errorList);
-              currentItem = { name: headerMatch[1] };
+              currentItem = { name: headerMatch[1], line: i + 1, keyLines: {} };
+              if (!isValidVarName(headerMatch[1]))
+                lint(
+                  `Line ${i + 1}: Invalid variable name '${headerMatch[1]}' (only letters, digits, \`_\`, \`.\`, \`-\`)`,
+                );
               continue;
             }
             const kvMatch = line.match(/^\s*(\w+)\s*=\s*(.*)$/);
@@ -2778,11 +3092,25 @@
                 );
                 continue;
               }
-              if (!KNOWN_KEYS.has(key)) {
-                errorList.push(`Line ${i + 1}: Unrecognized key '${key}'`);
+              if (!INI_KEYS.has(key)) {
+                errorList.push(`Line ${i + 1}: Unrecognized key \`${key}\``);
                 continue;
               }
-              currentItem[key] = stripINIQuotes(kvMatch[2].trim());
+              if (key in currentItem.keyLines)
+                lint(
+                  `Line ${i + 1}: Duplicate key \`${key}\` for '${currentItem.name}'`,
+                );
+              currentItem.keyLines[key] = i + 1;
+              const rawVal = kvMatch[2].trim();
+              if (
+                /^["']/.test(rawVal) &&
+                (rawVal.length === 1 || rawVal.at(-1) !== rawVal[0])
+              )
+                lint(
+                  `Line ${i + 1}: Unbalanced quotes in \`${key}\` for '${currentItem.name}'`,
+                );
+              currentItem[key] = stripINIQuotes(rawVal);
+              if (key === "group") groupLines[currentItem[key]] ??= i + 1;
               continue;
             }
             errorList.push(`Line ${i + 1}: Unrecognized syntax`);
@@ -2792,18 +3120,48 @@
           }
         }
         if (currentItem) commitINIItem(result, currentItem, errorList);
+        const groupCounts = {};
+        for (const def of Object.values(result))
+          if (def.group)
+            groupCounts[def.group] = (groupCounts[def.group] || 0) + 1;
+        for (const [g, n] of Object.entries(groupCounts))
+          if (n < 2)
+            lint(`Line ${groupLines[g]}: Group '${g}' has only one member`);
+        const lineOf = (m) => Number(m.match(/^Line (\d+):/)?.[1] ?? Infinity);
+        errorList.sort((a, b) => lineOf(a) - lineOf(b));
         return result;
       }
       function commitINIItem(result, item, errorList = []) {
+        const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
+        const lines = item.keyLines || {};
+        const at = (key) => {
+          const line = lines[key] ?? item.line;
+          return line ? `Line ${line}: ` : "";
+        };
         if (result[item.name])
-          errorList.push(`Duplicate variable name: '${item.name}'`);
+          errorList.push(`${at()}Duplicate variable name: '${item.name}'`);
+        if (item.type && item.type !== "int")
+          lint(
+            `${at("type")}Unknown type \`${item.type}\` for '${item.name}' (only \`int\` is supported)`,
+          );
+        if (
+          item.required !== undefined &&
+          !/^(true|false)$/i.test(String(item.required).trim())
+        )
+          lint(
+            `${at("required")}\`required\` for '${item.name}' must be \`true\` or \`false\``,
+          );
+        if (item.error && !item.regex)
+          lint(
+            `${at("error")}\`error\` for '${item.name}' has no effect without \`regex\``,
+          );
         let compiledRegex = null;
         if (item.regex) {
           try {
             compiledRegex = new RegExp(item.regex);
           } catch (e) {
             errorList.push(
-              `Invalid regex pattern for '${item.name}': ${item.regex}`,
+              `${at("regex")}Invalid \`regex\` for '${item.name}': \`${item.regex}\``,
             );
           }
         }
@@ -2812,9 +3170,36 @@
           parsedChoices = parseINIInlineList(item.choices);
           if (!parsedChoices) {
             errorList.push(
-              `Invalid choices format for '${item.name}'. Must be inline: [opt1, opt2]`,
+              `${at("choices")}Invalid \`choices\` for '${item.name}'; must be inline: \`[opt1, opt2]\``,
             );
           }
+        }
+        if (parsedChoices) {
+          if (parsedChoices.length < 2)
+            lint(
+              `${at("choices")}\`choices\` for '${item.name}' needs at least two options`,
+            );
+          if (new Set(parsedChoices).size !== parsedChoices.length)
+            lint(
+              `${at("choices")}\`choices\` for '${item.name}' has duplicate options`,
+            );
+          if (item.regex || item.type)
+            lint(
+              `${at("choices")}\`regex\` and \`type\` are ignored for '${item.name}' because it has \`choices\``,
+            );
+          if (item.default && !parsedChoices.includes(item.default))
+            lint(
+              `${at("default")}\`default\` for '${item.name}' is not one of its \`choices\``,
+            );
+        } else if (item.default) {
+          if (item.type === "int" && !/^\d+$/.test(item.default))
+            lint(
+              `${at("default")}\`default\` for '${item.name}' is not an integer`,
+            );
+          if (compiledRegex && !compiledRegex.test(item.default))
+            lint(
+              `${at("default")}\`default\` for '${item.name}' fails its own \`regex\``,
+            );
         }
         result[item.name] = {
           category: item.category || "",
@@ -3049,7 +3434,7 @@
         }
         if (iterations >= MAX_ITERATIONS) {
           console.warn("Template conditional parser hit iteration limit.");
-          showToast("Malformed {% if %} tags in template");
+          showToast("Malformed {% if %} tags in template", "error");
         }
         return result;
       }
@@ -3097,6 +3482,128 @@
           .join("\n")
           .trim();
       }
+      // Paste hazards. Ctrl-V (0x16) escapes the editor keys ? and tab; encoding hazards have no escape.
+      const RISK_CHAR_RE = /(?<!\x16)[\t?]|[\u0080-\u{10FFFF}]/gu;
+      const MARK_CHAR_RE = /\x16|(?<!\x16)[\t?]|[\u0080-\u{10FFFF}]/gu;
+      // Jinja syntax that survived rendering: a full tag, or a stray opener/closer.
+      const SYNTAX_RE = /\{[{%#](?:[^{}%#]*[}%#]\})?|[}%#]\}/g;
+      const SYNTAX_MSG = "Unrendered template syntax; the device will reject it";
+      function riskCharName(ch) {
+        if (ch === "\t") return "Tab (terminal completion, unless escaped with Ctrl-V)";
+        if (ch === "?") return "`?` (CLI help character, unless escaped with Ctrl-V)";
+        if (ch === "\u00a0") return "Non-breaking space";
+        return `Non-ASCII character \`${ch}\``;
+      }
+      // Part of a line that reaches the device; must match cleanOutputLines.
+      function commandPart(line) {
+        if (/^\s*!/.test(line)) return "";
+        if (FREEFORM_CMD_RE.test(line)) return line;
+        return line.replace(/\s+!.*$/, "");
+      }
+      // Banner-aware line walk shared by lint and preview marking.
+      function walkConfigLines(text) {
+        const parts = [];
+        let bannerDelim = null;
+        let bannerLine = -1;
+        const lines = (text ?? "").split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (bannerDelim) {
+            parts.push({ i, line, cmd: line, banner: true });
+            if (line.includes(bannerDelim)) bannerDelim = null;
+            continue;
+          }
+          const m = line.match(BANNER_START_RE);
+          if (m) {
+            const afterFirst = line.slice(line.indexOf(m[1]) + 1);
+            if (!afterFirst.includes(m[1])) {
+              bannerDelim = m[1];
+              bannerLine = i;
+            }
+            parts.push({ i, line, cmd: line, banner: true });
+            continue;
+          }
+          parts.push({ i, line, cmd: commandPart(line), banner: false });
+        }
+        const unclosed = bannerDelim
+          ? { delim: bannerDelim, line: bannerLine }
+          : null;
+        return { parts, unclosed };
+      }
+      // Index into tokenized `cmd` where the restored text reaches `at`; a hit
+      // inside a value token snaps to the token's start.
+      function tokenizedIndex(cmd, restore, at) {
+        let pos = 0;
+        let seen = 0;
+        for (const piece of cmd.split(/(\x00(?:EX|RV)\d+\x00)/)) {
+          const len = restore(piece).length;
+          if (seen + len >= at)
+            return piece.startsWith("\x00") ? pos : pos + (at - seen);
+          seen += len;
+          pos += piece.length;
+        }
+        return -1;
+      }
+      // `text` may hold value tokens so a value's ! never reads as a comment
+      // boundary; `restore` fills them in for the char scan and length check.
+      // Issues carry a [start, end] range on the tokenized line where one exists.
+      function lintConfigLines(text, restore = (s) => s) {
+        const issues = [];
+        if (!LINT_PASTE_WARNINGS) return issues;
+        const add = (line, message, range = null) =>
+          issues.push({ line, message, range });
+        const { parts, unclosed } = walkConfigLines(text);
+        for (const { i, cmd, banner } of parts) {
+          const cmdText = restore(cmd);
+          if (cmdText.trim() === "") continue;
+          const seen = new Set();
+          for (const m of cmdText.matchAll(RISK_CHAR_RE)) {
+            const name = riskCharName(m[0]);
+            if (!seen.has(name)) add(i, `Contains ${name}`);
+            seen.add(name);
+          }
+          for (const m of cmd.matchAll(SYNTAX_RE))
+            add(i, SYNTAX_MSG, [m.index, m.index + m[0].length]);
+          if (banner) continue;
+          const d = cmdText.match(/^\s*description\s+(?=(.*)$)/i);
+          if (d && d[1].length > MAX_DESCRIPTION_LEN)
+            add(i, `Description exceeds ${MAX_DESCRIPTION_LEN} characters`, [
+              tokenizedIndex(cmd, restore, d[0].length + MAX_DESCRIPTION_LEN),
+              cmd.length,
+            ]);
+        }
+        if (unclosed) {
+          const line = parts[unclosed.line].cmd;
+          const at = line.match(BANNER_START_RE)[0].length - 1;
+          add(
+            unclosed.line,
+            `Banner delimiter \`${unclosed.delim}\` never closes; every line after it is banner text`,
+            [at, at + 1],
+          );
+        }
+        return issues;
+      }
+      // Values that can add or clear a paste warning bypass the fast path.
+      function lintSensitive(value) {
+        if (!LINT_PASTE_WARNINGS) return false;
+        return value.search(MARK_CHAR_RE) !== -1 || value.length > 80;
+      }
+      function warnAttrs(kind, msgs) {
+        return ` data-warns="${escHtml(msgs.join("\n"))}" data-warn-kind="${escHtml(kind)}"`;
+      }
+      // Glyph-drawn chars carry data-ch so a selection copy restores the real byte.
+      function markRiskChars(escapedHtml) {
+        return escapedHtml.replace(MARK_CHAR_RE, (ch) => {
+          if (ch === "\x16")
+            return `<span class="esc-char" data-ch="\x16" title="Ctrl-V escape: the next character pastes literally">\u2416</span>`;
+          const shown =
+            ch === "\t" ? "\u2192" : ch === "\u00a0" ? "\u2423" : ch;
+          return `<span class="risk-char" data-ch="${escHtml(ch)}"${warnAttrs("paste warnings", [riskCharName(ch)])}>${escHtml(shown)}</span>`;
+        });
+      }
+      function markRange(escapedHtml, message) {
+        return `<span class="risk-char"${warnAttrs("paste warnings", [message])}>${markRiskChars(escapedHtml)}</span>`;
+      }
       // Single chokepoint for {{ }} evaluation; all render paths go here so they can't drift.
       function renderExpr(content) {
         const trimmed = content.trim();
@@ -3110,20 +3617,45 @@
           vars,
         };
       }
-      function jinjaRaw(template) {
+      function jinjaRawParts(template) {
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues);
         // Values are tokenized through the badge/comment strips so user input
         // (secrets with bangs, badge-shaped text) is never mutilated.
         const rendered = [];
-        result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
-          rendered.push(renderExpr(content).text);
+        result = result.replace(/\{\{(.+?)\}\}/g, (match, content) => {
+          const r = renderExpr(content);
+          if (!r.filled && !r.baseVar) return match;
+          rendered.push(r.text);
           return `\x00RV${rendered.length - 1}\x00`;
         });
         result = result.replace(CLEAN_BADGE_RE, "");
+        const restore = (s) =>
+          s.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
+        const lintText = cleanFormatting(result);
         result = cleanOutputLines(result);
-        result = result.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
-        return cleanFormatting(result);
+        return { output: cleanFormatting(restore(result)), lintText, restore };
+      }
+      function jinjaRaw(template) {
+        return jinjaRawParts(template).output;
+      }
+      function lintBody(template) {
+        const { lintText, restore } = jinjaRawParts(template);
+        return lintConfigLines(lintText, restore);
+      }
+      function headerWarnHtml(issues) {
+        if (!issues.length) return "";
+        const msgs = issues.map(({ line, message }) => `Line ${line + 1}: ${message}`);
+        return `<span class="header-warn"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
+      }
+      function copyToastMessage(base, output, issues) {
+        const warns = [];
+        if (output.includes("{{")) warns.push("unfilled {{ }} fields");
+        if (issues.length)
+          warns.push(
+            `${issues.length} paste warning${issues.length === 1 ? "" : "s"}`,
+          );
+        return warns.length ? `${base} — warning: ${warns.join(", ")}` : null;
       }
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = template.replace(JINJA_COMMENT_RE, "");
@@ -3132,8 +3664,9 @@
         });
         // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
         const exprTokens = [];
-        result = result.replace(/\{\{(.+?)\}\}/g, (_, content) => {
+        result = result.replace(/\{\{(.+?)\}\}/g, (match, content) => {
           const { text, filled, baseVar, vars } = renderExpr(content);
+          if (!filled && !baseVar) return match;
           const token = `\x00EX${exprTokens.length}\x00`;
           exprTokens.push({
             displayText: text,
@@ -3170,21 +3703,64 @@
             return token;
           },
         );
-        result = escHtml(cleanFormatting(result));
+        // Trim while tokens are in place so lint and rows share line indexes.
+        result = cleanFormatting(result);
+        const issues = lintConfigLines(
+          result.replace(/\x00BG\d+\x00/g, "").replace(/[^\S\n]+$/gm, ""),
+          (s) =>
+            s.replace(/\x00EX(\d+)\x00/g, (_, i) => exprTokens[i].displayText),
+        );
+        // Marks are tokenized past highlighting: lint ranges, then risky chars between them.
+        const marks = [];
+        const mark = (text, message) => {
+          marks.push({ text, message });
+          return `\x00RK${marks.length - 1}\x00`;
+        };
+        const markChars = (s) => s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
+        if (LINT_PASTE_WARNINGS)
+          result = walkConfigLines(result)
+            .parts.map(({ i, line, cmd }) => {
+              for (const m of cmd.matchAll(/\x00EX(\d+)\x00/g))
+                exprTokens[m[1]].risky = true;
+              const ranges = issues
+                .filter((x) => x.line === i && x.range && x.range[0] >= 0)
+                .sort((a, b) => a.range[0] - b.range[0]);
+              let out = "";
+              let pos = 0;
+              for (const { range: [s, e], message } of ranges) {
+                if (s < pos) continue;
+                out += markChars(cmd.slice(pos, s)) + mark(cmd.slice(s, e), message);
+                pos = e;
+              }
+              return out + markChars(cmd.slice(pos)) + line.slice(cmd.length);
+            })
+            .join("\n");
+        result = escHtml(result);
         if (keywordGroups && keywordGroups.length) {
           result = applyKeywordHighlighting(result, keywordGroups);
         }
+        for (let i = 0; i < marks.length; i++) {
+          const { text, message } = marks[i];
+          result = result.replace(`\x00RK${i}\x00`, () =>
+            message
+              ? markRange(escHtml(text), message)
+              : markRiskChars(escHtml(text)),
+          );
+        }
         for (let i = 0; i < exprTokens.length; i++) {
-          const { displayText, filled, baseVar, vars, rawContent } =
+          const { displayText, filled, baseVar, vars, rawContent, risky } =
             exprTokens[i];
           const cls = filled ? "var-filled" : "var-unfilled";
           const safeVar = escJSString(baseVar);
           const safeVars = escJSString((vars || []).join(" "));
           const safeRaw = escHtml(rawContent);
-          result = result.replace(`\x00EX${i}\x00`, () =>
-            baseVar
-              ? `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${escHtml(displayText)}</span>`
-              : `<span class="${cls}" title="Invalid variable expression — check the template">${escHtml(displayText)}</span>`,
+          const text = risky
+            ? markRiskChars(escHtml(displayText))
+            : escHtml(displayText);
+          result = result.replace(
+            `\x00EX${i}\x00`,
+            () =>
+              `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${text}</span>`,
           );
         }
         for (let i = 0; i < badgeTokens.length; i++) {
@@ -3201,13 +3777,20 @@
             () => `<span class="${cls}">${pill}</span>`,
           );
         }
-        return cleanFormatting(result)
+        const warnByLine = {};
+        for (const { line, message } of issues)
+          (warnByLine[line] ??= []).push(message);
+        const rows = result
           .split("\n")
-          .map(
-            (line) =>
-              `<span class="config-line">${line === "" ? " " : line}</span>`,
-          )
+          .map((line, i) => {
+            const w = warnByLine[i];
+            const attrs = w
+              ? ` class="config-line line-warn"${warnAttrs("paste warnings", w)}`
+              : ` class="config-line"`;
+            return `<span${attrs}>${line === "" ? " " : line}</span>`;
+          })
           .join("");
+        return { html: `<span class="config-lines">${rows}</span>`, issues };
       }
       // Single pass: per-word replaces re-matched their own output ("access-list" -> "access" + "-list").
       function getKeywordMap(keywordGroups) {
@@ -3299,74 +3882,84 @@
         e.target.value = "";
       }
       function scanTemplateForErrors(text) {
+        const msgs = [];
         const cleanText = text.replace(JINJA_COMMENT_RE, "");
         // A {# or #} surviving the strip is unpaired (e.g. spans a section).
-        if (cleanText.includes("{#") || cleanText.includes("#}")) return true;
-        const opensVars = (cleanText.match(/\{\{/g) || []).length;
-        const closesVars = (cleanText.match(/\}\}/g) || []).length;
-        const opensLogic = (cleanText.match(/\{%/g) || []).length;
-        const closesLogic = (cleanText.match(/%\}/g) || []).length;
-        if (opensVars !== closesVars || opensLogic !== closesLogic) return true;
-        const unsupportedTagMatch = cleanText.match(
-          /\{%\s*(?!if\b|else\b|endif\b)[\w-]+\b/i,
+        if (cleanText.includes("{#") || cleanText.includes("#}"))
+          msgs.push("Unpaired `{# #}` comment");
+        const count = (re) => (cleanText.match(re) || []).length;
+        if (count(/\{\{/g) !== count(/\}\}/g)) msgs.push("Unbalanced `{{ }}`");
+        if (count(/\{%/g) !== count(/%\}/g)) msgs.push("Unbalanced `{% %}`");
+        const unsupportedTag = cleanText.match(
+          /\{%\s*(?!if\b|else\b|endif\b)([\w-]+)\b/i,
         );
-        if (unsupportedTagMatch) return true;
+        if (unsupportedTag) msgs.push(`Unsupported tag \`{% ${unsupportedTag[1]} %}\``);
         // {{ }} referencing no valid variable: auto-detect skips it, so flag it.
         const exprScanRE = /\{\{(.+?)\}\}/g;
         let exprMatch;
         while ((exprMatch = exprScanRE.exec(cleanText)) !== null) {
           const { baseExpr } = parseExprParts(exprMatch[1].trim());
+          let valid;
           if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
             const members = baseExpr
               .slice(1, -1)
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean);
-            if (!members.length || !members.every(isValidVarName)) return true;
-          } else if (!isValidVarName(baseExpr)) {
-            return true;
+            valid = members.length > 0 && members.every(isValidVarName);
+          } else {
+            valid = isValidVarName(baseExpr);
           }
+          if (!valid)
+            msgs.push(`Invalid variable expression \`{{${exprMatch[1]}}}\``);
         }
         // A {{ }} split across lines matches no expression regex; renders literally.
         if (/\{\{|\}\}/.test(cleanText.replace(/\{\{(.+?)\}\}/g, "")))
-          return true;
+          msgs.push("`{{ }}` split across lines");
         // Only bare-var conditions are evaluatable; anything else renders literally.
         const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/gi;
         let condMatch;
         while ((condMatch = ifCondRE.exec(cleanText)) !== null) {
-          if (!/^\s+[\w.-]+\s*$/.test(condMatch[1])) return true;
+          if (!/^\s+[\w.-]+\s*$/.test(condMatch[1]))
+            msgs.push(`Unsupported condition \`{% if${condMatch[1]}%}\``);
         }
-        let depth = 0;
-        let elseFlags = [];
-        const logicRegex = /\{%\s*(if|else|endif)\b/gi;
+        // Open ifs as written, so the message names the one left unpaired.
+        const open = [];
+        const logicRegex = /\{%\s*(if|else|endif)\b[\s\S]*?%\}/gi;
         let match;
         while ((match = logicRegex.exec(cleanText)) !== null) {
           const keyword = match[1].toLowerCase();
           if (keyword === "if") {
-            depth++;
-            elseFlags[depth] = false;
+            open.push({ tag: match[0], hasElse: false });
           } else if (keyword === "else") {
-            if (depth === 0) return true;
-            if (elseFlags[depth]) return true;
-            elseFlags[depth] = true;
-          } else if (keyword === "endif") {
-            depth--;
-            if (depth < 0) return true;
+            const top = open[open.length - 1];
+            if (!top || top.hasElse)
+              msgs.push(`\`${match[0]}\` without a matching \`{% if %}\``);
+            else top.hasElse = true;
+          } else if (!open.pop()) {
+            msgs.push(`\`${match[0]}\` without a matching \`{% if %}\``);
           }
         }
-        return depth !== 0;
+        for (const { tag } of open)
+          msgs.push(`\`${tag}\` without a matching \`{% endif %}\``);
+        return [...new Set(msgs)];
       }
       function updateTemplateErrorBadge() {
         if (templateSource === null) return;
-        // Per-body scan too: {% if %} spanning !!! breaks section copy (limitation).
-        const hasErrors =
-          scanTemplateForErrors(assembleFullEditableText()) ||
-          sectionRecords.some((r) =>
-            scanTemplateForErrors(recordEffectiveBody(r)),
-          );
-        document.getElementById("templateErrorBadge").style.display = hasErrors
-          ? "inline-flex"
-          : "none";
+        const msgs = new Set();
+        if (LINT_TEMPLATE) {
+          // Per-body scan first: {% if %} spanning !!! breaks section copy (limitation).
+          const seen = new Set();
+          for (const r of sectionRecords)
+            for (const m of scanTemplateForErrors(recordEffectiveBody(r))) {
+              seen.add(m);
+              msgs.add(r.name === null ? m : `[${r.name}] ${m}`);
+            }
+          // Whole-template scan adds only what no single section already reports.
+          for (const m of scanTemplateForErrors(assembleFullEditableText()))
+            if (!seen.has(m)) msgs.add(m);
+        }
+        setWarnBadge("templateErrorBadge", "syntax issues", [...msgs]);
       }
       function toInternalEOL(s) {
         return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -3376,9 +3969,23 @@
       }
       function readFileAsText(file, errorMsg, onLoad) {
         const reader = new FileReader();
-        reader.onerror = () => showToast(errorMsg);
+        reader.onerror = () => showToast(errorMsg, "error");
         reader.onload = onLoad;
         reader.readAsText(file);
+      }
+      const emptyStateHtml = document.getElementById("previewContainer").innerHTML;
+      // A fresh template: the standard header, opened in the full editor.
+      function newTemplate() {
+        templateSource = TEMPLATE_HEADER;
+        originalTemplateSource = templateSource;
+        templateFileName = "";
+        sectionRecords = deriveRecordsFromTemplate(templateSource);
+        resetEditState();
+        setTemplateStatus(templateFileName);
+        applyAutoViewMode();
+        render();
+        renderAutoDetectButtons();
+        toggleFullEdit();
       }
       function templateBasename() {
         const dot = templateFileName.lastIndexOf(".");
@@ -3387,10 +3994,12 @@
       function outputStem() {
         return templateBasename().replace(/\.template$/i, "");
       }
+      // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
         const safe = escHtml(name);
-        document.getElementById("templateStatus").innerHTML =
-          `<span class="filename" title="${safe}">${safe}</span>`;
+        document.getElementById("templateStatus").innerHTML = name
+          ? `<span class="filename" title="${safe}">${safe}</span>`
+          : '<span class="not-loaded">Unsaved template</span>';
         document.getElementById("templateLoader").classList.add("loaded");
       }
       function applyAutoViewMode() {
@@ -3436,15 +4045,21 @@
             resetEditState();
             setTemplateStatus(fullName);
             applyAutoViewMode();
-            if (scanTemplateForErrors(templateSource))
-              showToast("Template file contains formatting errors");
+            const syntaxIssues = LINT_TEMPLATE
+              ? scanTemplateForErrors(templateSource).length
+              : 0;
+            if (syntaxIssues)
+              showToast(
+                `Template file has ${syntaxIssues} syntax issue${syntaxIssues === 1 ? "" : "s"}`,
+                "warn",
+              );
             render();
             renderAutoDetectButtons();
             // Auto-generate the form on load; lightning re-detects after edits.
             autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Template Parse Error:", err);
-            showToast("Error rendering template");
+            showToast("Error rendering template", "error");
           }
         });
       }
@@ -3461,17 +4076,16 @@
             varsFromFile = structuredClone(variableDefs);
             varsFileName = file.name;
             const count = Object.keys(variableDefs).length;
-            const vBadge = document.getElementById("varsErrorBadge");
             if (count === 0) {
-              showToast("No variables found — check INI format");
+              showToast("No variables found — check INI format", "warn");
               return;
             }
-            if (iniErrors.length > 0) {
-              vBadge.style.display = "inline-flex";
-              showToast("Vars file contains formatting errors");
-            } else {
-              vBadge.style.display = "none";
-            }
+            setWarnBadge("varsErrorBadge", "variable definition issues", iniErrors);
+            if (iniErrors.length)
+              showToast(
+                `Vars file has ${iniErrors.length} definition issue${iniErrors.length === 1 ? "" : "s"}`,
+                "warn",
+              );
             setVarsStatus(file.name, count, { markLoaded: true });
             buildForm();
             if (templateSource !== null) {
@@ -3481,7 +4095,7 @@
             }
           } catch (err) {
             console.error("Vars Parse Error:", err);
-            showToast("Failed to parse variables file");
+            showToast("Failed to parse variables file", "error");
           }
         });
       }
@@ -3491,6 +4105,7 @@
         suggestedName,
         mimeType,
         successMsg,
+        toastKind = "",
       ) {
         if (window.showSaveFilePicker) {
           try {
@@ -3501,9 +4116,9 @@
             const writable = await handle.createWritable();
             await writable.write(content);
             await writable.close();
-            return; // the Save As dialog is its own confirmation - no toast
+            return handle.name; // the Save As dialog is its own confirmation - no toast
           } catch (e) {
-            if (e && e.name === "AbortError") return; // user cancelled
+            if (e && e.name === "AbortError") return null; // user cancelled
             // any other failure (e.g. disabled by policy): fall through
           }
         }
@@ -3513,7 +4128,8 @@
         link.download = suggestedName;
         link.click();
         setTimeout(() => URL.revokeObjectURL(link.href), 100);
-        if (successMsg) showToast(successMsg);
+        if (successMsg) showToast(successMsg, toastKind);
+        return suggestedName;
       }
 
       function saveSession() {
@@ -3562,7 +4178,7 @@
             const session = JSON.parse(evt.target.result);
             const validationError = validateSessionV1(session);
             if (validationError) {
-              showToast(`Cannot load session: ${validationError}`);
+              showToast(`Cannot load session: ${validationError}`, "error");
               return;
             }
             templateSource =
@@ -3599,7 +4215,7 @@
             showToast("Session loaded successfully");
           } catch (err) {
             console.error("Session Parse Error:", err);
-            showToast("Failed to load session JSON");
+            showToast("Failed to load session JSON", "error");
           }
         });
       }
@@ -3829,7 +4445,12 @@ category = General
           applyValidity(e.target, validMsg, newVal, config);
 
           // presence flip can change {% if %} blocks -> full render
-          if (!!oldVal !== !!newVal) debouncedRender();
+          if (
+            !!oldVal !== !!newVal ||
+            lintSensitive(oldVal) ||
+            lintSensitive(newVal)
+          )
+            debouncedRender();
           else {
             fastUpdatePreview(varName);
             // regex validity can flip while presence does not
@@ -4006,8 +4627,10 @@ category = General
         }
       }
 
+      // Switching views commits and closes every open editor, in either direction.
       function toggleView() {
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        for (const id of [...activeSectionEditors]) commitSectionEdit(id);
         viewMode = viewMode === "sections" ? "full" : "sections";
         document
           .getElementById("viewThumb")
@@ -4023,6 +4646,8 @@ category = General
         if (viewMode === "full")
           renderFullMode(container, sections, badgeColorMap);
         else renderSectionMode(container, sections, badgeColorMap);
+        // Editors come out of the markup empty-mirrored; size and highlight them.
+        container.querySelectorAll("textarea.section-edit").forEach(autoSizeTextarea);
         refreshLastCopied();
         updateProgressBar();
         updateTemplateErrorBadge();
@@ -4033,11 +4658,18 @@ category = General
         const edited = hasEdits();
         const headerClass = isEditing ? " is-editing" : edited ? " edited" : "";
 
+        const preview = isEditing
+          ? null
+          : jinjaDisplay(
+              trimBodyEnds(assembleFullEditableText()),
+              keywordGroups,
+              badgeColorMap,
+            );
         let html = `<div class="config-section" id="section-full">
                             <div class="section-header${headerClass}">
                               <h3>Full Config</h3>
                               <div class="btn-group">
-                                <span class="copied-badge" id="badge-full">Copied!</span>`;
+                                <span class="copied-badge" id="badge-full">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
 
         if (isEditing) {
           html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelFullEdit()"><svg><use href="#icon-close"></use></svg></button>
@@ -4053,10 +4685,10 @@ category = General
 
         if (isEditing) {
           const editText = fullModeEditBuffer || assembleFullEditableText();
-          const rows = Math.max(editText.split("\n").length + 2, 4);
-          html += `<textarea class="section-edit" id="editor-full" rows="${rows}" oninput="onFullEditInput(this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
+          const rows = editText.split("\n").length;
+          html += editorHtml("editor-full", rows, editText, "onFullEditInput(this.value)");
         } else {
-          html += `<pre>${jinjaDisplay(trimBodyEnds(assembleFullEditableText()), keywordGroups, badgeColorMap)}</pre>`;
+          html += `<pre>${preview.html}</pre>`;
         }
 
         html += `</div>`;
@@ -4065,10 +4697,10 @@ category = General
 
       function renderSectionMode(container, sections, badgeColorMap) {
         if (sections.length === 0) {
-          container.innerHTML = `<div class="empty-state" style="flex-direction: column;">
-                                         <div style="color: var(--text-dim); font-weight: 600;">No sections detected in this template.</div>
-                                         <div style="font-size: 12px; margin-top: 12px;">Toggle to <strong>Full</strong> view above, or add <code>!!! Section Name</code> markers to your template file.</div>
-                                       </div>`;
+          container.innerHTML = `<div class="empty-state">
+              <div class="empty-title">No sections detected in this template.</div>
+              <div class="empty-hint">Toggle to <strong>Full</strong> view above, or add <code>!!! Section Name</code> markers to your template file.</div>
+            </div>`;
           return;
         }
 
@@ -4083,11 +4715,16 @@ category = General
               : "";
           if (isImportant) headerClass += " important";
 
+          const r = recordById(id);
+          const body = isEdited && r ? recordEffectiveBody(r) : displayBody;
+          const preview = isEditing
+            ? null
+            : jinjaDisplay(trimBodyEnds(body), keywordGroups, badgeColorMap);
           html += `<div class="config-section" id="section-${i}">
                            <div class="section-header${headerClass}">
                              <h3>${escHtml(name)}</h3>
                              <div class="btn-group">
-                               <span class="copied-badge" id="badge-${i}">Copied!</span>`;
+                               <span class="copied-badge" id="badge-${i}">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
 
           if (isEditing) {
             html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelSectionEdit(${id})"><svg><use href="#icon-close"></use></svg></button>
@@ -4114,16 +4751,12 @@ category = General
           html += `</div></div>`;
 
           if (isEditing) {
-            const r = recordById(id);
             const editText =
               r && r.override !== null ? r.override : displayBody;
-            const rows = Math.max(editText.split("\n").length + 2, 4);
-            html += `<textarea class="section-edit" id="editor-sec-${i}" rows="${rows}" oninput="onSectionEditInput(${id}, this.value); autoSizeTextarea(this)">${escHtml(editText)}</textarea>`;
-          } else if (isEdited) {
-            const r = recordById(id);
-            html += `<pre>${jinjaDisplay(trimBodyEnds(r ? recordEffectiveBody(r) : displayBody), keywordGroups, badgeColorMap)}</pre>`;
+            const rows = editText.split("\n").length;
+            html += editorHtml(`editor-sec-${i}`, rows, editText, `onSectionEditInput(${id}, this.value)`);
           } else {
-            html += `<pre>${jinjaDisplay(trimBodyEnds(displayBody), keywordGroups, badgeColorMap)}</pre>`;
+            html += `<pre>${preview.html}</pre>`;
           }
           html += `</div>`;
         }
@@ -4362,23 +4995,26 @@ category = General
             !startsInComment && SECTION_RE.test(line),
         );
       }
+      function commitSectionEdit(id) {
+        activeSectionEditors.delete(id);
+        delete sectionEditBackups[id];
+        const r = recordById(id);
+        // Body-only edit: normalize this record (trim-tolerant). A typed !!! marker needs the full disassembler to split.
+        if (r && r.override !== null) {
+          if (containsSectionMarker(r.override)) {
+            sectionRecords = disassembleFullEdit(
+              sectionRecords,
+              assembleFromRecords(sectionRecords),
+              true,
+            );
+          } else if (bodiesEquivalent(r.override, r.baselineBody)) {
+            r.override = null;
+          }
+        }
+      }
       function toggleSectionEdit(id, index) {
         if (activeSectionEditors.has(id)) {
-          activeSectionEditors.delete(id);
-          delete sectionEditBackups[id];
-          const r = recordById(id);
-          // Body-only edit: normalize this record (trim-tolerant). A typed !!! marker needs the full disassembler to split.
-          if (r && r.override !== null) {
-            if (containsSectionMarker(r.override)) {
-              sectionRecords = disassembleFullEdit(
-                sectionRecords,
-                assembleFromRecords(sectionRecords),
-                true,
-              );
-            } else if (bodiesEquivalent(r.override, r.baselineBody)) {
-              r.override = null;
-            }
-          }
+          commitSectionEdit(id);
           autoDetectVars({ quiet: true });
         } else {
           const r = recordById(id);
@@ -4619,13 +5255,14 @@ category = General
       function copySectionByName(id, index) {
         const r = recordById(id);
         if (!r) return;
-        const output = jinjaRaw(recordEffectiveBody(r)) + "\n";
+        const body = recordEffectiveBody(r);
+        const output = jinjaRaw(body) + "\n";
         navigator.clipboard
           .writeText(output)
           .then(() => {
             flashBadge(`badge-${index}`);
-            if (output.includes("{{"))
-              showToast("Warning: copied text has unfilled {{ }} fields");
+            const msg = copyToastMessage("Copied", output, lintBody(body));
+            if (msg) showToast(msg, "warn");
             clearLastCopied();
             lastCopied = {
               kind: "section",
@@ -4638,7 +5275,7 @@ category = General
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
-            showToast("Failed to copy to clipboard");
+            showToast("Failed to copy to clipboard", "error");
           });
       }
 
@@ -4671,16 +5308,15 @@ category = General
           return;
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        const output = jinjaRaw(assembleFullEditableText()) + "\n";
+        const body = assembleFullEditableText();
+        const output = jinjaRaw(body) + "\n";
 
         navigator.clipboard
           .writeText(output)
           .then(() => {
-            showToast(
-              output.includes("{{")
-                ? "Copied — warning: unfilled {{ }} fields included"
-                : "Copied full config",
-            );
+            const base = "Copied full config";
+            const msg = copyToastMessage(base, output, lintBody(body));
+            showToast(msg ?? base, msg ? "warn" : "");
             flashBadge("badge-full");
             clearLastCopied();
             lastCopied = {
@@ -4693,7 +5329,7 @@ category = General
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
-            showToast("Failed to copy to clipboard");
+            showToast("Failed to copy to clipboard", "error");
           });
       }
 
@@ -4709,20 +5345,20 @@ category = General
           formValues.Hostname ||
           outputStem() ||
           "config";
-        const output = toWindowsEOL(
-          jinjaRaw(assembleFullEditableText()) + "\n",
-        );
+        const body = assembleFullEditableText();
+        const output = toWindowsEOL(jinjaRaw(body) + "\n");
+        const base = `Saved ${hostname}.config`;
+        const msg = copyToastMessage(base, output, lintBody(body));
         saveTextFile(
           output,
           `${hostname}.config`,
           "text/plain",
-          output.includes("{{")
-            ? `Saved ${hostname}.config — warning: unfilled {{ }} fields`
-            : `Saved ${hostname}.config`,
+          msg ?? base,
+          msg ? "warn" : "",
         );
       }
 
-      function saveTemplate() {
+      async function saveTemplate() {
         if (templateSource === null) {
           showToast("Load a template first");
           return;
@@ -4731,39 +5367,24 @@ category = General
 
         const filename = `${templateBasename() || "template"}.config`;
 
-        // Indented so older tool copies don't parse the "!!!" examples as markers.
-        const headerText = `{# ===============================================================
-   Switch Configuration Template
-   JINJA2 SYNTAX (same as Ansible):
-   {{  VAR  }}                              Variable substitution
-   {{  VAR | default('fallback')  }}        Default if empty
-   {{  VAR | upper  }}                      Uppercase
-   {{  VAR | lower  }}                      Lowercase
-   {{  VAR | trim  }}                       Remove leading/trailing spaces
-   {{  [V1, V2, V3] | join(',')  }}         Join non-empty values
-   {% if VAR %}...{% endif %}               Conditional block
-   {% if VAR %}...{% else %}...{% endif %}  With else branch
-   Comment blocks use opening {-# and closing #-} (without dashes)
 
-   TOOL EXTENSIONS:
-   !!! Section Name                         Copy-able section break
-   !!!!! Important Section                  Renders header in red text
-   !KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
-                                            any all-caps keyword works, e.g. !STIG: V-1234, !CIS: 1.5.2
-=============================================================== #}\n\n`;
 
         // Don't stack a second header on save -> load -> save.
         const body = assembleFullEditableText();
         const hasHeader =
           /^\s*\{#[\s\S]{0,200}Switch Configuration Template/.test(body);
-        const output = toWindowsEOL(hasHeader ? body : headerText + body);
+        const output = toWindowsEOL(hasHeader ? body : TEMPLATE_HEADER + body);
 
-        saveTextFile(
+        const saved = await saveTextFile(
           output,
           filename,
           "text/plain",
           `Saved template: ${filename}`,
         );
+        if (saved) {
+          templateFileName = saved;
+          setTemplateStatus(saved);
+        }
       }
 
       function resetAll() {
@@ -4801,10 +5422,10 @@ category = General
         document.getElementById("templateLoader").classList.remove("loaded");
         document.getElementById("templateStatus").innerHTML =
           '<span class="not-loaded">No template loaded</span>';
-        document.getElementById("templateErrorBadge").style.display = "none";
+        setWarnBadge("templateErrorBadge", "syntax issues", []);
         document.getElementById("viewThumb").classList.remove("right");
         document.getElementById("previewContainer").innerHTML =
-          '<div class="empty-state">Load a template to get started.</div>';
+          emptyStateHtml;
         renderAutoDetectButtons();
 
         if (Object.keys(varsFromFile).length === 0) {
@@ -4838,7 +5459,7 @@ category = General
         document.getElementById("varsLoader").classList.remove("loaded");
         document.getElementById("varsStatus").innerHTML =
           '<span class="not-loaded">No vars loaded</span>';
-        document.getElementById("varsErrorBadge").style.display = "none";
+        setWarnBadge("varsErrorBadge", "variable definition issues", []);
 
         const varsBadge = document.getElementById("varsCountBadge");
         if (varsBadge) {
@@ -4853,9 +5474,126 @@ category = General
         showToast("Variables cleared");
       }
 
+      // Tab indents in editors; a multi-line selection shifts every line.
+      document.addEventListener("keydown", (e) => {
+        const ta = e.target;
+        if (e.key !== "Tab" || !EDITOR_TAB_SIZE) return;
+        if (!(ta instanceof HTMLTextAreaElement) || !ta.matches(".section-edit"))
+          return;
+        e.preventDefault();
+        const pad = " ".repeat(EDITOR_TAB_SIZE);
+        const { value, selectionStart: s, selectionEnd: en } = ta;
+        const multi = value.slice(s, en).includes("\n");
+        if (!multi && !e.shiftKey) {
+          document.execCommand("insertText", false, pad);
+          return;
+        }
+        const from = value.lastIndexOf("\n", s - 1) + 1;
+        const to = en > from && value[en - 1] === "\n" ? en - 1 : en;
+        const block = value.slice(from, to);
+        const shifted = e.shiftKey
+          ? block.replace(new RegExp(`^ {1,${EDITOR_TAB_SIZE}}`, "gm"), "")
+          : block.replace(/^/gm, pad);
+        ta.setSelectionRange(from, to);
+        document.execCommand("insertText", false, shifted);
+        ta.setSelectionRange(from, from + shifted.length);
+      });
+      function editorHtml(id, rows, text, onInput) {
+        return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; autoSizeTextarea(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
+      }
+      // Template text highlighted for the editor mirror: keywords and comments
+      // as in the preview, Jinja tokens in blue, risk chars underlined in place
+      // (no glyphs: the mirror must keep the textarea's exact widths). Issues
+      // are the per-line risk-char findings, for the header icon.
+      function highlightTemplate(text) {
+        const jinja = [];
+        const marks = [];
+        const issues = [];
+        // A multi-line tag or comment is tokenized per line so row indexes hold.
+        const tokenized = walkConfigLines(
+          text.replace(/\{#[\s\S]*?#\}|\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}|\{[{%#]|[}%#]\}/g, (m) =>
+            m
+              .split("\n")
+              .map((seg) => {
+                if (!seg) return ""; // an empty span would give the row no height
+                jinja.push(seg);
+                return `\x00J${jinja.length - 1}\x00`;
+              })
+              .join("\n"),
+          ),
+        )
+          .parts.map(({ i, line, cmd }) => {
+            if (!LINT_PASTE_WARNINGS) return line;
+            const seen = new Set();
+            const marked = cmd.replace(RISK_CHAR_RE, (ch) => {
+              const name = riskCharName(ch);
+              if (!seen.has(name)) issues.push({ line: i, message: `Contains ${name}` });
+              seen.add(name);
+              marks.push(ch);
+              return `\x00R${marks.length - 1}\x00`;
+            });
+            return marked + line.slice(cmd.length);
+          })
+          .join("\n");
+        const warned = new Set(issues.map((x) => x.line));
+        const escaped = escHtml(tokenized);
+        const html = (
+          EDITOR_HIGHLIGHTING
+            ? applyKeywordHighlighting(escaped, keywordGroups)
+            : escaped
+        )
+          .replace(/\x00J(\d+)\x00/g, (_, i) =>
+            EDITOR_HIGHLIGHTING
+              ? `<span class="tpl-jinja">${escHtml(jinja[i])}</span>`
+              : escHtml(jinja[i]),
+          )
+          .replace(/\x00R(\d+)\x00/g, (_, i) => `<span class="risk-char"${warnAttrs("paste warnings", [riskCharName(marks[i])])}>${escHtml(marks[i])}</span>`)
+          .split("\n")
+          .map((line, i) => `<span class="mirror-line${warned.has(i) ? " line-warn" : ""}">${line || " "}</span>`)
+          .join("");
+        return { html, issues };
+      }
+      function placeEditorStrip(ta, strip, row) {
+        const cs = getComputedStyle(ta);
+        const lineHeight = parseFloat(cs.lineHeight);
+        strip.style.top = `${parseFloat(cs.paddingTop) + row * lineHeight}px`;
+        strip.style.height = `${lineHeight}px`;
+      }
+      function updateCursorLine(ta) {
+        const strip = ta.parentElement?.querySelector(".editor-cursor-line");
+        if (!strip) return;
+        const row = ta.value.slice(0, ta.selectionStart).split("\n").length - 1;
+        placeEditorStrip(ta, strip, row);
+        strip.hidden = document.activeElement !== ta;
+      }
+      function flashEditorLine(ta, row) {
+        const strip = ta.parentElement?.querySelector(".editor-flash");
+        if (!strip) return;
+        placeEditorStrip(ta, strip, row);
+        flashLine(strip);
+      }
+      document.addEventListener("selectionchange", () => {
+        const ta = document.activeElement;
+        if (ta instanceof HTMLTextAreaElement && ta.matches(".section-edit")) updateCursorLine(ta);
+      });
+      document.addEventListener("focusout", (e) => {
+        if (e.target instanceof HTMLTextAreaElement && e.target.matches(".section-edit"))
+          e.target.parentElement?.querySelector(".editor-cursor-line")?.setAttribute("hidden", "");
+      });
       function autoSizeTextarea(el) {
         el.style.height = "auto";
         el.style.height = `${el.scrollHeight}px`;
+        updateCursorLine(el);
+        const mirror = el.previousElementSibling;
+        if (!mirror?.classList.contains("editor-mirror")) return;
+        const { html, issues } = highlightTemplate(el.value);
+        mirror.innerHTML = html;
+        mirror.scrollLeft = el.scrollLeft;
+        // Header icon tracks the editor live.
+        const badge = el.closest(".config-section")?.querySelector(".copied-badge");
+        if (!badge) return;
+        badge.parentElement.querySelector(".header-warn")?.remove();
+        badge.insertAdjacentHTML("afterend", headerWarnHtml(issues));
       }
       function pageScrolls() {
         return window.matchMedia("(max-width: 900px)").matches;
@@ -4868,21 +5606,226 @@ category = General
         const panel = document.querySelector(".preview-panel");
         if (panel) panel.scrollTo({ top: 0, behavior: "smooth" });
       }
-      function openBadgeCopy(el) {
-        const popup = document.getElementById("badgeCopyPopup");
-        if (!popup) return;
-        popup.querySelector(".badge-copy-text").textContent =
-          el.dataset.marker || "";
+      // Candidates in preference order: the two sides, then centered beside the
+      // anchor; the first that fits the viewport with the least section-header
+      // coverage wins.
+      function placePopup(popup, r, above = false) {
         popup.hidden = false;
-        const r = el.getBoundingClientRect();
         const pr = popup.getBoundingClientRect();
-        let top = r.bottom + 6;
-        if (top + pr.height > window.innerHeight) top = r.top - pr.height - 6;
+        const sides = [r.bottom + 6, r.top - pr.height - 6];
+        if (above) sides.reverse();
+        sides.push((r.top + r.bottom - pr.height) / 2);
+        const fits = (t) => t >= 8 && t + pr.height <= window.innerHeight - 8;
+        const headers = [...document.querySelectorAll(".section-header")].map(
+          (h) => h.getBoundingClientRect(),
+        );
+        const covered = (t) =>
+          headers.reduce(
+            (sum, h) =>
+              h.right > r.left
+                ? sum + Math.max(0, Math.min(h.bottom, t + pr.height) - Math.max(h.top, t))
+                : sum,
+            0,
+          );
+        const fitting = sides.filter(fits);
+        let top = (fitting.length ? fitting : sides).reduce((best, t) =>
+          covered(t) < covered(best) ? t : best,
+        );
         let left = r.left;
         if (left + pr.width > window.innerWidth - 8)
           left = window.innerWidth - pr.width - 8;
         popup.style.top = `${Math.max(8, top)}px`;
         popup.style.left = `${Math.max(8, left)}px`;
+      }
+      function openBadgeCopy(el) {
+        const popup = document.getElementById("badgeCopyPopup");
+        if (!popup) return;
+        popup.querySelector(".badge-copy-text").textContent =
+          el.dataset.marker || "";
+        placePopup(popup, el.getBoundingClientRect());
+      }
+      let warnPopupEl = null;
+      function showWarnPopup(el, e) {
+        const popup = document.getElementById("warnPopup");
+        if (!popup || el === warnPopupEl) return;
+        const msgs = (el.dataset.warns || "").split("\n").filter(Boolean);
+        if (!msgs.length) return;
+        warnPopupEl = el;
+        // Header rows jump to their line (the preview shows no line numbers).
+        // "[Section] msg" rows group under the section and jump to its mark.
+        const fromHeader = el.classList.contains("header-warn");
+        const canJump =
+          fromHeader &&
+          el.closest(".config-section")?.querySelector(".config-lines, .section-edit");
+        let group = null;
+        const rows = msgs.map((msg) => {
+          const m = msg.match(/^\[(.+?)\] ([\s\S]*)$/);
+          if (!m) {
+            const ln = fromHeader && msg.match(/^Line (\d+): ([\s\S]*)$/);
+            if (!ln) return warnRowHtml(msg);
+            return warnRowHtml(ln[2], canJump ? { line: ln[1] - 1 } : null);
+          }
+          const head =
+            m[1] === group
+              ? ""
+              : `<div class="warn-group"><span title="${escHtml(m[1])}">${escHtml(m[1])}</span></div>`;
+          group = m[1];
+          const literal = (m[2].match(/`([^`]*)`/) || [, ""])[1];
+          return head + warnRowHtml(m[2], { section: m[1], literal });
+        });
+        // A single mark holds exactly one warning: a label, not a count.
+        const kind = el.dataset.warnKind;
+        const title = el.classList.contains("risk-char")
+          ? kind.replace(/s$/, "")
+          : `${kind}<span class="warn-popup-count">— <span class="count-number">${msgs.length}</span></span>`;
+        popup.innerHTML =
+          `<div class="warn-popup-title">${title}</div>` + rows.join("");
+        // Preview marks open above their line so nothing below is covered;
+        // header icons anchor to the whole header. x follows the pointer.
+        const inLines = el.closest(".config-lines") !== null;
+        const r = (el.closest(".section-header") ?? el).getBoundingClientRect();
+        placePopup(
+          popup,
+          { left: e.clientX + 12, top: r.top, bottom: r.bottom },
+          inLines,
+        );
+      }
+      // "Line N:" becomes the gutter; quoted text becomes a chip colored by
+      // kind. `link` makes the row a jump: {line} or {section, literal}.
+      function warnRowHtml(msg, link = null) {
+        const m = msg.match(/^Line (\d+): ([\s\S]*)$/);
+        const litClass = (lit) =>
+          INI_KEYS.has(lit)
+            ? "warn-key"
+            : /^(?:&[#\w]+;|.)$/u.test(lit)
+              ? "warn-char"
+              : "warn-val";
+        const body = escHtml(m ? m[2] : msg).replace(
+          /`([^`]*)`|&#039;(.+?)&#039;/g,
+          (_, code, name) =>
+            code !== undefined
+              ? `<code class="${litClass(code)}">${code}</code>`
+              : `<code class="warn-name">${name}</code>`,
+        );
+        const gutter = escHtml(m ? m[1] : "");
+        const data = link
+          ? Object.entries(link)
+              .map(([k, v]) => ` data-${k}="${escHtml(String(v))}"`)
+              .join("")
+          : "";
+        const attrs = link
+          ? ` class="warn-row warn-row-link"${data} title="Go to this line"`
+          : ` class="warn-row"`;
+        return gutter
+          ? `<div${attrs}><span class="warn-row-ln">${gutter}</span><span>${body}</span></div>`
+          : `<div${attrs}><span class="warn-row-full">${body}</span></div>`;
+      }
+      function hideWarnPopup() {
+        const popup = document.getElementById("warnPopup");
+        if (popup) popup.hidden = true;
+        warnPopupEl = null;
+        clearTimeout(warnHideTimer);
+        warnHideTimer = null;
+      }
+      // Grace period so the pointer can cross into the popup.
+      let warnHideTimer = null;
+      function scheduleHideWarn() {
+        warnHideTimer ??= setTimeout(hideWarnPopup, 200);
+      }
+      document.addEventListener("mouseover", (e) => {
+        const cancelHide = () => {
+          clearTimeout(warnHideTimer);
+          warnHideTimer = null;
+        };
+        if (e.target.closest("#warnPopup")) return cancelHide();
+        // Lines keep their edge marker only; the marks and header icon carry the popups.
+        const el = e.target.closest("[data-warns]:not(.config-line)");
+        if (!el) return;
+        cancelHide();
+        showWarnPopup(el, e);
+      });
+      document.addEventListener("mouseout", (e) => {
+        const from =
+          e.target.closest("#warnPopup") || e.target.closest("[data-warns]:not(.config-line)");
+        if (!from || from.contains(e.relatedTarget)) return;
+        scheduleHideWarn();
+      });
+      // Editor marks live in the mirror under the textarea, so hit-test through it.
+      document.addEventListener("mousemove", (e) => {
+        if (!(e.target instanceof HTMLTextAreaElement) || !e.target.matches(".section-edit")) return;
+        const mark = document
+          .elementsFromPoint(e.clientX, e.clientY)
+          .find((n) => n.matches(".editor-mirror .risk-char"));
+        if (mark) {
+          clearTimeout(warnHideTimer);
+          warnHideTimer = null;
+          showWarnPopup(mark, e);
+        } else if (warnPopupEl?.closest(".editor-mirror")) scheduleHideWarn();
+      });
+      document.addEventListener("mouseout", (e) => {
+        if (e.target instanceof HTMLTextAreaElement && warnPopupEl?.closest(".editor-mirror"))
+          scheduleHideWarn();
+      });
+      // A drag that selected text ends in a click too; a live selection means
+      // "copying", not "go".
+      document.addEventListener("click", (e) => {
+        const row = e.target.closest(".warn-row-link");
+        if (!row || !window.getSelection().isCollapsed) return;
+        const { line, section, literal } = row.dataset;
+        const card = warnPopupEl?.closest(".config-section");
+        hideWarnPopup();
+        const editor = card?.querySelector(".section-edit");
+        if (line !== undefined && editor) return flashEditorLine(editor, +line);
+        const targets =
+          line !== undefined
+            ? [card?.querySelectorAll(".config-line")[line]]
+            : issueLines(section, literal);
+        targets.filter(Boolean).forEach(flashLine);
+      });
+      // Lines of one section: its card in section view, the span after its
+      // !!! marker in full view. Every mark equal to the literal or its bare
+      // delimiters flashes (so a split `{{ }}` lights both lines); else the first
+      // mark by opening, else the first mark, else the first line.
+      function issueLines(name, literal) {
+        const heading = (c) => c.querySelector("h3")?.textContent ?? "";
+        let lines;
+        if (viewMode === "sections") {
+          const cards = [...document.querySelectorAll(".config-section")];
+          const card =
+            cards.find((c) => heading(c) === name) ??
+            cards.find((c) => heading(c).startsWith(name));
+          lines = card ? [...card.querySelectorAll(".config-line")] : [];
+        } else {
+          const all = [...document.querySelectorAll(".config-line")];
+          const isMarker = (l) => /^!!!/.test(l.textContent.trim());
+          const start = all.findIndex(
+            (l) => isMarker(l) && l.textContent.trim().replace(/^!+\s*/, "") === name,
+          );
+          const end = all.findIndex((l, i) => i > start && isMarker(l));
+          lines = start < 0 ? [] : all.slice(start + 1, end < 0 ? undefined : end);
+        }
+        const marks = lines.flatMap((l) => [...l.querySelectorAll(".risk-char")]);
+        const bare = literal.match(/^(\{[{%#])\s*([}%#]\})$/);
+        const pieces = new Set(bare ? [bare[1], bare[2]] : [literal]);
+        const opening = literal.replace(/\s*(%}|}}|#})$/, "");
+        let hits = marks.filter((m) => pieces.has(m.textContent));
+        if (!hits.length)
+          hits = [marks.find((m) => m.textContent.startsWith(opening)) ?? marks[0]];
+        const found = [...new Set(hits.filter(Boolean).map((m) => m.closest(".config-line")))];
+        return found.length ? found : lines.slice(0, 1);
+      }
+      function flashLine(el, i = 0) {
+        if (i === 0) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-jump");
+        void el.offsetWidth; // restart on repeat clicks
+        el.classList.add("flash-jump");
+        el.addEventListener("animationend", () => el.classList.remove("flash-jump"), { once: true });
+      }
+      function setWarnBadge(id, kind, msgs) {
+        const el = document.getElementById(id);
+        el.dataset.warns = msgs.join("\n");
+        el.dataset.warnKind = kind;
+        el.style.display = msgs.length ? "inline-flex" : "none";
       }
 
       function closeBadgeCopy() {
@@ -4899,6 +5842,7 @@ category = General
         if (e.key === "Escape") closeBadgeCopy();
       });
       window.addEventListener("scroll", closeBadgeCopy, true);
+      window.addEventListener("scroll", hideWarnPopup, true);
 
       function escHtml(s) {
         return !s
@@ -4933,11 +5877,16 @@ category = General
         setTimeout(() => badge.classList.remove("show"), 1500);
       }
 
-      function showToast(message) {
+      let toastTimer = null;
+      function showToast(message, kind = "") {
         const el = document.getElementById("toast");
         el.textContent = message;
-        el.classList.add("show");
-        setTimeout(() => el.classList.remove("show"), 2000);
+        el.className = `toast show${kind ? ` ${kind}` : ""}`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(
+          () => el.classList.remove("show"),
+          kind ? 4500 : 3000,
+        );
       }
 
       function openHelp() {
@@ -5042,6 +5991,10 @@ category = General
             const frag = sel.getRangeAt(0).cloneContents();
             // cloneContents ignores user-select: none, so drop pills here
             frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
+            // Tab, NBSP, and Ctrl-V are drawn as glyphs; copy the real character.
+            frag
+              .querySelectorAll("[data-ch]")
+              .forEach((n) => (n.textContent = n.dataset.ch));
             // Lines are block spans containing no newline chars, so plain
             // textContent would flatten a multi-line selection onto one line.
             const lineEls = frag.querySelectorAll(".config-line");
@@ -5054,7 +6007,10 @@ category = General
             e.clipboardData.setData("text/plain", text + "\n");
             e.preventDefault();
             if (text.includes("{{"))
-              showToast("Warning: copied text has unfilled {{ }} fields");
+              showToast(
+                "Warning: copied text has unfilled {{ }} fields",
+                "warn",
+              );
           });
 
         const dropZone = document.querySelector(".form-panel");
