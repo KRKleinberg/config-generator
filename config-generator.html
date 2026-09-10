@@ -804,6 +804,9 @@
       }
 
       .preview-toolbar h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         font-size: 14px;
         font-weight: 600;
         color: var(--text-dim);
@@ -841,7 +844,7 @@
         position: absolute;
         top: 2px;
         left: 2px;
-        width: 76px;
+        width: calc(50% - 2px);
         height: 26px;
         background: var(--accent);
         border-radius: 14px;
@@ -850,7 +853,7 @@
       }
 
       .view-toggle-thumb.right {
-        left: 76px;
+        left: 50%;
       }
 
       .view-toggle-label {
@@ -1186,6 +1189,89 @@
         transform: skewX(25deg);
       }
       /* Two-column grid: the gutter sizes to its widest label so bodies align. */
+      /* Platform badge: the title's own type, divided off by a rule; reads as
+         text until hovered. Its menu lists the dialects. */
+      .dialect-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: none;
+        border-left: 1px solid var(--border);
+        padding: 0 0 0 10px;
+        font: inherit;
+        letter-spacing: inherit;
+        color: var(--text-hint);
+        cursor: pointer;
+      }
+
+      .dialect-btn:hover {
+        color: var(--text);
+      }
+
+      .dialect-menu {
+        padding: 4px;
+        font-size: 12px;
+      }
+
+      .dialect-menu button {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        width: 100%;
+        padding: 6px 10px;
+        background: none;
+        border: none;
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .dialect-menu button:hover {
+        background: rgba(var(--rgb-slate), 0.05);
+      }
+
+      .dialect-menu button.current {
+        color: var(--success);
+      }
+
+      .dialect-menu .dialect-short {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        min-width: 4.5em;
+      }
+
+      .dialect-menu .dialect-label {
+        color: var(--text-dim);
+        padding-right: 24px;
+      }
+
+      .dialect-menu .dialect-flag {
+        margin-left: auto;
+      }
+
+      .dialect-menu button {
+        gap: 10px;
+      }
+
+      /* Same pill as a config badge, in the warning color. */
+      .dialect-flag {
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.5px;
+        background: rgba(var(--rgb-warn), 0.18);
+        color: var(--warn);
+      }
+
+
+
       .warn-popup {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
@@ -1328,7 +1414,8 @@
       }
 
       .badge-copy-popup,
-      .warn-popup {
+      .warn-popup,
+      .dialect-menu {
         position: fixed;
         z-index: 100;
         background: var(--surface);
@@ -1780,6 +1867,31 @@
       }
 
       @media (max-width: 640px) {
+        .toolbar-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+
+        .view-toggle-track {
+          width: 100%;
+        }
+
+        .empty-state {
+          padding: 24px 16px;
+        }
+
+        .empty-state .empty-actions {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          width: 100%;
+          max-width: 360px;
+        }
+
+        .empty-actions .btn {
+          justify-content: center;
+        }
+
         .guide-table td:first-child {
           white-space: normal;
         }
@@ -2185,7 +2297,15 @@
       <div class="preview-panel">
         <div class="preview-toolbar">
           <div class="toolbar-header">
-            <h2>CONFIG PREVIEW</h2>
+            <h2>
+              CONFIG PREVIEW
+              <button
+                id="dialectBadge"
+                class="dialect-btn"
+                onclick="toggleDialectMenu(event)"
+                title="Switch platform"
+              ></button>
+            </h2>
             <div class="view-toggle" onclick="toggleView()">
               <div class="view-toggle-track">
                 <div class="view-toggle-thumb" id="viewThumb"></div>
@@ -2229,6 +2349,7 @@
             </div>
           </div>
         </div>
+        <div id="dialectMenu" class="dialect-menu" hidden></div>
         <div id="warnPopup" class="warn-popup" hidden></div>
         <div id="badgeCopyPopup" class="badge-copy-popup" hidden>
           <span class="badge-copy-text"></span>
@@ -2409,15 +2530,15 @@
                   <dl class="guide-defs">
                     <dt>Auto-cleaning</dt>
                     <dd>
-                      <code>!KEYWORD:</code>
+                      <code data-syntax>!KEYWORD:</code>
                       badges and
-                      <code>!</code>
+                      <code data-syntax>!</code>
                       comments are stripped from copied and saved text, except
                       on commands that take free-form text (passwords, keys,
                       descriptions, remarks), where a mid-line
-                      <code>!</code>
+                      <code data-syntax>!</code>
                       is kept as part of the value. A bare
-                      <code>!</code>
+                      <code data-syntax>!</code>
                       line passes through to answer device prompts; banner
                       blocks are left untouched.
                     </dd>
@@ -2549,19 +2670,19 @@
                           </td>
                         </tr>
                         <tr>
-                          <td><code>!!! Section Name</code></td>
+                          <td><code data-syntax>!!! Section Name</code></td>
                           <td>
                             Splits the preview into copyable sections. Five
-                            bangs (
-                            <code>!!!!!</code>
+                            markers (
+                            <code data-syntax>!!!!!</code>
                             ) render the header in red for critical sections.
                           </td>
                         </tr>
                         <tr>
-                          <td><code>!KEYWORD: v1, v2</code></td>
+                          <td><code data-syntax>!KEYWORD: v1, v2</code></td>
                           <td>
                             End-of-line colored badges (e.g.,
-                            <code>!STIG: V-1234</code>
+                            <code data-syntax>!STIG: V-1234</code>
                             ). Any all-caps keyword works; badges are stripped
                             from output. End of line only.
                           </td>
@@ -2704,7 +2825,8 @@
       const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
       const LINT_TEMPLATE = true; // template structure badge
       const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
-      const MAX_DESCRIPTION_LEN = 240; // IOS-XE limit; confirm with `description ?`
+      const DIALECT_NAME = "ios"; // ios, nxos, eos, junos — see DIALECTS; only ios is device-tested
+      const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
       const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
@@ -2724,16 +2846,10 @@
       let varsFromFile = {};
       let varsFileName = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
-      const SECTION_RE = /^(!!!+)\s*(.+)$/;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
-      // (?<![^\s]) = line start or after whitespace: a glued bang is a value
-      // (P@ss!NOTE:1), never a badge.
-      const BADGE_RE = /(?<![^\s])!([A-Z][A-Z0-9_-]*):\s*([\w\-., ]+)/g;
-      // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
-      const CLEAN_BADGE_RE = /(?<![^\s])![A-Z][A-Z0-9_-]*:\s*[\w\-., ]+/g;
       // Written at the top of every saved or new template. Indented so older
-      // tool copies don't parse the "!!!" examples as markers.
-      const TEMPLATE_HEADER = `{# ===============================================================
+      // tool copies don't parse the marker examples as markers.
+      const templateHeader = (c) => `{# ===============================================================
    Switch Configuration Template
    JINJA2 SYNTAX (same as Ansible):
    {{  VAR  }}                              Variable substitution
@@ -2747,10 +2863,10 @@
    Comment blocks use opening {-# and closing #-} (without dashes)
 
    TOOL EXTENSIONS:
-   !!! Section Name                         Copy-able section break
-   !!!!! Important Section                  Renders header in red text
-   !KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
-                                            any all-caps keyword works, e.g. !STIG: V-1234, !CIS: 1.5.2
+   ${c}${c}${c} Section Name                         Copy-able section break
+   ${c}${c}${c}${c}${c} Important Section                  Renders header in red text
+   ${c}KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
+                                            any all-caps keyword works, e.g. ${c}STIG: V-1234, ${c}CIS: 1.5.2
 =============================================================== #}\n\n`;
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
       // Recognized .vars.ini keys; shared by the parser and warn-row coloring.
@@ -2772,7 +2888,7 @@
         /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
       let cachedKwGroupsRef = null;
       let cachedKwMap = null;
-      const keywordGroups = [
+      const IOS_KEYWORDS = [
         {
           name: "Interfaces",
           color: "var(--syn-interface)",
@@ -3420,7 +3536,7 @@
                   return (
                     body
                       .split("\n")
-                      .map((l) => (l.trim() === "" ? l : "! " + l))
+                      .map((l) => (l.trim() === "" ? l : `${COMMENT} ` + l))
                       .join("\n") + tail
                   );
                 }
@@ -3438,40 +3554,243 @@
         }
         return result;
       }
-      // Output: drop ! comment lines and whitespace-preceded inline comments,
-      // then strip leading indent. Glued bangs are values; banners verbatim.
-      const BANNER_START_RE =
-        /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/;
-      // Free-form-arg commands (secrets, keys, descriptions): mid-line ! is data, not a comment.
-      const FREEFORM_CMD_RE =
+      // ---- Dialects: everything vendor-shaped lives here. `comment` is the
+      // comment leader (section markers are three of them, badges one);
+      // `freeform` names commands whose mid-line comment char is data;
+      // `banner` is null where the CLI has no delimited banner syntax, else
+      // the opening line pattern and either a fixed closing line or null to
+      // use the captured delimiter. Description limits are per platform.
+      const IOS_BANNER = {
+        start:
+          /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/,
+        delimiter: null,
+      };
+      const IOS_FREEFORM =
         /^\s*(?:description|remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
+      // Junos: set-style or hierarchical; the argument can sit anywhere on the line.
+      const JUNOS_FREEFORM =
+        /\b(?:description|message|announcement|authentication-key|pre-shared-key|encrypted-password|plain-text-password|secret|key|community)\s/i;
+      const JUNOS_KEYWORDS = [
+        {
+          name: "Interfaces",
+          color: "var(--syn-interface)",
+          numbered: true, // ge-0/0/0, ae0, irb.100
+          words: ["interfaces", "unit", "family", "inet", "inet6", "ethernet-switching", "ge-", "xe-", "et-", "ae", "irb", "lo", "vlan-id", "vlans"],
+        },
+        {
+          name: "Good Words & Permits",
+          color: "var(--syn-good)",
+          words: ["accept", "permit", "allow", "enable", "up", "active", "commit"],
+        },
+        {
+          name: "Bad Words & Denies",
+          color: "var(--syn-bad)",
+          words: ["discard", "reject", "deny", "disable", "delete", "deactivate", "down", "rollback"],
+        },
+        {
+          name: "Security & Credentials",
+          color: "var(--syn-secure)",
+          words: ["authentication", "authentication-order", "root-authentication", "encrypted-password", "plain-text-password", "secret", "pre-shared-key", "ssh", "ssl", "login", "user", "class", "super-user", "radius-server", "tacplus-server", "security", "policies", "zones", "ike", "ipsec"],
+        },
+        {
+          name: "Access Lists",
+          color: "var(--syn-acl)",
+          words: ["firewall", "filter", "term", "from", "then", "policy-options", "policy-statement", "prefix-list", "route-filter", "source-address", "destination-address", "count", "log", "syslog"],
+        },
+        {
+          name: "Services & Protocols",
+          color: "var(--syn-service)",
+          words: ["protocols", "ospf", "bgp", "isis", "lldp", "rstp", "mstp", "vstp", "igmp-snooping", "snmp", "ntp", "dhcp", "dhcp-relay", "services", "system", "chassis", "routing-instances", "routing-options", "forwarding-options"],
+        },
+        {
+          name: "Config Commands",
+          color: "var(--syn-command)",
+          words: ["set", "edit", "top", "show", "apply-groups", "groups", "description", "host-name", "domain-name", "name-server", "static", "route", "next-hop", "mtu", "speed", "duplex", "native-vlan-id", "port-mode", "interface-mode", "members", "trunk", "access"],
+        },
+      ];
+      const withWords = (groups, name, extra) =>
+        groups.map((g) => (g.name === name ? { ...g, words: [...g.words, ...extra] } : g));
+      const DIALECTS = {
+        ios: {
+          label: "Cisco IOS / IOS-XE",
+          short: "IOS-XE",
+          comment: "!",
+          descriptionMax: 240,
+          freeform: IOS_FREEFORM,
+          banner: IOS_BANNER,
+          keywords: IOS_KEYWORDS,
+        },
+        nxos: {
+          experimental: true,
+          label: "Cisco NX-OS",
+          short: "NX-OS",
+          comment: "!",
+          descriptionMax: 254,
+          freeform: IOS_FREEFORM,
+          banner: IOS_BANNER,
+          keywords: withWords(IOS_KEYWORDS, "Config Commands", ["feature", "vpc", "vdc", "fex", "vrf", "hardware"]),
+        },
+        eos: {
+          experimental: true,
+          label: "Arista EOS",
+          short: "EOS",
+          comment: "!",
+          descriptionMax: 240,
+          freeform: IOS_FREEFORM,
+          banner: { start: /^\s*banner\s+(?:motd|login)\s*$/i, delimiter: "EOF" },
+          keywords: withWords(IOS_KEYWORDS, "Config Commands", ["management", "mlag", "daemon", "event-handler", "hardware"]),
+        },
+        junos: {
+          experimental: true,
+          label: "Juniper Junos",
+          short: "Junos",
+          comment: "#",
+          descriptionMax: 255,
+          freeform: JUNOS_FREEFORM,
+          banner: null,
+          keywords: JUNOS_KEYWORDS,
+        },
+      };
+      // Everything derived from the dialect; applyDialect rebuilds it, at
+      // startup and on a live switch from the platform badge.
+      let DIALECT, COMMENT, MARKER, keywordGroups, MAX_DESCRIPTION_LEN;
+      let FREEFORM_CMD_RE, TEMPLATE_HEADER, SECTION_RE, BADGE_RE, CLEAN_BADGE_RE;
+      let COMMENT_LINE_RE, BARE_COMMENT_RE, INLINE_COMMENT_RE, INLINE_OR_LINE_COMMENT_RE;
+      function applyDialect(name) {
+        DIALECT = DIALECTS[name] ?? DIALECTS.ios;
+        COMMENT = DIALECT.comment;
+        MARKER = COMMENT.repeat(3);
+        keywordGroups = DIALECT.keywords;
+        MAX_DESCRIPTION_LEN = DIALECT.descriptionMax;
+        FREEFORM_CMD_RE = DIALECT.freeform;
+        TEMPLATE_HEADER = templateHeader(COMMENT);
+        const c = escRegex(COMMENT);
+        SECTION_RE = new RegExp(`^(${c}{3,})\\s*(.+)$`);
+        // (?<![^\s]) = line start or after whitespace: a glued bang is a value
+        // (P@ss!NOTE:1), never a badge.
+        BADGE_RE = new RegExp(`(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`, "g");
+        // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
+        CLEAN_BADGE_RE = new RegExp(`(?<![^\\s])${c}[A-Z][A-Z0-9_-]*:\\s*[\\w\\-., ]+`, "g");
+        COMMENT_LINE_RE = new RegExp(`^\\s*${c}`);
+        BARE_COMMENT_RE = new RegExp(`^\\s*${c}\\s*$`);
+        INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
+        INLINE_OR_LINE_COMMENT_RE = new RegExp(`(?:^|\\s)${c}`);
+        const badge = document.getElementById("dialectBadge");
+        badge.innerHTML = DIALECT.experimental
+          ? `${escHtml(DIALECT.short)}<span class="dialect-flag">BETA</span>`
+          : escHtml(DIALECT.short);
+        badge.title = DIALECT.experimental
+          ? `${DIALECT.label} — beta: verify output on a device`
+          : "Switch platform";
+
+        // Guide examples are written in IOS syntax; swap their comment leaders for the dialect's.
+        document.querySelectorAll("[data-syntax]").forEach((el) => {
+          el.dataset.syntax ||= el.textContent;
+          el.textContent = el.dataset.syntax.replace(/^!+/, (m) => COMMENT.repeat(m.length));
+        });
+      }
+      applyDialect(DIALECT_NAME);
+      function toggleDialectMenu(e) {
+        const menu = document.getElementById("dialectMenu");
+        if (!menu.hidden) return closeDialectMenu();
+        menu.innerHTML = Object.entries(DIALECTS)
+          .map(
+            ([key, d]) =>
+              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="dialect-short">${escHtml(d.short)}</span><span class="dialect-label">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag" title="Beta: verify output on a device">BETA</span>' : ""}</button>`,
+          )
+          .join("");
+        placePopup(menu, e.currentTarget.getBoundingClientRect());
+      }
+      function closeDialectMenu() {
+        document.getElementById("dialectMenu").hidden = true;
+      }
+      // Sections are a tool concept and survive the switch; they are written
+      // out with the new marker. Body text is re-cleaned, re-linted, re-colored.
+      function switchDialect(name) {
+        closeDialectMenu();
+        if (DIALECTS[name] === DIALECT) return;
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        for (const id of [...activeSectionEditors]) commitSectionEdit(id);
+        applyDialect(name);
+        if (templateSource !== null) render();
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#dialectMenu, #dialectBadge")) closeDialectMenu();
+      });
+      // Platform guess from commands no other dialect uses. Returns a key only
+      // on a clear lead; anything ambiguous keeps the current platform.
+      const DIALECT_SIGNS = {
+        junos: [
+          [/^\s*set\s+(?:system|interfaces|protocols|vlans|firewall|routing-options|security)\b/m, 4],
+          [/^\s*(?:interfaces|protocols|system|routing-options)\s*\{/m, 4],
+          [/\b(?:ge|xe|et)-\d+\/\d+\/\d+/, 3],
+          [/\bunit\s+\d+\s+family\b/, 2],
+        ],
+        eos: [
+          [/^\s*banner\s+\w+\s*\n[\s\S]*?^\s*EOF\s*$/m, 4],
+          [/^\s*(?:mlag\s+configuration|daemon\s+\w+|management\s+api|event-handler)\b/m, 3],
+          [/^\s*interface\s+Ethernet\d+(?![\/\d])/m, 2],
+        ],
+        nxos: [
+          [/^\s*feature\s+\w+/m, 4],
+          [/^\s*(?:vpc\s+domain|vrf\s+context|fex\s+\d+|boot\s+nxos)\b/m, 4],
+          [/^\s*interface\s+Ethernet\d+\/\d+/m, 2],
+        ],
+        ios: [
+          [/^\s*interface\s+(?:Gigabit|TenGigabit|FastEthernet|TwoGigabit|FiveGigabit|TwentyFiveGig|FortyGigabit|HundredGig)/im, 4],
+          [/^\s*(?:service\s+password-encryption|enable\s+secret|ip\s+domain[- ]name|boot\s+system)\b/m, 2],
+          [/^\s*spanning-tree\s+portfast\b/m, 1],
+        ],
+      };
+      function detectDialect(text) {
+        const scores = Object.entries(DIALECT_SIGNS).map(([key, signs]) => [
+          key,
+          signs.reduce((n, [re, w]) => n + (re.test(text) ? w : 0), 0),
+        ]);
+        scores.sort((a, b) => b[1] - a[1]);
+        const [[best, top], [, next]] = scores;
+        return top >= 4 && top - next >= 3 ? best : null;
+      }
+      // Opening banner line: { delim } with the closer, or delim null when it
+      // closes on the same line; null when the line is not a banner.
+      function bannerStart(line) {
+        const b = DIALECT.banner;
+        const m = b && line.match(b.start);
+        if (!m) return null;
+        if (b.delimiter) return { delim: b.delimiter, at: m[0].length - 1 };
+        const afterFirst = line.slice(line.indexOf(m[1]) + 1);
+        return { delim: afterFirst.includes(m[1]) ? null : m[1], at: m[0].length - 1 };
+      }
+      function bannerCloses(line, delim) {
+        return DIALECT.banner.delimiter ? line.trim() === delim : line.includes(delim);
+      }
+      // Output: drop comment lines and whitespace-preceded inline comments,
+      // then strip leading indent. Glued bangs are values; banners verbatim.
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
         for (const line of (text ?? "").split("\n")) {
           if (bannerDelim) {
             out.push(line);
-            if (line.includes(bannerDelim)) bannerDelim = null;
+            if (bannerCloses(line, bannerDelim)) bannerDelim = null;
             continue;
           }
-          const m = line.match(BANNER_START_RE);
-          if (m) {
+          const b = bannerStart(line);
+          if (b) {
             out.push(line.replace(/^\s+/, ""));
-            // Multi-line banner unless the delimiter recurs on this line.
-            const afterFirst = line.slice(line.indexOf(m[1]) + 1);
-            if (!afterFirst.includes(m[1])) bannerDelim = m[1];
+            bannerDelim = b.delim;
             continue;
           }
-          if (/^\s*!\s*$/.test(line)) {
-            out.push("!"); // bare ! passes through: answers device prompts on paste
+          if (BARE_COMMENT_RE.test(line)) {
+            out.push(COMMENT); // bare comment char passes through: answers device prompts on paste
             continue;
           }
-          if (/^\s*!/.test(line)) continue;
+          if (COMMENT_LINE_RE.test(line)) continue;
           if (FREEFORM_CMD_RE.test(line)) {
             out.push(line.replace(/^\s+/, ""));
             continue;
           }
-          out.push(line.replace(/\s+!.*$/, "").replace(/^\s+/, ""));
+          out.push(line.replace(INLINE_COMMENT_RE, "").replace(/^\s+/, ""));
         }
         return out.join("\n");
       }
@@ -3496,9 +3815,9 @@
       }
       // Part of a line that reaches the device; must match cleanOutputLines.
       function commandPart(line) {
-        if (/^\s*!/.test(line)) return "";
+        if (COMMENT_LINE_RE.test(line)) return "";
         if (FREEFORM_CMD_RE.test(line)) return line;
-        return line.replace(/\s+!.*$/, "");
+        return line.replace(INLINE_COMMENT_RE, "");
       }
       // Banner-aware line walk shared by lint and preview marking.
       function walkConfigLines(text) {
@@ -3510,14 +3829,13 @@
           const line = lines[i];
           if (bannerDelim) {
             parts.push({ i, line, cmd: line, banner: true });
-            if (line.includes(bannerDelim)) bannerDelim = null;
+            if (bannerCloses(line, bannerDelim)) bannerDelim = null;
             continue;
           }
-          const m = line.match(BANNER_START_RE);
-          if (m) {
-            const afterFirst = line.slice(line.indexOf(m[1]) + 1);
-            if (!afterFirst.includes(m[1])) {
-              bannerDelim = m[1];
+          const b = bannerStart(line);
+          if (b) {
+            if (b.delim) {
+              bannerDelim = b.delim;
               bannerLine = i;
             }
             parts.push({ i, line, cmd: line, banner: true });
@@ -3573,8 +3891,7 @@
             ]);
         }
         if (unclosed) {
-          const line = parts[unclosed.line].cmd;
-          const at = line.match(BANNER_START_RE)[0].length - 1;
+          const at = bannerStart(parts[unclosed.line].cmd).at;
           add(
             unclosed.line,
             `Banner delimiter \`${unclosed.delim}\` never closes; every line after it is banner text`,
@@ -3826,10 +4143,10 @@
           let commentHtml = "";
           // Free-form-arg lines only comment at line start; must match cleanOutputLines.
           const commentMatch = line.match(
-            FREEFORM_CMD_RE.test(line) ? /^\s*!/ : /(?:^|\s)!/,
+            FREEFORM_CMD_RE.test(line) ? COMMENT_LINE_RE : INLINE_OR_LINE_COMMENT_RE,
           );
           if (commentMatch) {
-            const commentIdx = line.indexOf("!", commentMatch.index);
+            const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
             commentHtml = `<span class="ios-comment">${rawComment}</span>`;
             line = line.slice(0, commentIdx);
@@ -4035,9 +4352,13 @@
         const fullName = file.name;
         readFileAsText(file, "Error reading template file", (evt) => {
           try {
-            templateSource = canonicalizeMarkers(
-              toInternalEOL(evt.target.result),
-            );
+            const raw = toInternalEOL(evt.target.result);
+            const guess = DIALECT_AUTODETECT && detectDialect(raw);
+            if (guess && DIALECTS[guess] !== DIALECT) {
+              applyDialect(guess);
+              showToast(`Platform: ${DIALECT.label} (detected)`);
+            }
+            templateSource = canonicalizeMarkers(raw);
             // Committed only on a successful read.
             templateFileName = fullName;
             originalTemplateSource = templateSource;
@@ -4139,6 +4460,7 @@
         }
         const session = {
           schemaVersion: SESSION_SCHEMA_VERSION,
+          dialect: Object.keys(DIALECTS).find((k) => DIALECTS[k] === DIALECT),
           templateSource,
           originalTemplateSource,
           templateFileName,
@@ -4189,6 +4511,8 @@
               session.originalTemplateSource !== null
                 ? toInternalEOL(session.originalTemplateSource)
                 : null;
+            if (session.dialect in DIALECTS && DIALECTS[session.dialect] !== DIALECT)
+              applyDialect(session.dialect);
             templateFileName = session.templateFileName;
             varsFromFile = session.varsFromFile;
             varsFileName = session.varsFileName;
@@ -4699,7 +5023,7 @@ category = General
         if (sections.length === 0) {
           container.innerHTML = `<div class="empty-state">
               <div class="empty-title">No sections detected in this template.</div>
-              <div class="empty-hint">Toggle to <strong>Full</strong> view above, or add <code>!!! Section Name</code> markers to your template file.</div>
+              <div class="empty-hint">Toggle to <strong>Full</strong> view above, or add <code>${MARKER} Section Name</code> markers to your template file.</div>
             </div>`;
           return;
         }
@@ -4828,7 +5152,7 @@ category = General
             if (startsInComment) return line; // comment content, not a marker
             const m = line.match(SECTION_RE);
             if (!m) return line;
-            return (m[1].length >= 5 ? "!!!!! " : "!!! ") + m[2].trim();
+            return `${m[1].length >= 5 ? COMMENT.repeat(5) : MARKER} ` + m[2].trim();
           })
           .join("\n");
       }
@@ -4929,7 +5253,7 @@ category = General
         const parts = [];
         for (const r of records) {
           if (r.name !== null)
-            parts.push((r.isImportant ? "!!!!! " : "!!! ") + r.name);
+            parts.push(`${r.isImportant ? COMMENT.repeat(5) : MARKER} ` + r.name);
           parts.push(recordEffectiveBody(r));
         }
         return parts.join("\n");
@@ -5797,9 +6121,9 @@ category = General
           lines = card ? [...card.querySelectorAll(".config-line")] : [];
         } else {
           const all = [...document.querySelectorAll(".config-line")];
-          const isMarker = (l) => /^!!!/.test(l.textContent.trim());
+          const isMarker = (l) => l.textContent.trim().startsWith(MARKER);
           const start = all.findIndex(
-            (l) => isMarker(l) && l.textContent.trim().replace(/^!+\s*/, "") === name,
+            (l) => isMarker(l) && l.textContent.trim().replace(SECTION_RE, "$2") === name,
           );
           const end = all.findIndex((l, i) => i > start && isMarker(l));
           lines = start < 0 ? [] : all.slice(start + 1, end < 0 ? undefined : end);
@@ -5839,7 +6163,10 @@ category = General
         closeBadgeCopy();
       });
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeBadgeCopy();
+        if (e.key === "Escape") {
+          closeBadgeCopy();
+          closeDialectMenu();
+        }
       });
       window.addEventListener("scroll", closeBadgeCopy, true);
       window.addEventListener("scroll", hideWarnPopup, true);
