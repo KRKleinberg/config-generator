@@ -168,10 +168,15 @@
         }
       }
 
-      .form-panel.drag-over {
+      body.drag-over::after {
+        content: "";
+        position: fixed;
+        inset: 12px;
+        z-index: 200;
         background: rgba(var(--rgb-accent), 0.05);
         outline: 2px dashed var(--accent);
-        outline-offset: -12px;
+        border-radius: var(--radius-lg);
+        pointer-events: none;
       }
 
       .brand,
@@ -1022,9 +1027,9 @@
          squiggle as a background instead; it shows under a tab or NBSP too. */
       .editor-mirror .risk-char {
         text-decoration: none;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3' viewBox='0 0 6 3'%3E%3Cpath d='M0 2.2 Q1.5 0 3 2.2 T6 2.2' fill='none' stroke='%23dd9a1f' stroke-width='1'/%3E%3C/svg%3E")
-          repeat-x bottom / 6px 3px;
-        padding-bottom: 1px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='5' viewBox='0 0 6 5'%3E%3Cpath d='M0 1.2 Q1.5 4.2 3 1.2 T6 1.2' fill='none' stroke='%23dd9a1f' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
+          repeat-x bottom / 6px 5px;
+        padding-bottom: 6px;
       }
 
       .config-section pre {
@@ -1259,6 +1264,8 @@
 
       /* Same pill as a config badge, in the warning color. */
       .dialect-flag {
+        position: relative;
+        top: 1px; /* centered on the caps, not the line box */
         padding: 1px 6px;
         border-radius: var(--radius-sm);
         font-family: var(--mono);
@@ -6340,18 +6347,21 @@ category = General
               );
           });
 
-        const dropZone = document.querySelector(".form-panel");
-        dropZone.addEventListener("dragover", (e) => {
+        // Whole window is the drop target. dragenter/dragleave fire for every
+        // element crossed, so a depth counter tells a real leave from a child hop.
+        let dragDepth = 0;
+        document.addEventListener("dragenter", (e) => {
           e.preventDefault();
-          dropZone.classList.add("drag-over");
+          if (dragDepth++ === 0) document.body.classList.add("drag-over");
         });
-        dropZone.addEventListener("dragleave", (e) => {
-          e.preventDefault();
-          dropZone.classList.remove("drag-over");
+        document.addEventListener("dragover", (e) => e.preventDefault());
+        document.addEventListener("dragleave", () => {
+          if (--dragDepth === 0) document.body.classList.remove("drag-over");
         });
-        dropZone.addEventListener("drop", (e) => {
+        document.addEventListener("drop", (e) => {
           e.preventDefault();
-          dropZone.classList.remove("drag-over");
+          dragDepth = 0;
+          document.body.classList.remove("drag-over");
           if (!e.dataTransfer.files.length) return;
 
           let foundSession = false,
