@@ -1,4 +1,4 @@
-<!-- Config Generator v2026.09.10 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
+<!-- Config Generator v2026.09.21 | Copyright 2026 Kevin Kleinberg | Apache-2.0 | github.com/KRKleinberg/config-generator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -1099,7 +1099,7 @@
         cursor: help;
       }
 
-      .ios-comment {
+      .config-comment {
         color: var(--text-dim);
       }
 
@@ -1193,7 +1193,6 @@
         opacity: 0.3;
         transform: skewX(25deg);
       }
-      /* Two-column grid: the gutter sizes to its widest label so bodies align. */
       /* Platform badge: the title's own type, divided off by a rule; reads as
          text until hovered. Its menu lists the dialects. */
       .dialect-btn {
@@ -1260,10 +1259,6 @@
         top: 0;
       }
 
-      .dialect-menu button {
-        gap: 10px;
-      }
-
       /* Same pill as a config badge, in the warning color. */
       .dialect-flag {
         position: relative;
@@ -1279,8 +1274,7 @@
         color: var(--warn);
       }
 
-
-
+      /* Two-column grid: the gutter sizes to its widest label so bodies align. */
       .warn-popup {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
@@ -1647,19 +1641,6 @@
         font-family: var(--mono);
         font-size: 12px;
         color: var(--success);
-      }
-
-      .sop-content pre {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        padding: 12px;
-        border-radius: var(--radius);
-        overflow-x: auto;
-        margin-bottom: 16px;
-        font-family: var(--mono);
-        font-size: 12px;
-        line-height: 1.5;
-        color: var(--text);
       }
 
       .guide-h4-first {
@@ -2396,9 +2377,9 @@
           <div class="sop-content">
             <h4 class="guide-h4-first">Overview</h4>
             <p class="guide-intro">
-              Generates standardized network configurations entirely in your
-              browser. Nothing is sent over the network and nothing persists
-              after this tab closes. Save a session to keep your progress.
+              Builds switch configs from a template, entirely in the browser.
+              Nothing leaves the page and nothing survives closing the tab; save
+              a session to keep your progress.
             </p>
             <div class="quick-start">
               <div class="qs-step">
@@ -2434,15 +2415,15 @@
                   <dl class="guide-defs">
                     <dt>Template</dt>
                     <dd>
-                      The configuration itself, with
+                      The config, with
                       <code>{{ VARIABLE }}</code>
-                      entries where values go.
+                      where values go.
                     </dd>
                     <dt>Variables</dt>
                     <dd>
-                      An optional
+                      Optional
                       <code>.vars.ini</code>
-                      that gives each field its hint, dropdown, and validation.
+                      giving each field a hint, dropdown, or validation.
                     </dd>
                     <dt>
                       Auto-detect
@@ -2453,15 +2434,15 @@
                       </span>
                     </dt>
                     <dd>
-                      Keeps the form in sync with the template: fields appear
-                      and disappear as its variables change. Auto-detected
-                      fields have no hints, dropdowns, or validation, so load a
+                      Fields follow the template's variables automatically; the
+                      button forces a re-sync. Auto-detected fields have no
+                      hints or validation, so load a
                       <code>.vars.ini</code>
-                      if one exists. The button forces a re-sync.
+                      if one exists.
                     </dd>
                     <dt>Drag and drop</dt>
                     <dd>
-                      Drop files anywhere on the form panel:
+                      Drop files anywhere in the window:
                       <code>.session.json</code>
                       restores a session,
                       <code>.ini</code>
@@ -2481,16 +2462,15 @@
                   <dl class="guide-defs">
                     <dt>Find a variable</dt>
                     <dd>
-                      Click a field label to jump to that variable in the
-                      preview; click again to cycle through each place it
-                      appears. Click any highlighted
+                      Click a field label to jump to it in the preview (again to
+                      cycle); click a highlighted
                       <code>{{ VARIABLE }}</code>
-                      in the preview to jump back to its input field.
+                      to jump back to its field.
                     </dd>
                     <dt>Linked groups</dt>
                     <dd>
-                      If any field in a linked group is filled, the whole group
-                      becomes required.
+                      Fill any field in a group and the whole group becomes
+                      required.
                     </dd>
                   </dl>
                 </div>
@@ -2506,11 +2486,10 @@
                   <dl class="guide-defs">
                     <dt>Template-level edits</dt>
                     <dd>
-                      Edits apply to the template text, not the final output:
+                      Edits apply to the template, not the output, so
                       <code>{{ VARIABLE }}</code>
-                      entries keep working inside an edited section and form
-                      changes still flow through. Switching between Sections
-                      and Full commits any open editor.
+                      entries keep working and form changes still flow through.
+                      Switching views commits open editors.
                     </dd>
                     <dt>
                       Reset
@@ -2521,9 +2500,8 @@
                       </span>
                     </dt>
                     <dd>
-                      On an edited section: restores that section's template
-                      output. Above the form: clears every input. Loaded files
-                      and manual edits stay.
+                      On a section: restores it. Above the form: clears every
+                      input; files and edits stay.
                     </dd>
                   </dl>
                 </div>
@@ -2542,21 +2520,19 @@
                       <code data-syntax>!KEYWORD:</code>
                       badges and
                       <code data-syntax>!</code>
-                      comments are stripped from copied and saved text, except
-                      on commands that take free-form text (passwords, keys,
-                      descriptions, remarks), where a mid-line
+                      comments are stripped from output, except on free-form
+                      commands (passwords, keys, descriptions, remarks) where a
+                      mid-line
                       <code data-syntax>!</code>
-                      is kept as part of the value. A bare
+                      is part of the value. Bare
                       <code data-syntax>!</code>
-                      line passes through to answer device prompts; banner
-                      blocks are left untouched.
+                      lines and banner blocks pass through.
                     </dd>
                     <dt>Unfilled variables</dt>
                     <dd>
                       Come out as literal
                       <code>{{ VARIABLE }}</code>
-                      text. Fill every amber variable before pasting to a
-                      device.
+                      text; fill every amber variable before pasting.
                     </dd>
                   </dl>
                 </div>
@@ -2569,9 +2545,6 @@
                   </svg>
                 </summary>
                 <div class="guide-body">
-                  <p class="guide-note">
-                    Three save buttons, three different files:
-                  </p>
                   <dl class="guide-defs">
                     <dt>
                       Save Config
@@ -2581,9 +2554,7 @@
                         </svg>
                       </span>
                     </dt>
-                    <dd>
-                      (Top right) The finished, device-ready configuration.
-                    </dd>
+                    <dd>(Top right) The device-ready config.</dd>
                     <dt>
                       Save Template
                       <span class="guide-btn">
@@ -2593,11 +2564,9 @@
                       </span>
                     </dt>
                     <dd>
-                      (Top right) The template itself, with its
+                      (Top right) The template with its
                       <code>{{ VARIABLE }}</code>
-                      entries intact and your manual edits baked in. Use it to
-                      make a recurring edit permanent or to hand changes back to
-                      the template maintainer.
+                      entries intact and your manual edits baked in.
                     </dd>
                     <dt>
                       Save Session
@@ -2608,11 +2577,9 @@
                       </span>
                     </dt>
                     <dd>
-                      (Top left) Your whole workspace: loaded files, form
-                      inputs, and manual edits, saved as one
+                      (Top left) The whole workspace as one
                       <code>.session.json</code>
-                      file. This is the only way progress survives closing the
-                      tab.
+                      file. The only way progress survives closing the tab.
                     </dd>
                   </dl>
                 </div>
@@ -2644,7 +2611,7 @@
                         <tr>
                           <td><code>{{ VAR | filter }}</code></td>
                           <td>
-                            Supported filters:
+                            Filters:
                             <code>default('x')</code>
                             ,
                             <code>upper</code>
@@ -2662,38 +2629,35 @@
                         <tr>
                           <td><code>{% if VAR %} {% else %}</code></td>
                           <td>
-                            Branches on whether VAR is filled. Existence checks
-                            only. There is no
+                            Branches on whether VAR is filled; no
                             <code>==</code>
-                            comparison; use a
+                            . Use a
                             <code>choices</code>
-                            dropdown and one field per branch instead. An if
-                            block must open and close within one section.
+                            dropdown with one field per branch. Must open and
+                            close within one section.
                           </td>
                         </tr>
                         <tr>
                           <td><code>{# comment #}</code></td>
                           <td>
-                            Stripped from output. May span section markers;
-                            cannot nest.
+                            Stripped from output. May span sections; cannot
+                            nest.
                           </td>
                         </tr>
                         <tr>
                           <td><code data-syntax>!!! Section Name</code></td>
                           <td>
-                            Splits the preview into copyable sections. Five
-                            markers (
+                            Starts a copyable section. Five (
                             <code data-syntax>!!!!!</code>
-                            ) render the header in red for critical sections.
+                            ) mark it critical with a red header.
                           </td>
                         </tr>
                         <tr>
                           <td><code data-syntax>!KEYWORD: v1, v2</code></td>
                           <td>
-                            End-of-line colored badges (e.g.,
+                            End-of-line badge, e.g.
                             <code data-syntax>!STIG: V-1234</code>
-                            ). Any all-caps keyword works; badges are stripped
-                            from output. End of line only.
+                            . Any all-caps keyword; stripped from output.
                           </td>
                         </tr>
                       </tbody>
@@ -2710,14 +2674,12 @@
                 </summary>
                 <div class="guide-body">
                   <p class="guide-note">
-                    One flat
+                    One
                     <code>[VAR_NAME]</code>
-                    section per variable, with
+                    section per variable with
                     <code>key = value</code>
-                    lines below it. Unrecognized keys are ignored with a
-                    warning. Variable names may contain letters, digits,
-                    underscores, dots, and hyphens, and must start with a
-                    letter, digit, or underscore. Spaces are not allowed.
+                    lines. Names: letters, digits, underscores, dots, and
+                    hyphens; no spaces.
                   </p>
                   <div class="guide-table-wrap">
                     <table class="guide-table">
@@ -2731,38 +2693,36 @@
                         <tr>
                           <td><code>description</code></td>
                           <td>
-                            Hint shown under the field.
+                            Hint under the field;
                             <code>\n</code>
-                            and
-                            <code>\t</code>
-                            insert line breaks.
+                            breaks lines.
                           </td>
                         </tr>
                         <tr>
                           <td><code>placeholder</code></td>
-                          <td>Grey example text. Never submitted.</td>
+                          <td>Grey example text, never submitted.</td>
                         </tr>
                         <tr>
                           <td><code>default</code></td>
-                          <td>Real value prefilled into the field.</td>
+                          <td>Value prefilled into the field.</td>
                         </tr>
                         <tr>
                           <td><code>type</code></td>
                           <td>
                             <code>int</code>
-                            restricts input to numbers.
+                            restricts input to digits.
                           </td>
                         </tr>
                         <tr>
                           <td><code>choices</code></td>
                           <td>
                             <code>[opt1, opt2]</code>
-                            renders a dropdown. Inline list only.
+                            renders a dropdown.
                           </td>
                         </tr>
                         <tr>
                           <td><code>regex</code></td>
-                          <td>Validation pattern, wrapped in single quotes.</td>
+                          <td>Validation pattern in single quotes.</td>
                         </tr>
                         <tr>
                           <td><code>error</code></td>
@@ -2770,9 +2730,7 @@
                         </tr>
                         <tr>
                           <td><code>category</code></td>
-                          <td>
-                            Heading the field is grouped under in the form.
-                          </td>
+                          <td>Heading the field is grouped under.</td>
                         </tr>
                         <tr>
                           <td><code>required</code></td>
@@ -2784,8 +2742,7 @@
                         <tr>
                           <td><code>group</code></td>
                           <td>
-                            If any field in a group is filled, all become
-                            required.
+                            Fill any field in a group and all become required.
                           </td>
                         </tr>
                       </tbody>
@@ -2793,7 +2750,7 @@
                   </div>
                   <p class="guide-note guide-note-after">
                     <strong>Starter file:</strong>
-                    load a template with no variables file, then click the
+                    with a template loaded and no vars file, the
                     <span class="keep-together">
                       download icon
                       <span class="guide-btn">
@@ -2802,10 +2759,9 @@
                         </svg>
                       </span>
                     </span>
-                    beside the lightning to export a boilerplate
+                    beside the lightning exports a boilerplate
                     <code>.vars.ini</code>
-                    covering the template's variables. Fill in the hints and
-                    validation by hand.
+                    for the template's variables.
                   </p>
                 </div>
               </details>
@@ -2834,7 +2790,7 @@
       const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
       const LINT_TEMPLATE = true; // template structure badge
       const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
-      const DIALECT_NAME = "ios"; // ios, nxos, eos, junos — see DIALECTS; only ios is device-tested
+      const DIALECT_NAME = "ios"; // ios, nxos, eos, junos (see DIALECTS); only ios is device-tested
       const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
       const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
@@ -2858,7 +2814,8 @@
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
       // Written at the top of every saved or new template. Indented so older
       // tool copies don't parse the marker examples as markers.
-      const templateHeader = (c) => `{# ===============================================================
+      function templateHeader(c) {
+        return `{# ===============================================================
    Switch Configuration Template
    JINJA2 SYNTAX (same as Ansible):
    {{  VAR  }}                              Variable substitution
@@ -2877,6 +2834,7 @@
    ${c}KEYWORD: VAL1, VAL2                     End-of-line badge, one color per keyword (stripped on copy)
                                             any all-caps keyword works, e.g. ${c}STIG: V-1234, ${c}CIS: 1.5.2
 =============================================================== #}\n\n`;
+      }
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
       // Recognized .vars.ini keys; shared by the parser and warn-row coloring.
       const INI_KEYS = new Set([
@@ -3584,41 +3542,154 @@
           name: "Interfaces",
           color: "var(--syn-interface)",
           numbered: true, // ge-0/0/0, ae0, irb.100
-          words: ["interfaces", "unit", "family", "inet", "inet6", "ethernet-switching", "ge-", "xe-", "et-", "ae", "irb", "lo", "vlan-id", "vlans"],
+          words: [
+            "interfaces",
+            "unit",
+            "family",
+            "inet",
+            "inet6",
+            "ethernet-switching",
+            "ge-",
+            "xe-",
+            "et-",
+            "ae",
+            "irb",
+            "lo",
+            "vlan-id",
+            "vlans",
+          ],
         },
         {
           name: "Good Words & Permits",
           color: "var(--syn-good)",
-          words: ["accept", "permit", "allow", "enable", "up", "active", "commit"],
+          words: [
+            "accept",
+            "permit",
+            "allow",
+            "enable",
+            "up",
+            "active",
+            "commit",
+          ],
         },
         {
           name: "Bad Words & Denies",
           color: "var(--syn-bad)",
-          words: ["discard", "reject", "deny", "disable", "delete", "deactivate", "down", "rollback"],
+          words: [
+            "discard",
+            "reject",
+            "deny",
+            "disable",
+            "delete",
+            "deactivate",
+            "down",
+            "rollback",
+          ],
         },
         {
           name: "Security & Credentials",
           color: "var(--syn-secure)",
-          words: ["authentication", "authentication-order", "root-authentication", "encrypted-password", "plain-text-password", "secret", "pre-shared-key", "ssh", "ssl", "login", "user", "class", "super-user", "radius-server", "tacplus-server", "security", "policies", "zones", "ike", "ipsec"],
+          words: [
+            "authentication",
+            "authentication-order",
+            "root-authentication",
+            "encrypted-password",
+            "plain-text-password",
+            "secret",
+            "pre-shared-key",
+            "ssh",
+            "ssl",
+            "login",
+            "user",
+            "class",
+            "super-user",
+            "radius-server",
+            "tacplus-server",
+            "security",
+            "policies",
+            "zones",
+            "ike",
+            "ipsec",
+          ],
         },
         {
           name: "Access Lists",
           color: "var(--syn-acl)",
-          words: ["firewall", "filter", "term", "from", "then", "policy-options", "policy-statement", "prefix-list", "route-filter", "source-address", "destination-address", "count", "log", "syslog"],
+          words: [
+            "firewall",
+            "filter",
+            "term",
+            "from",
+            "then",
+            "policy-options",
+            "policy-statement",
+            "prefix-list",
+            "route-filter",
+            "source-address",
+            "destination-address",
+            "count",
+            "log",
+            "syslog",
+          ],
         },
         {
           name: "Services & Protocols",
           color: "var(--syn-service)",
-          words: ["protocols", "ospf", "bgp", "isis", "lldp", "rstp", "mstp", "vstp", "igmp-snooping", "snmp", "ntp", "dhcp", "dhcp-relay", "services", "system", "chassis", "routing-instances", "routing-options", "forwarding-options"],
+          words: [
+            "protocols",
+            "ospf",
+            "bgp",
+            "isis",
+            "lldp",
+            "rstp",
+            "mstp",
+            "vstp",
+            "igmp-snooping",
+            "snmp",
+            "ntp",
+            "dhcp",
+            "dhcp-relay",
+            "services",
+            "system",
+            "chassis",
+            "routing-instances",
+            "routing-options",
+            "forwarding-options",
+          ],
         },
         {
           name: "Config Commands",
           color: "var(--syn-command)",
-          words: ["set", "edit", "top", "show", "apply-groups", "groups", "description", "host-name", "domain-name", "name-server", "static", "route", "next-hop", "mtu", "speed", "duplex", "native-vlan-id", "port-mode", "interface-mode", "members", "trunk", "access"],
+          words: [
+            "set",
+            "edit",
+            "top",
+            "show",
+            "apply-groups",
+            "groups",
+            "description",
+            "host-name",
+            "domain-name",
+            "name-server",
+            "static",
+            "route",
+            "next-hop",
+            "mtu",
+            "speed",
+            "duplex",
+            "native-vlan-id",
+            "port-mode",
+            "interface-mode",
+            "members",
+            "trunk",
+            "access",
+          ],
         },
       ];
       const withWords = (groups, name, extra) =>
-        groups.map((g) => (g.name === name ? { ...g, words: [...g.words, ...extra] } : g));
+        groups.map((g) =>
+          g.name === name ? { ...g, words: [...g.words, ...extra] } : g,
+        );
       const DIALECTS = {
         ios: {
           label: "Cisco IOS / IOS XE",
@@ -3637,7 +3708,14 @@
           descriptionMax: 254,
           freeform: IOS_FREEFORM,
           banner: IOS_BANNER,
-          keywords: withWords(IOS_KEYWORDS, "Config Commands", ["feature", "vpc", "vdc", "fex", "vrf", "hardware"]),
+          keywords: withWords(IOS_KEYWORDS, "Config Commands", [
+            "feature",
+            "vpc",
+            "vdc",
+            "fex",
+            "vrf",
+            "hardware",
+          ]),
         },
         eos: {
           experimental: true,
@@ -3646,8 +3724,17 @@
           comment: "!",
           descriptionMax: 240,
           freeform: IOS_FREEFORM,
-          banner: { start: /^\s*banner\s+(?:motd|login)\s*$/i, delimiter: "EOF" },
-          keywords: withWords(IOS_KEYWORDS, "Config Commands", ["management", "mlag", "daemon", "event-handler", "hardware"]),
+          banner: {
+            start: /^\s*banner\s+(?:motd|login)\s*$/i,
+            delimiter: "EOF",
+          },
+          keywords: withWords(IOS_KEYWORDS, "Config Commands", [
+            "management",
+            "mlag",
+            "daemon",
+            "event-handler",
+            "hardware",
+          ]),
         },
         junos: {
           experimental: true,
@@ -3663,8 +3750,15 @@
       // Everything derived from the dialect; applyDialect rebuilds it, at
       // startup and on a live switch from the platform badge.
       let DIALECT, COMMENT, MARKER, keywordGroups, MAX_DESCRIPTION_LEN;
-      let FREEFORM_CMD_RE, TEMPLATE_HEADER, SECTION_RE, BADGE_RE, CLEAN_BADGE_RE;
-      let COMMENT_LINE_RE, BARE_COMMENT_RE, INLINE_COMMENT_RE, INLINE_OR_LINE_COMMENT_RE;
+      let FREEFORM_CMD_RE,
+        TEMPLATE_HEADER,
+        SECTION_RE,
+        BADGE_RE,
+        CLEAN_BADGE_RE;
+      let COMMENT_LINE_RE,
+        BARE_COMMENT_RE,
+        INLINE_COMMENT_RE,
+        INLINE_OR_LINE_COMMENT_RE;
       function applyDialect(name) {
         DIALECT = DIALECTS[name] ?? DIALECTS.ios;
         COMMENT = DIALECT.comment;
@@ -3677,9 +3771,15 @@
         SECTION_RE = new RegExp(`^(${c}{3,})\\s*(.+)$`);
         // (?<![^\s]) = line start or after whitespace: a glued bang is a value
         // (P@ss!NOTE:1), never a badge.
-        BADGE_RE = new RegExp(`(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`, "g");
+        BADGE_RE = new RegExp(
+          `(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`,
+          "g",
+        );
         // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
-        CLEAN_BADGE_RE = new RegExp(`(?<![^\\s])${c}[A-Z][A-Z0-9_-]*:\\s*[\\w\\-., ]+`, "g");
+        CLEAN_BADGE_RE = new RegExp(
+          `(?<![^\\s])${c}[A-Z][A-Z0-9_-]*:\\s*[\\w\\-., ]+`,
+          "g",
+        );
         COMMENT_LINE_RE = new RegExp(`^\\s*${c}`);
         BARE_COMMENT_RE = new RegExp(`^\\s*${c}\\s*$`);
         INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
@@ -3693,7 +3793,9 @@
         // Guide examples are written in IOS syntax; swap their comment leaders for the dialect's.
         document.querySelectorAll("[data-syntax]").forEach((el) => {
           el.dataset.syntax ||= el.textContent;
-          el.textContent = el.dataset.syntax.replace(/^!+/, (m) => COMMENT.repeat(m.length));
+          el.textContent = el.dataset.syntax.replace(/^!+/, (m) =>
+            COMMENT.repeat(m.length),
+          );
         });
       }
       applyDialect(DIALECT_NAME);
@@ -3722,20 +3824,27 @@
         if (templateSource !== null) render();
       }
       document.addEventListener("click", (e) => {
-        if (!e.target.closest("#dialectMenu, #dialectBadge")) closeDialectMenu();
+        if (!e.target.closest("#dialectMenu, #dialectBadge"))
+          closeDialectMenu();
       });
       // Platform guess from commands no other dialect uses. Returns a key only
       // on a clear lead; anything ambiguous keeps the current platform.
       const DIALECT_SIGNS = {
         junos: [
-          [/^\s*set\s+(?:system|interfaces|protocols|vlans|firewall|routing-options|security)\b/m, 4],
+          [
+            /^\s*set\s+(?:system|interfaces|protocols|vlans|firewall|routing-options|security)\b/m,
+            4,
+          ],
           [/^\s*(?:interfaces|protocols|system|routing-options)\s*\{/m, 4],
           [/\b(?:ge|xe|et)-\d+\/\d+\/\d+/, 3],
           [/\bunit\s+\d+\s+family\b/, 2],
         ],
         eos: [
           [/^\s*banner\s+\w+\s*\n[\s\S]*?^\s*EOF\s*$/m, 4],
-          [/^\s*(?:mlag\s+configuration|daemon\s+\w+|management\s+api|event-handler)\b/m, 3],
+          [
+            /^\s*(?:mlag\s+configuration|daemon\s+\w+|management\s+api|event-handler)\b/m,
+            3,
+          ],
           [/^\s*interface\s+Ethernet\d+(?![\/\d])/m, 2],
         ],
         nxos: [
@@ -3744,8 +3853,14 @@
           [/^\s*interface\s+Ethernet\d+\/\d+/m, 2],
         ],
         ios: [
-          [/^\s*interface\s+(?:Gigabit|TenGigabit|FastEthernet|TwoGigabit|FiveGigabit|TwentyFiveGig|FortyGigabit|HundredGig)/im, 4],
-          [/^\s*(?:service\s+password-encryption|enable\s+secret|ip\s+domain[- ]name|boot\s+system)\b/m, 2],
+          [
+            /^\s*interface\s+(?:Gigabit|TenGigabit|FastEthernet|TwoGigabit|FiveGigabit|TwentyFiveGig|FortyGigabit|HundredGig)/im,
+            4,
+          ],
+          [
+            /^\s*(?:service\s+password-encryption|enable\s+secret|ip\s+domain[- ]name|boot\s+system)\b/m,
+            2,
+          ],
           [/^\s*spanning-tree\s+portfast\b/m, 1],
         ],
       };
@@ -3766,10 +3881,15 @@
         if (!m) return null;
         if (b.delimiter) return { delim: b.delimiter, at: m[0].length - 1 };
         const afterFirst = line.slice(line.indexOf(m[1]) + 1);
-        return { delim: afterFirst.includes(m[1]) ? null : m[1], at: m[0].length - 1 };
+        return {
+          delim: afterFirst.includes(m[1]) ? null : m[1],
+          at: m[0].length - 1,
+        };
       }
       function bannerCloses(line, delim) {
-        return DIALECT.banner.delimiter ? line.trim() === delim : line.includes(delim);
+        return DIALECT.banner.delimiter
+          ? line.trim() === delim
+          : line.includes(delim);
       }
       // Output: drop comment lines and whitespace-preceded inline comments,
       // then strip leading indent. Glued bangs are values; banners verbatim.
@@ -3813,10 +3933,13 @@
       const MARK_CHAR_RE = /\x16|(?<!\x16)[\t?]|[\u0080-\u{10FFFF}]/gu;
       // Jinja syntax that survived rendering: a full tag, or a stray opener/closer.
       const SYNTAX_RE = /\{[{%#](?:[^{}%#]*[}%#]\})?|[}%#]\}/g;
-      const SYNTAX_MSG = "Unrendered template syntax; the device will reject it";
+      const SYNTAX_MSG =
+        "Unrendered template syntax; the device will reject it";
       function riskCharName(ch) {
-        if (ch === "\t") return "Tab (terminal completion, unless escaped with Ctrl-V)";
-        if (ch === "?") return "`?` (CLI help character, unless escaped with Ctrl-V)";
+        if (ch === "\t")
+          return "Tab (terminal completion, unless escaped with Ctrl-V)";
+        if (ch === "?")
+          return "`?` (CLI help character, unless escaped with Ctrl-V)";
         if (ch === "\u00a0") return "Non-breaking space";
         return `Non-ASCII character \`${ch}\``;
       }
@@ -3969,7 +4092,9 @@
       }
       function headerWarnHtml(issues) {
         if (!issues.length) return "";
-        const msgs = issues.map(({ line, message }) => `Line ${line + 1}: ${message}`);
+        const msgs = issues.map(
+          ({ line, message }) => `Line ${line + 1}: ${message}`,
+        );
         return `<span class="header-warn"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
       }
       function copyToastMessage(base, output, issues) {
@@ -4040,7 +4165,8 @@
           marks.push({ text, message });
           return `\x00RK${marks.length - 1}\x00`;
         };
-        const markChars = (s) => s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
+        const markChars = (s) =>
+          s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
         if (LINT_PASTE_WARNINGS)
           result = walkConfigLines(result)
             .parts.map(({ i, line, cmd }) => {
@@ -4051,9 +4177,13 @@
                 .sort((a, b) => a.range[0] - b.range[0]);
               let out = "";
               let pos = 0;
-              for (const { range: [s, e], message } of ranges) {
+              for (const {
+                range: [s, e],
+                message,
+              } of ranges) {
                 if (s < pos) continue;
-                out += markChars(cmd.slice(pos, s)) + mark(cmd.slice(s, e), message);
+                out +=
+                  markChars(cmd.slice(pos, s)) + mark(cmd.slice(s, e), message);
                 pos = e;
               }
               return out + markChars(cmd.slice(pos)) + line.slice(cmd.length);
@@ -4150,12 +4280,14 @@
           let commentHtml = "";
           // Free-form-arg lines only comment at line start; must match cleanOutputLines.
           const commentMatch = line.match(
-            FREEFORM_CMD_RE.test(line) ? COMMENT_LINE_RE : INLINE_OR_LINE_COMMENT_RE,
+            FREEFORM_CMD_RE.test(line)
+              ? COMMENT_LINE_RE
+              : INLINE_OR_LINE_COMMENT_RE,
           );
           if (commentMatch) {
             const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
-            commentHtml = `<span class="ios-comment">${rawComment}</span>`;
+            commentHtml = `<span class="config-comment">${rawComment}</span>`;
             line = line.slice(0, commentIdx);
           }
           if (line.trim().length > 0) {
@@ -4217,7 +4349,8 @@
         const unsupportedTag = cleanText.match(
           /\{%\s*(?!if\b|else\b|endif\b)([\w-]+)\b/i,
         );
-        if (unsupportedTag) msgs.push(`Unsupported tag \`{% ${unsupportedTag[1]} %}\``);
+        if (unsupportedTag)
+          msgs.push(`Unsupported tag \`{% ${unsupportedTag[1]} %}\``);
         // {{ }} referencing no valid variable: auto-detect skips it, so flag it.
         const exprScanRE = /\{\{(.+?)\}\}/g;
         let exprMatch;
@@ -4297,7 +4430,8 @@
         reader.onload = onLoad;
         reader.readAsText(file);
       }
-      const emptyStateHtml = document.getElementById("previewContainer").innerHTML;
+      const emptyStateHtml =
+        document.getElementById("previewContainer").innerHTML;
       // A fresh template: the standard header, opened in the full editor.
       function newTemplate() {
         templateSource = TEMPLATE_HEADER;
@@ -4317,6 +4451,15 @@
       }
       function outputStem() {
         return templateBasename().replace(/\.template$/i, "");
+      }
+      function outputHostname() {
+        return (
+          formValues.HOSTNAME ||
+          formValues.hostname ||
+          formValues.Hostname ||
+          outputStem() ||
+          "config"
+        );
       }
       // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
@@ -4408,7 +4551,11 @@
               showToast("No variables found — check INI format", "warn");
               return;
             }
-            setWarnBadge("varsErrorBadge", "variable definition issues", iniErrors);
+            setWarnBadge(
+              "varsErrorBadge",
+              "variable definition issues",
+              iniErrors,
+            );
             if (iniErrors.length)
               showToast(
                 `Vars file has ${iniErrors.length} definition issue${iniErrors.length === 1 ? "" : "s"}`,
@@ -4483,15 +4630,9 @@
             override: r.override,
           })),
         };
-        const hostname =
-          formValues.HOSTNAME ||
-          formValues.hostname ||
-          formValues.Hostname ||
-          outputStem() ||
-          "config";
         saveTextFile(
           JSON.stringify(session, null, 2),
-          `${hostname}.session.json`,
+          `${outputHostname()}.session.json`,
           "application/json",
           "Session saved to file",
         );
@@ -4518,7 +4659,10 @@
               session.originalTemplateSource !== null
                 ? toInternalEOL(session.originalTemplateSource)
                 : null;
-            if (session.dialect in DIALECTS && DIALECTS[session.dialect] !== DIALECT)
+            if (
+              session.dialect in DIALECTS &&
+              DIALECTS[session.dialect] !== DIALECT
+            )
               applyDialect(session.dialect);
             templateFileName = session.templateFileName;
             varsFromFile = session.varsFromFile;
@@ -4978,7 +5122,9 @@ category = General
           renderFullMode(container, sections, badgeColorMap);
         else renderSectionMode(container, sections, badgeColorMap);
         // Editors come out of the markup empty-mirrored; size and highlight them.
-        container.querySelectorAll("textarea.section-edit").forEach(autoSizeTextarea);
+        container
+          .querySelectorAll("textarea.section-edit")
+          .forEach(autoSizeTextarea);
         refreshLastCopied();
         updateProgressBar();
         updateTemplateErrorBadge();
@@ -5017,7 +5163,12 @@ category = General
         if (isEditing) {
           const editText = fullModeEditBuffer || assembleFullEditableText();
           const rows = editText.split("\n").length;
-          html += editorHtml("editor-full", rows, editText, "onFullEditInput(this.value)");
+          html += editorHtml(
+            "editor-full",
+            rows,
+            editText,
+            "onFullEditInput(this.value)",
+          );
         } else {
           html += `<pre>${preview.html}</pre>`;
         }
@@ -5085,7 +5236,12 @@ category = General
             const editText =
               r && r.override !== null ? r.override : displayBody;
             const rows = editText.split("\n").length;
-            html += editorHtml(`editor-sec-${i}`, rows, editText, `onSectionEditInput(${id}, this.value)`);
+            html += editorHtml(
+              `editor-sec-${i}`,
+              rows,
+              editText,
+              `onSectionEditInput(${id}, this.value)`,
+            );
           } else {
             html += `<pre>${preview.html}</pre>`;
           }
@@ -5159,7 +5315,9 @@ category = General
             if (startsInComment) return line; // comment content, not a marker
             const m = line.match(SECTION_RE);
             if (!m) return line;
-            return `${m[1].length >= 5 ? COMMENT.repeat(5) : MARKER} ` + m[2].trim();
+            return (
+              `${m[1].length >= 5 ? COMMENT.repeat(5) : MARKER} ` + m[2].trim()
+            );
           })
           .join("\n");
       }
@@ -5260,7 +5418,9 @@ category = General
         const parts = [];
         for (const r of records) {
           if (r.name !== null)
-            parts.push(`${r.isImportant ? COMMENT.repeat(5) : MARKER} ` + r.name);
+            parts.push(
+              `${r.isImportant ? COMMENT.repeat(5) : MARKER} ` + r.name,
+            );
           parts.push(recordEffectiveBody(r));
         }
         return parts.join("\n");
@@ -5670,12 +5830,7 @@ category = General
           return;
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        const hostname =
-          formValues.HOSTNAME ||
-          formValues.hostname ||
-          formValues.Hostname ||
-          outputStem() ||
-          "config";
+        const hostname = outputHostname();
         const body = assembleFullEditableText();
         const output = toWindowsEOL(jinjaRaw(body) + "\n");
         const base = `Saved ${hostname}.config`;
@@ -5697,8 +5852,6 @@ category = General
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
 
         const filename = `${templateBasename() || "template"}.config`;
-
-
 
         // Don't stack a second header on save -> load -> save.
         const body = assembleFullEditableText();
@@ -5755,8 +5908,7 @@ category = General
           '<span class="not-loaded">No template loaded</span>';
         setWarnBadge("templateErrorBadge", "syntax issues", []);
         document.getElementById("viewThumb").classList.remove("right");
-        document.getElementById("previewContainer").innerHTML =
-          emptyStateHtml;
+        document.getElementById("previewContainer").innerHTML = emptyStateHtml;
         renderAutoDetectButtons();
 
         if (Object.keys(varsFromFile).length === 0) {
@@ -5809,7 +5961,10 @@ category = General
       document.addEventListener("keydown", (e) => {
         const ta = e.target;
         if (e.key !== "Tab" || !EDITOR_TAB_SIZE) return;
-        if (!(ta instanceof HTMLTextAreaElement) || !ta.matches(".section-edit"))
+        if (
+          !(ta instanceof HTMLTextAreaElement) ||
+          !ta.matches(".section-edit")
+        )
           return;
         e.preventDefault();
         const pad = " ".repeat(EDITOR_TAB_SIZE);
@@ -5842,15 +5997,17 @@ category = General
         const issues = [];
         // A multi-line tag or comment is tokenized per line so row indexes hold.
         const tokenized = walkConfigLines(
-          text.replace(/\{#[\s\S]*?#\}|\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}|\{[{%#]|[}%#]\}/g, (m) =>
-            m
-              .split("\n")
-              .map((seg) => {
-                if (!seg) return ""; // an empty span would give the row no height
-                jinja.push(seg);
-                return `\x00J${jinja.length - 1}\x00`;
-              })
-              .join("\n"),
+          text.replace(
+            /\{#[\s\S]*?#\}|\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}|\{[{%#]|[}%#]\}/g,
+            (m) =>
+              m
+                .split("\n")
+                .map((seg) => {
+                  if (!seg) return ""; // an empty span would give the row no height
+                  jinja.push(seg);
+                  return `\x00J${jinja.length - 1}\x00`;
+                })
+                .join("\n"),
           ),
         )
           .parts.map(({ i, line, cmd }) => {
@@ -5858,7 +6015,8 @@ category = General
             const seen = new Set();
             const marked = cmd.replace(RISK_CHAR_RE, (ch) => {
               const name = riskCharName(ch);
-              if (!seen.has(name)) issues.push({ line: i, message: `Contains ${name}` });
+              if (!seen.has(name))
+                issues.push({ line: i, message: `Contains ${name}` });
               seen.add(name);
               marks.push(ch);
               return `\x00R${marks.length - 1}\x00`;
@@ -5878,9 +6036,16 @@ category = General
               ? `<span class="tpl-jinja">${escHtml(jinja[i])}</span>`
               : escHtml(jinja[i]),
           )
-          .replace(/\x00R(\d+)\x00/g, (_, i) => `<span class="risk-char"${warnAttrs("paste warnings", [riskCharName(marks[i])])}>${escHtml(marks[i])}</span>`)
+          .replace(
+            /\x00R(\d+)\x00/g,
+            (_, i) =>
+              `<span class="risk-char"${warnAttrs("paste warnings", [riskCharName(marks[i])])}>${escHtml(marks[i])}</span>`,
+          )
           .split("\n")
-          .map((line, i) => `<span class="mirror-line${warned.has(i) ? " line-warn" : ""}">${line || " "}</span>`)
+          .map(
+            (line, i) =>
+              `<span class="mirror-line${warned.has(i) ? " line-warn" : ""}">${line || " "}</span>`,
+          )
           .join("");
         return { html, issues };
       }
@@ -5905,11 +6070,17 @@ category = General
       }
       document.addEventListener("selectionchange", () => {
         const ta = document.activeElement;
-        if (ta instanceof HTMLTextAreaElement && ta.matches(".section-edit")) updateCursorLine(ta);
+        if (ta instanceof HTMLTextAreaElement && ta.matches(".section-edit"))
+          updateCursorLine(ta);
       });
       document.addEventListener("focusout", (e) => {
-        if (e.target instanceof HTMLTextAreaElement && e.target.matches(".section-edit"))
-          e.target.parentElement?.querySelector(".editor-cursor-line")?.setAttribute("hidden", "");
+        if (
+          e.target instanceof HTMLTextAreaElement &&
+          e.target.matches(".section-edit")
+        )
+          e.target.parentElement
+            ?.querySelector(".editor-cursor-line")
+            ?.setAttribute("hidden", "");
       });
       function autoSizeTextarea(el) {
         el.style.height = "auto";
@@ -5921,7 +6092,9 @@ category = General
         mirror.innerHTML = html;
         mirror.scrollLeft = el.scrollLeft;
         // Header icon tracks the editor live.
-        const badge = el.closest(".config-section")?.querySelector(".copied-badge");
+        const badge = el
+          .closest(".config-section")
+          ?.querySelector(".copied-badge");
         if (!badge) return;
         badge.parentElement.querySelector(".header-warn")?.remove();
         badge.insertAdjacentHTML("afterend", headerWarnHtml(issues));
@@ -5954,7 +6127,11 @@ category = General
           headers.reduce(
             (sum, h) =>
               h.right > r.left
-                ? sum + Math.max(0, Math.min(h.bottom, t + pr.height) - Math.max(h.top, t))
+                ? sum +
+                  Math.max(
+                    0,
+                    Math.min(h.bottom, t + pr.height) - Math.max(h.top, t),
+                  )
                 : sum,
             0,
           );
@@ -5987,7 +6164,9 @@ category = General
         const fromHeader = el.classList.contains("header-warn");
         const canJump =
           fromHeader &&
-          el.closest(".config-section")?.querySelector(".config-lines, .section-edit");
+          el
+            .closest(".config-section")
+            ?.querySelector(".config-lines, .section-edit");
         let group = null;
         const rows = msgs.map((msg) => {
           const m = msg.match(/^\[(.+?)\] ([\s\S]*)$/);
@@ -6077,13 +6256,18 @@ category = General
       });
       document.addEventListener("mouseout", (e) => {
         const from =
-          e.target.closest("#warnPopup") || e.target.closest("[data-warns]:not(.config-line)");
+          e.target.closest("#warnPopup") ||
+          e.target.closest("[data-warns]:not(.config-line)");
         if (!from || from.contains(e.relatedTarget)) return;
         scheduleHideWarn();
       });
       // Editor marks live in the mirror under the textarea, so hit-test through it.
       document.addEventListener("mousemove", (e) => {
-        if (!(e.target instanceof HTMLTextAreaElement) || !e.target.matches(".section-edit")) return;
+        if (
+          !(e.target instanceof HTMLTextAreaElement) ||
+          !e.target.matches(".section-edit")
+        )
+          return;
         const mark = document
           .elementsFromPoint(e.clientX, e.clientY)
           .find((n) => n.matches(".editor-mirror .risk-char"));
@@ -6094,7 +6278,10 @@ category = General
         } else if (warnPopupEl?.closest(".editor-mirror")) scheduleHideWarn();
       });
       document.addEventListener("mouseout", (e) => {
-        if (e.target instanceof HTMLTextAreaElement && warnPopupEl?.closest(".editor-mirror"))
+        if (
+          e.target instanceof HTMLTextAreaElement &&
+          warnPopupEl?.closest(".editor-mirror")
+        )
           scheduleHideWarn();
       });
       // A drag that selected text ends in a click too; a live selection means
@@ -6130,19 +6317,30 @@ category = General
           const all = [...document.querySelectorAll(".config-line")];
           const isMarker = (l) => l.textContent.trim().startsWith(MARKER);
           const start = all.findIndex(
-            (l) => isMarker(l) && l.textContent.trim().replace(SECTION_RE, "$2") === name,
+            (l) =>
+              isMarker(l) &&
+              l.textContent.trim().replace(SECTION_RE, "$2") === name,
           );
           const end = all.findIndex((l, i) => i > start && isMarker(l));
-          lines = start < 0 ? [] : all.slice(start + 1, end < 0 ? undefined : end);
+          lines =
+            start < 0 ? [] : all.slice(start + 1, end < 0 ? undefined : end);
         }
-        const marks = lines.flatMap((l) => [...l.querySelectorAll(".risk-char")]);
+        const marks = lines.flatMap((l) => [
+          ...l.querySelectorAll(".risk-char"),
+        ]);
         const bare = literal.match(/^(\{[{%#])\s*([}%#]\})$/);
         const pieces = new Set(bare ? [bare[1], bare[2]] : [literal]);
         const opening = literal.replace(/\s*(%}|}}|#})$/, "");
         let hits = marks.filter((m) => pieces.has(m.textContent));
         if (!hits.length)
-          hits = [marks.find((m) => m.textContent.startsWith(opening)) ?? marks[0]];
-        const found = [...new Set(hits.filter(Boolean).map((m) => m.closest(".config-line")))];
+          hits = [
+            marks.find((m) => m.textContent.startsWith(opening)) ?? marks[0],
+          ];
+        const found = [
+          ...new Set(
+            hits.filter(Boolean).map((m) => m.closest(".config-line")),
+          ),
+        ];
         return found.length ? found : lines.slice(0, 1);
       }
       function flashLine(el, i = 0) {
@@ -6150,7 +6348,11 @@ category = General
         el.classList.remove("flash-jump");
         void el.offsetWidth; // restart on repeat clicks
         el.classList.add("flash-jump");
-        el.addEventListener("animationend", () => el.classList.remove("flash-jump"), { once: true });
+        el.addEventListener(
+          "animationend",
+          () => el.classList.remove("flash-jump"),
+          { once: true },
+        );
       }
       function setWarnBadge(id, kind, msgs) {
         const el = document.getElementById(id);
