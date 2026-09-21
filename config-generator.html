@@ -4518,6 +4518,14 @@
         if (markLoaded)
           document.getElementById("varsLoader").classList.add("loaded");
       }
+      function clearVarsStatus() {
+        document.getElementById("varsLoader").classList.remove("loaded");
+        document.getElementById("varsStatus").innerHTML =
+          '<span class="not-loaded">No vars loaded</span>';
+        const badge = document.getElementById("varsCountBadge");
+        badge.style.display = "none";
+        badge.innerHTML = "";
+      }
       function processTemplateFile(file) {
         const fullName = file.name;
         readFileAsText(file, "Error reading template file", (evt) => {
@@ -4727,9 +4735,7 @@
           if (fileCount) {
             setVarsStatus(varsFileName, fileCount);
           } else {
-            document.getElementById("varsStatus").innerHTML =
-              '<span class="not-loaded">No vars loaded</span>';
-            document.getElementById("varsCountBadge").style.display = "none";
+            clearVarsStatus();
           }
           buildForm();
           render();
@@ -5946,16 +5952,14 @@ category = General
           variableDefs = {};
           Object.keys(formValues).forEach((k) => delete formValues[k]);
           document.getElementById("formFields").innerHTML = "";
-          document.getElementById("varsStatus").innerHTML =
-            '<span class="not-loaded">No vars loaded</span>';
-          document.getElementById("varsCountBadge").style.display = "none";
+          clearVarsStatus();
         } else {
           // Drop merged auto-detected extras; only the vars file remains.
           variableDefs = structuredClone(varsFromFile);
           buildForm();
           setVarsStatus(varsFileName, Object.keys(varsFromFile).length);
-          updateProgressBar();
         }
+        updateProgressBar();
         showToast("Template cleared");
       }
 
@@ -5968,17 +5972,8 @@ category = General
         Object.keys(formValues).forEach((k) => delete formValues[k]);
 
         document.getElementById("varsInput").value = "";
-        document.getElementById("varsLoader").classList.remove("loaded");
-        document.getElementById("varsStatus").innerHTML =
-          '<span class="not-loaded">No vars loaded</span>';
+        clearVarsStatus();
         setWarnBadge("varsErrorBadge", "variable definition issues", []);
-
-        const varsBadge = document.getElementById("varsCountBadge");
-        if (varsBadge) {
-          varsBadge.style.display = "none";
-          varsBadge.innerHTML = "";
-        }
-
         document.getElementById("formFields").innerHTML = "";
         renderAutoDetectButtons();
         updateProgressBar();
