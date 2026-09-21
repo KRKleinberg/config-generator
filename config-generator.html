@@ -352,6 +352,23 @@
         color: var(--text);
       }
 
+      .file-loader.loaded .clear-file-btn.armed {
+        width: auto;
+        padding: 0 6px;
+        opacity: 1;
+        pointer-events: auto;
+        color: var(--warn);
+        font: 600 11px var(--sans);
+      }
+
+      .clear-file-btn.armed svg {
+        display: none;
+      }
+
+      .clear-file-btn.armed::after {
+        content: "Clear?";
+      }
+
       .clear-file-btn svg {
         width: 15px;
         height: 15px;
@@ -2177,7 +2194,7 @@
           <div style="display: flex; align-items: center; gap: 2px">
             <button
               class="clear-file-btn"
-              onclick="clearTemplate()"
+              onclick="armClear(this, clearTemplate)"
               title="Clear Template"
               aria-label="Clear Template"
             >
@@ -2242,7 +2259,7 @@
           <div style="display: flex; align-items: center; gap: 2px">
             <button
               class="clear-file-btn"
-              onclick="clearVariables()"
+              onclick="armClear(this, clearVariables)"
               title="Clear Variables"
               aria-label="Clear Variables"
             >
@@ -3820,7 +3837,13 @@
         if (DIALECTS[name] === DIALECT) return;
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         for (const id of [...activeSectionEditors]) commitSectionEdit(id);
+        // The original is marker-bound; re-emit it so a switch is not an edit.
+        const original =
+          originalTemplateSource === null
+            ? null
+            : deriveRecordsFromTemplate(originalTemplateSource);
         applyDialect(name);
+        if (original) originalTemplateSource = assembleFromRecords(original);
         if (templateSource !== null) render();
       }
       document.addEventListener("click", (e) => {
@@ -4453,13 +4476,10 @@
         return templateBasename().replace(/\.template$/i, "");
       }
       function outputHostname() {
-        return (
-          formValues.HOSTNAME ||
-          formValues.hostname ||
-          formValues.Hostname ||
-          outputStem() ||
-          "config"
+        const key = Object.keys(formValues).find(
+          (k) => k.toLowerCase() === "hostname",
         );
+        return (key && formValues[key]) || outputStem() || "config";
       }
       // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
@@ -5887,15 +5907,25 @@ category = General
         render();
       }
 
+      // First click arms the button ("Clear?"), the second clears; no system dialog.
+      let armedClear = null;
+      function armClear(btn, action) {
+        if (armedClear?.btn === btn) {
+          disarmClear();
+          return action();
+        }
+        disarmClear();
+        btn.classList.add("armed");
+        armedClear = { btn, timer: setTimeout(disarmClear, 3000) };
+      }
+      function disarmClear() {
+        if (!armedClear) return;
+        clearTimeout(armedClear.timer);
+        armedClear.btn.classList.remove("armed");
+        armedClear = null;
+      }
       function clearTemplate() {
         if (!templateSource) return;
-        if (
-          !confirm(
-            "Clear the loaded template? This will remove any manual edits.",
-          )
-        )
-          return;
-
         templateSource = null;
         originalTemplateSource = null;
         templateFileName = "";
@@ -5932,8 +5962,6 @@ category = General
       function clearVariables() {
         if (Object.keys(variableDefs).length === 0 && varsFileName === "")
           return;
-        if (!confirm("Clear all variables and form inputs?")) return;
-
         variableDefs = {};
         varsFromFile = {};
         varsFileName = "";
