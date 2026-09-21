@@ -2377,7 +2377,7 @@
           <div class="sop-content">
             <h4 class="guide-h4-first">Overview</h4>
             <p class="guide-intro">
-              Builds switch configs from a template, entirely in the browser.
+              Builds device configs from a template, entirely in the browser.
               Nothing leaves the page and nothing survives closing the tab; save
               a session to keep your progress.
             </p>
@@ -2816,7 +2816,7 @@
       // tool copies don't parse the marker examples as markers.
       function templateHeader(c) {
         return `{# ===============================================================
-   Switch Configuration Template
+   Device Configuration Template
    JINJA2 SYNTAX (same as Ansible):
    {{  VAR  }}                              Variable substitution
    {{  VAR | default('fallback')  }}        Default if empty
@@ -5855,8 +5855,9 @@ category = General
 
         // Don't stack a second header on save -> load -> save.
         const body = assembleFullEditableText();
-        const hasHeader =
-          /^\s*\{#[\s\S]{0,200}Switch Configuration Template/.test(body);
+        const hasHeader = /^\s*\{#[\s\S]{0,200}Configuration Template/.test(
+          body,
+        );
         const output = toWindowsEOL(hasHeader ? body : TEMPLATE_HEADER + body);
 
         const saved = await saveTextFile(

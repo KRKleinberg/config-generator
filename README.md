@@ -1,6 +1,6 @@
 # Config Generator
 
-A single-file, offline browser tool that turns a Jinja template and an optional vars file into a switch configuration through a generated form. Built and device-tested for Cisco IOS XE; NX-OS, Arista EOS, and Juniper Junos are supported but untested.
+A single-file, offline browser tool that turns a Jinja template and an optional vars file into a device configuration through a generated form. Built and device-tested for Cisco IOS XE; NX-OS, Arista EOS, and Juniper Junos are supported but untested.
 
 ## Features
 
