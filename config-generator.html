@@ -6573,22 +6573,18 @@ category = General
           .getElementById("openInput")
           .addEventListener("change", onOpenFileSelected);
 
-        let lastMousedownTime = 0;
+        // A double-click selects the whole line rather than a word.
         document
           .getElementById("previewContainer")
           .addEventListener("mousedown", (e) => {
-            const now = Date.now();
-            if (now - lastMousedownTime < 400) {
-              e.preventDefault();
-              const line = e.target.closest(".config-line");
-              if (!line) return;
-              const range = document.createRange();
-              range.selectNodeContents(line);
-              const sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-            lastMousedownTime = now;
+            const line = e.detail === 2 && e.target.closest(".config-line");
+            if (!line) return;
+            e.preventDefault();
+            const range = document.createRange();
+            range.selectNodeContents(line);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
           });
 
         // Manual copies get a trailing newline so a pasted line executes.
