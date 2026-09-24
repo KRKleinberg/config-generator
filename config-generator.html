@@ -5115,17 +5115,9 @@ category = General
 
           if (!isRequired) continue;
           total++;
-          const val =
-            typeof formValues[varName] === "string"
-              ? formValues[varName].trim()
-              : "";
-          if (val) {
-            if (config.compiledRegex instanceof RegExp) {
-              if (config.compiledRegex.test(val)) filled++;
-            } else {
-              filled++;
-            }
-          }
+          const value = formValues[varName];
+          if (isValuePresent(value) && isFieldValueValid(value, config))
+            filled++;
         }
 
         const pct = total > 0 ? (filled / total) * 100 : 100;
