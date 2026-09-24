@@ -38,7 +38,7 @@ Constants at the top of the script:
 | `FILENAME_VAR` | `"HOSTNAME"` | Form variable (any casing) that names saved files |
 | `TEMPLATE_EXTENSIONS` | `".config,.txt,..."` | Template picker filter |
 | `SAVE_TEMPLATE_HEADER` | `true` | Prepend the syntax header when saving a template |
-| `AUTO_DETECT_VARS` | `true` | Resync the form on template load and edit commit; the lightning button stays manual |
+| `AUTO_DETECT_VARS` | `true` | Keep the form in sync with the template; off shows a lightning button to detect manually |
 | `LINT_PASTE_WARNINGS` | `true` | Paste warnings in the preview, editors, headers, and toasts |
 | `LINT_NON_ASCII` | `true` | Flag non-ASCII characters; off for sites with umlauts in banners |
 | `LINT_TEMPLATE` | `true` | Template syntax badge |

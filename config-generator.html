@@ -2444,17 +2444,9 @@
                       <code>.vars.ini</code>
                       giving each field a hint, dropdown, or validation.
                     </dd>
-                    <dt>
-                      Auto-detect
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-lightning"></use>
-                        </svg>
-                      </span>
-                    </dt>
+                    <dt>Auto-detect</dt>
                     <dd>
-                      Fields follow the template's variables automatically; the
-                      button forces a re-sync.
+                      Fields follow the template's variables automatically.
                     </dd>
                     <dt>
                       Open
@@ -2793,7 +2785,7 @@
       const TEMPLATE_EXTENSIONS = ".config,.txt,.cfg,.tpl,.conf,.template"; // template picker filter
       const SAVE_TEMPLATE_HEADER = true; // prepend the syntax header when saving a template
       // Variables
-      const AUTO_DETECT_VARS = true; // resync the form on template load and edit commit; the lightning stays manual
+      const AUTO_DETECT_VARS = true; // keep the form in sync with the template; off shows a lightning button to detect manually
       // Linting
       const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
       const LINT_NON_ASCII = true; // flag non-ASCII characters; off for sites with umlauts in banners
@@ -5255,7 +5247,8 @@ category = General
       function renderAutoDetectButtons() {
         const container = document.getElementById("autoDetectIcons");
         container.innerHTML = "";
-        if (templateSource === null) return;
+        // With auto-detect on the form is always in sync; the button is manual mode's.
+        if (templateSource === null || AUTO_DETECT_VARS) return;
 
         const btn = document.createElement("button");
         btn.className = "subtle-icon-btn mini-btn";
