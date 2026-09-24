@@ -2180,7 +2180,7 @@
         <div class="panel-header">
           Template
           <span
-            id="templateErrorBadge"
+            id="templateWarnBadge"
             class="panel-warn"
             data-warns=""
             tabindex="0"
@@ -2224,7 +2224,7 @@
           Variables
           <span id="varsCountBadge" class="vars-count"></span>
           <span
-            id="varsErrorBadge"
+            id="varsWarnBadge"
             class="panel-warn"
             data-warns=""
             tabindex="0"
@@ -4483,10 +4483,10 @@
           if (!seen.has(m)) msgs.add(m);
         return [...msgs];
       }
-      function updateTemplateErrorBadge() {
+      function updateTemplateWarnBadge() {
         if (templateSource === null) return;
         setWarnBadge(
-          "templateErrorBadge",
+          "templateWarnBadge",
           "syntax issues",
           templateSyntaxIssues(),
         );
@@ -4621,7 +4621,7 @@
             varsFromFile = structuredClone(defs);
             varsFileName = file.name;
             setWarnBadge(
-              "varsErrorBadge",
+              "varsWarnBadge",
               "variable definition issues",
               iniErrors,
             );
@@ -4769,7 +4769,7 @@
               clearVarsStatus();
             }
             // Sessions carry no vars-file diagnostics; drop the previous file's.
-            setWarnBadge("varsErrorBadge", "variable definition issues", []);
+            setWarnBadge("varsWarnBadge", "variable definition issues", []);
             applyAutoViewMode();
             buildForm();
             render();
@@ -5194,7 +5194,7 @@ category = General
           .forEach(autoSizeTextarea);
         refreshLastCopied();
         updateProgressBar();
-        updateTemplateErrorBadge();
+        updateTemplateWarnBadge();
       }
 
       function renderFullMode(container, sections, badgeColorMap) {
@@ -5956,7 +5956,7 @@ category = General
         document.getElementById("templateLoader").classList.remove("loaded");
         document.getElementById("templateStatus").innerHTML =
           '<span class="not-loaded">No template loaded</span>';
-        setWarnBadge("templateErrorBadge", "syntax issues", []);
+        setWarnBadge("templateWarnBadge", "syntax issues", []);
         document.getElementById("previewContainer").innerHTML = emptyStateHtml;
       }
       function clearTemplate() {
@@ -5993,7 +5993,7 @@ category = General
         varsFileName = "";
         Object.keys(formValues).forEach((k) => delete formValues[k]);
         clearVarsStatus();
-        setWarnBadge("varsErrorBadge", "variable definition issues", []);
+        setWarnBadge("varsWarnBadge", "variable definition issues", []);
         document.getElementById("formFields").innerHTML = "";
         renderAutoDetectButtons();
         updateProgressBar();
