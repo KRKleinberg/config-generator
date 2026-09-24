@@ -2852,7 +2852,7 @@
       let originalTemplateSource = null;
       let sectionRecords = [];
       let nextRecordId = 1;
-      const formValues = {};
+      const formValues = Object.create(null);
       const activeSectionEditors = new Set();
       const sectionEditBackups = {};
       let viewMode = "sections";
@@ -3273,7 +3273,7 @@
           const line = lines[key] ?? item.line;
           return line ? `Line ${line}: ` : "";
         };
-        if (result[item.name])
+        if (Object.hasOwn(result, item.name))
           errorList.push(`${at()}Duplicate variable name: '${item.name}'`);
         if (item.type && item.type !== "int")
           lint(
@@ -6571,7 +6571,7 @@ category = General
       function escRegex(s) {
         return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-      // Strings only: inherited props from proto-named vars would crash .trim().
+      // Strings only: session formValues are not type-checked.
       function isValuePresent(v) {
         return typeof v === "string" && v.trim() !== "";
       }
@@ -6603,7 +6603,7 @@ category = General
           document.getElementById("helpLightbox").classList.remove("show");
       }
 
-      const searchIndexes = {};
+      const searchIndexes = Object.create(null);
       const exprVarIndexes = new WeakMap();
       // Joined expressions reference several vars; each click advances to the next.
       function nextExprVar(span) {
