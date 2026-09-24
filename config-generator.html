@@ -2838,6 +2838,7 @@
       let templateFileName = "";
       let varsFromFile = {};
       let varsFileName = "";
+      let emptyStateHtml = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
       const EXPR_RE = /\{\{(.+?)\}\}/g;
@@ -3839,7 +3840,6 @@
           );
         });
       }
-      applyDialect(DIALECT_NAME);
       function toggleDialectMenu(e) {
         const menu = document.getElementById("dialectMenu");
         if (!menu.hidden) return closeDialectMenu();
@@ -3892,11 +3892,6 @@
         if (original) originalTemplateSource = assembleFromRecords(original);
         if (templateSource !== null) render();
       }
-      document.addEventListener("click", (e) => {
-        if (!e.target.closest("#dialectMenu, #dialectBadge"))
-          closeDialectMenu();
-        if (!e.target.closest("#saveMenu, #saveBtn")) closeSaveMenu();
-      });
       // Platform guess from commands no other dialect uses. Returns a key only
       // on a clear lead; anything ambiguous keeps the current platform.
       const DIALECT_SIGNS = {
@@ -4503,8 +4498,6 @@
         reader.onload = onLoad;
         reader.readAsText(file);
       }
-      const emptyStateHtml =
-        document.getElementById("previewContainer").innerHTML;
       // A fresh template: the standard header, opened in the full editor.
       function newTemplate() {
         templateSource = TEMPLATE_HEADER;
@@ -6001,33 +5994,6 @@ category = General
         showToast("Variables cleared");
       }
 
-      // Tab indents in editors; a multi-line selection shifts every line.
-      document.addEventListener("keydown", (e) => {
-        const ta = e.target;
-        if (e.key !== "Tab" || !EDITOR_TAB_SIZE) return;
-        if (
-          !(ta instanceof HTMLTextAreaElement) ||
-          !ta.matches(".section-edit")
-        )
-          return;
-        e.preventDefault();
-        const pad = " ".repeat(EDITOR_TAB_SIZE);
-        const { value, selectionStart: s, selectionEnd: en } = ta;
-        const multi = value.slice(s, en).includes("\n");
-        if (!multi && !e.shiftKey) {
-          document.execCommand("insertText", false, pad);
-          return;
-        }
-        const from = value.lastIndexOf("\n", s - 1) + 1;
-        const to = en > from && value[en - 1] === "\n" ? en - 1 : en;
-        const block = value.slice(from, to);
-        const shifted = e.shiftKey
-          ? block.replace(new RegExp(`^ {1,${EDITOR_TAB_SIZE}}`, "gm"), "")
-          : block.replace(/^/gm, pad);
-        ta.setSelectionRange(from, to);
-        document.execCommand("insertText", false, shifted);
-        ta.setSelectionRange(from, from + shifted.length);
-      });
       function editorHtml(id, rows, text, onInput) {
         return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; refreshEditor(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
       }
@@ -6112,20 +6078,6 @@ category = General
         placeEditorStrip(ta, strip, row);
         flashLine(strip);
       }
-      document.addEventListener("selectionchange", () => {
-        const ta = document.activeElement;
-        if (ta instanceof HTMLTextAreaElement && ta.matches(".section-edit"))
-          updateCursorLine(ta);
-      });
-      document.addEventListener("focusout", (e) => {
-        if (
-          e.target instanceof HTMLTextAreaElement &&
-          e.target.matches(".section-edit")
-        )
-          e.target.parentElement
-            ?.querySelector(".editor-cursor-line")
-            ?.setAttribute("hidden", "");
-      });
       function refreshEditor(el) {
         el.style.height = "auto";
         el.style.height = `${el.scrollHeight}px`;
@@ -6288,72 +6240,6 @@ category = General
       function scheduleHideWarn() {
         warnHideTimer ??= setTimeout(hideWarnPopup, 200);
       }
-      document.addEventListener("mouseover", (e) => {
-        const cancelHide = () => {
-          clearTimeout(warnHideTimer);
-          warnHideTimer = null;
-        };
-        if (e.target.closest("#warnPopup")) return cancelHide();
-        // Lines keep their edge marker only; the marks and header icon carry the popups.
-        const el = e.target.closest("[data-warns]:not(.config-line)");
-        if (!el) return;
-        cancelHide();
-        showWarnPopup(el, e);
-      });
-      // Keyboard route to the same popup: focus opens it, leaving closes it.
-      document.addEventListener("focusin", (e) => {
-        const el = e.target.closest?.("[data-warns]:not(.config-line)");
-        if (el) showWarnPopup(el, { clientX: el.getBoundingClientRect().left });
-      });
-      document.addEventListener("focusout", (e) => {
-        if (e.target.closest?.("[data-warns]")) hideWarnPopup();
-      });
-      document.addEventListener("mouseout", (e) => {
-        const from =
-          e.target.closest("#warnPopup") ||
-          e.target.closest("[data-warns]:not(.config-line)");
-        if (!from || from.contains(e.relatedTarget)) return;
-        scheduleHideWarn();
-      });
-      // Editor marks live in the mirror under the textarea, so hit-test through it.
-      document.addEventListener("mousemove", (e) => {
-        if (
-          !(e.target instanceof HTMLTextAreaElement) ||
-          !e.target.matches(".section-edit")
-        )
-          return;
-        const mark = document
-          .elementsFromPoint(e.clientX, e.clientY)
-          .find((n) => n.matches(".editor-mirror .risk-char"));
-        if (mark) {
-          clearTimeout(warnHideTimer);
-          warnHideTimer = null;
-          showWarnPopup(mark, e);
-        } else if (warnPopupEl?.closest(".editor-mirror")) scheduleHideWarn();
-      });
-      document.addEventListener("mouseout", (e) => {
-        if (
-          e.target instanceof HTMLTextAreaElement &&
-          warnPopupEl?.closest(".editor-mirror")
-        )
-          scheduleHideWarn();
-      });
-      // A drag that selected text ends in a click too; a live selection means
-      // "copying", not "go".
-      document.addEventListener("click", (e) => {
-        const row = e.target.closest(".warn-row-link");
-        if (!row || !window.getSelection().isCollapsed) return;
-        const { line, section, literal } = row.dataset;
-        const card = warnPopupEl?.closest(".config-section");
-        hideWarnPopup();
-        const editor = card?.querySelector(".section-edit");
-        if (line !== undefined && editor) return flashEditorLine(editor, +line);
-        const targets =
-          line !== undefined
-            ? [card?.querySelectorAll(".config-line")[line]]
-            : issueLines(section, literal);
-        targets.filter(Boolean).forEach(flashLine);
-      });
       // Lines of one section: its card in section view, the span after its
       // !!! marker in full view. Every mark equal to the literal or its bare
       // delimiters flashes (so a split `{{ }}` lights both lines); else the first
@@ -6419,44 +6305,6 @@ category = General
         const popup = document.getElementById("badgeCopyPopup");
         popup.hidden = true;
       }
-
-      document.addEventListener("click", (e) => {
-        if (e.target.closest(".badge") || e.target.closest("#badgeCopyPopup"))
-          return;
-        closeBadgeCopy();
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeBadgeCopy();
-          closeDialectMenu();
-          closeSaveMenu();
-          closeGuide();
-          hideWarnPopup();
-        }
-        // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
-        // and Open File dialogs are never wanted here.
-        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
-          const key = e.key.toLowerCase();
-          if (key === "s") {
-            e.preventDefault();
-            saveSession();
-          } else if (key === "o") {
-            e.preventDefault();
-            openTextFile("openInput", loadFile);
-          }
-        }
-      });
-      // Capture sees every scroller; the popup's own scroll must not close it.
-      window.addEventListener(
-        "scroll",
-        (e) => {
-          closeBadgeCopy();
-          closeDialectMenu();
-          closeSaveMenu();
-          if (!e.target.closest?.("#warnPopup")) hideWarnPopup();
-        },
-        true,
-      );
 
       function escHtml(s) {
         return !s
@@ -6568,6 +6416,8 @@ category = General
       }
 
       function initialize() {
+        applyDialect(DIALECT_NAME);
+        emptyStateHtml = document.getElementById("previewContainer").innerHTML;
         document.getElementById("templateInput").accept = TEMPLATE_EXTENSIONS;
         document
           .getElementById("templateInput")
@@ -6578,6 +6428,158 @@ category = General
         document
           .getElementById("openInput")
           .addEventListener("change", onOpenFileSelected);
+
+        document.addEventListener("click", (e) => {
+          if (!e.target.closest("#dialectMenu, #dialectBadge"))
+            closeDialectMenu();
+          if (!e.target.closest("#saveMenu, #saveBtn")) closeSaveMenu();
+        });
+        // Tab indents in editors; a multi-line selection shifts every line.
+        document.addEventListener("keydown", (e) => {
+          const ta = e.target;
+          if (e.key !== "Tab" || !EDITOR_TAB_SIZE) return;
+          if (
+            !(ta instanceof HTMLTextAreaElement) ||
+            !ta.matches(".section-edit")
+          )
+            return;
+          e.preventDefault();
+          const pad = " ".repeat(EDITOR_TAB_SIZE);
+          const { value, selectionStart: s, selectionEnd: en } = ta;
+          const multi = value.slice(s, en).includes("\n");
+          if (!multi && !e.shiftKey) {
+            document.execCommand("insertText", false, pad);
+            return;
+          }
+          const from = value.lastIndexOf("\n", s - 1) + 1;
+          const to = en > from && value[en - 1] === "\n" ? en - 1 : en;
+          const block = value.slice(from, to);
+          const shifted = e.shiftKey
+            ? block.replace(new RegExp(`^ {1,${EDITOR_TAB_SIZE}}`, "gm"), "")
+            : block.replace(/^/gm, pad);
+          ta.setSelectionRange(from, to);
+          document.execCommand("insertText", false, shifted);
+          ta.setSelectionRange(from, from + shifted.length);
+        });
+        document.addEventListener("selectionchange", () => {
+          const ta = document.activeElement;
+          if (ta instanceof HTMLTextAreaElement && ta.matches(".section-edit"))
+            updateCursorLine(ta);
+        });
+        document.addEventListener("focusout", (e) => {
+          if (
+            e.target instanceof HTMLTextAreaElement &&
+            e.target.matches(".section-edit")
+          )
+            e.target.parentElement
+              ?.querySelector(".editor-cursor-line")
+              ?.setAttribute("hidden", "");
+        });
+        document.addEventListener("mouseover", (e) => {
+          const cancelHide = () => {
+            clearTimeout(warnHideTimer);
+            warnHideTimer = null;
+          };
+          if (e.target.closest("#warnPopup")) return cancelHide();
+          // Lines keep their edge marker only; the marks and header icon carry the popups.
+          const el = e.target.closest("[data-warns]:not(.config-line)");
+          if (!el) return;
+          cancelHide();
+          showWarnPopup(el, e);
+        });
+        // Keyboard route to the same popup: focus opens it, leaving closes it.
+        document.addEventListener("focusin", (e) => {
+          const el = e.target.closest?.("[data-warns]:not(.config-line)");
+          if (el)
+            showWarnPopup(el, { clientX: el.getBoundingClientRect().left });
+        });
+        document.addEventListener("focusout", (e) => {
+          if (e.target.closest?.("[data-warns]")) hideWarnPopup();
+        });
+        document.addEventListener("mouseout", (e) => {
+          const from =
+            e.target.closest("#warnPopup") ||
+            e.target.closest("[data-warns]:not(.config-line)");
+          if (!from || from.contains(e.relatedTarget)) return;
+          scheduleHideWarn();
+        });
+        // Editor marks live in the mirror under the textarea, so hit-test through it.
+        document.addEventListener("mousemove", (e) => {
+          if (
+            !(e.target instanceof HTMLTextAreaElement) ||
+            !e.target.matches(".section-edit")
+          )
+            return;
+          const mark = document
+            .elementsFromPoint(e.clientX, e.clientY)
+            .find((n) => n.matches(".editor-mirror .risk-char"));
+          if (mark) {
+            clearTimeout(warnHideTimer);
+            warnHideTimer = null;
+            showWarnPopup(mark, e);
+          } else if (warnPopupEl?.closest(".editor-mirror")) scheduleHideWarn();
+        });
+        document.addEventListener("mouseout", (e) => {
+          if (
+            e.target instanceof HTMLTextAreaElement &&
+            warnPopupEl?.closest(".editor-mirror")
+          )
+            scheduleHideWarn();
+        });
+        // A drag that selected text ends in a click too; a live selection means
+        // "copying", not "go".
+        document.addEventListener("click", (e) => {
+          const row = e.target.closest(".warn-row-link");
+          if (!row || !window.getSelection().isCollapsed) return;
+          const { line, section, literal } = row.dataset;
+          const card = warnPopupEl?.closest(".config-section");
+          hideWarnPopup();
+          const editor = card?.querySelector(".section-edit");
+          if (line !== undefined && editor)
+            return flashEditorLine(editor, +line);
+          const targets =
+            line !== undefined
+              ? [card?.querySelectorAll(".config-line")[line]]
+              : issueLines(section, literal);
+          targets.filter(Boolean).forEach(flashLine);
+        });
+        document.addEventListener("click", (e) => {
+          if (e.target.closest(".badge") || e.target.closest("#badgeCopyPopup"))
+            return;
+          closeBadgeCopy();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            closeBadgeCopy();
+            closeDialectMenu();
+            closeSaveMenu();
+            closeGuide();
+            hideWarnPopup();
+          }
+          // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
+          // and Open File dialogs are never wanted here.
+          if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+            const key = e.key.toLowerCase();
+            if (key === "s") {
+              e.preventDefault();
+              saveSession();
+            } else if (key === "o") {
+              e.preventDefault();
+              openTextFile("openInput", loadFile);
+            }
+          }
+        });
+        // Capture sees every scroller; the popup's own scroll must not close it.
+        window.addEventListener(
+          "scroll",
+          (e) => {
+            closeBadgeCopy();
+            closeDialectMenu();
+            closeSaveMenu();
+            if (!e.target.closest?.("#warnPopup")) hideWarnPopup();
+          },
+          true,
+        );
 
         // A double-click selects the whole line rather than a word.
         document
