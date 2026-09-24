@@ -2172,9 +2172,9 @@
         </div>
         <div class="instructions">
           <ol>
-            <li>Load a template.config file</li>
-            <li>Load a vars.ini file or auto-detect variables from template</li>
-            <li>Fill out the form below to generate config</li>
+            <li>Load a template</li>
+            <li>Load or detect variables</li>
+            <li>Fill out the form, then copy or save the config</li>
           </ol>
         </div>
         <div class="panel-header">
@@ -2459,10 +2459,7 @@
                     </dt>
                     <dd>
                       Fields follow the template's variables automatically; the
-                      button forces a re-sync. Auto-detected fields have no
-                      hints or validation, so load a
-                      <code>.vars.ini</code>
-                      if one exists.
+                      button forces a re-sync.
                     </dd>
                     <dt>
                       Open
@@ -2499,11 +2496,6 @@
                       <code>{{ VARIABLE }}</code>
                       to jump back to its field.
                     </dd>
-                    <dt>Linked groups</dt>
-                    <dd>
-                      Fill any field in a group and the whole group becomes
-                      required.
-                    </dd>
                   </dl>
                 </div>
               </details>
@@ -2520,8 +2512,8 @@
                     <dd>
                       Edits apply to the template, not the output, so
                       <code>{{ VARIABLE }}</code>
-                      entries keep working and form changes still flow through.
-                      Switching views commits open editors.
+                      entries keep working; switching views commits open
+                      editors.
                     </dd>
                     <dt>
                       Reset
@@ -2564,7 +2556,7 @@
                     <dd>
                       Come out as literal
                       <code>{{ VARIABLE }}</code>
-                      text; fill every amber variable before pasting.
+                      text.
                     </dd>
                   </dl>
                 </div>
@@ -2591,7 +2583,7 @@
                       <strong>Session</strong>
                       (also Ctrl+S) saves your whole workspace as one
                       <code>.session.json</code>
-                      file, the only way progress survives closing the tab.
+                      file.
                       <strong>Template</strong>
                       writes the template with its
                       <code>{{ VARIABLE }}</code>
@@ -2641,16 +2633,16 @@
                         <tr>
                           <td><code>{% if VAR %} {% else %}</code></td>
                           <td>
-                            Branches on whether VAR is filled; no
-                            <code>==</code>. Use a <code>choices</code> dropdown
-                            with one field per branch. Must open and close
-                            within one section.
+                            Branches on whether VAR is filled and must open and
+                            close within one section; there is no
+                            <code>==</code>, so use a <code>choices</code>
+                            dropdown with one field per branch.
                           </td>
                         </tr>
                         <tr>
                           <td><code>{# comment #}</code></td>
                           <td>
-                            Stripped from output. May span sections; cannot
+                            Stripped from output; may span sections but cannot
                             nest.
                           </td>
                         </tr>
@@ -2665,9 +2657,9 @@
                         <tr>
                           <td><code data-syntax>!KEYWORD: v1, v2</code></td>
                           <td>
-                            End-of-line badge, e.g.
-                            <code data-syntax>!STIG: V-1234</code>. Any all-caps
-                            keyword; stripped from output.
+                            End-of-line badge for any all-caps keyword, e.g.
+                            <code data-syntax>!STIG: V-1234</code>; stripped
+                            from output.
                           </td>
                         </tr>
                       </tbody>
@@ -2814,7 +2806,7 @@
       // Linting
       const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
       const LINT_NON_ASCII = true; // flag non-ASCII characters; off for sites with umlauts in banners
-      const LINT_TEMPLATE = true; // template structure badge
+      const LINT_TEMPLATE = true; // template syntax badge
       const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
       // Platform and editor
       const DIALECT_NAME = "ios"; // ios, nxos, eos, junos (see DIALECTS); only ios is device-tested
