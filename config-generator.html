@@ -5286,12 +5286,12 @@ category = General
 
             if (i === sections.length - 1) {
               html += `<div class="split-btn">
-                               <button class="btn-part copy-only" title="Copy Only" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-only" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
                                <button class="btn-part copy-down" title="Copy and Go to Top" onclick="copyAndGoTop(${id}, ${i})"><svg><use href="#icon-copy-top"></use></svg></button>
                              </div>`;
             } else {
               html += `<div class="split-btn">
-                               <button class="btn-part copy-only" title="Copy Only" onclick="copySectionByName(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-only" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
                                <button class="btn-part copy-down" title="Copy and Go to Next" onclick="copyAndGoDown(${id}, ${i})"><svg><use href="#icon-copy-down"></use></svg></button>
                              </div>`;
             }
@@ -5806,7 +5806,7 @@ category = General
         if (el) el.classList.add("last-copied");
       }
 
-      function copySectionByName(id, index) {
+      function copySection(id, index) {
         const r = recordById(id);
         if (!r) return;
         const { raw, issues } = rawWithIssues(recordEffectiveBody(r));
@@ -5831,7 +5831,7 @@ category = General
       }
 
       async function copyAndGoDown(id, index) {
-        if (!(await copySectionByName(id, index))) return;
+        if (!(await copySection(id, index))) return;
 
         const currentSection = document.getElementById(`section-${index}`);
         const nextSection = document.getElementById(`section-${index + 1}`);
@@ -5849,7 +5849,7 @@ category = General
       }
 
       async function copyAndGoTop(id, index) {
-        if (await copySectionByName(id, index)) scrollToTop();
+        if (await copySection(id, index)) scrollToTop();
       }
 
       function copyAll() {
