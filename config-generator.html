@@ -4928,6 +4928,8 @@
             applyAutoViewMode();
             buildForm();
             render();
+            // An older or hand-edited session may not match its template.
+            autoDetectVars({ quiet: true });
             showToast(`Loaded ${file.name}`);
           } catch (err) {
             console.error("Session Parse Error:", err);
