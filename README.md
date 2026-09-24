@@ -6,13 +6,14 @@ A single-file, offline browser tool that turns a Jinja template and an optional 
 
 - Jinja2 subset compatible with Ansible: `{{ VAR }}`, `default`, `upper`, `lower`, `trim`, `join`, and `{% if %}/{% else %}` blocks.
 - Form generated from the template's variables, or from a vars file that adds hints, placeholders, defaults, dropdowns, regex validation, and linked field groups.
-- Live preview with syntax highlighting. Click a variable to jump to its field, or a field label to find it in the config.
+- Live highlighted preview: click a variable to jump to its field, or a field label to find it in the config.
 - Copyable sections: `!!! Name` markers split the preview into cards with a copy-and-advance workflow.
 - Manual edits at the template level in a highlighted editor; variables keep working inside edited text.
-- Paste warnings for `?`, tab, non-ASCII, over-long descriptions, unclosed banners, and unrendered template syntax, marked in place and listed on the section header. Ctrl-V before `?` or tab is honored as the escape.
+- Paste warnings for `?` and tab (unless escaped with Ctrl-V), non-ASCII, over-long descriptions, unclosed banners, and unrendered template syntax, marked in place and listed on the section header.
 - Template and vars file checks: unmatched tags, unsupported syntax, unknown keys, bad defaults, duplicates.
-- Inline badges: `!STIG: V-1234` or any all-caps keyword renders a colored pill. Badges and template comments are stripped from output.
-- Sessions save the whole workspace as one JSON file. Nothing is written to browser storage; nothing survives closing the tab unless saved.
+- Inline badges: `!STIG: V-1234` or any all-caps keyword renders a colored pill; badges and template comments are stripped from output.
+- Sessions save the whole workspace as one JSON file; nothing is written to browser storage, so nothing else survives closing the tab.
+- The platform badge in the preview title switches the platform, and loading a template picks it automatically when the syntax is unambiguous.
 
 ## Platforms
 
