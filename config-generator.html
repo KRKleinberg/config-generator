@@ -5985,6 +5985,8 @@ category = General
       }
 
       function resetAll() {
+        // Includes values kept for variables the template no longer uses.
+        for (const k of Object.keys(formValues)) delete formValues[k];
         for (const varName of Object.keys(variableDefs))
           formValues[varName] = "";
         buildForm();
