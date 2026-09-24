@@ -2688,15 +2688,9 @@
                         <tr>
                           <td><code>{{ VAR | filter }}</code></td>
                           <td>
-                            Filters:
-                            <code>default('x')</code>
-                            ,
-                            <code>upper</code>
-                            ,
-                            <code>lower</code>
-                            ,
-                            <code>trim</code>
-                            .
+                            Filters: <code>default('x')</code>,
+                            <code>upper</code>, <code>lower</code>,
+                            <code>trim</code>.
                           </td>
                         </tr>
                         <tr>
@@ -2707,11 +2701,9 @@
                           <td><code>{% if VAR %} {% else %}</code></td>
                           <td>
                             Branches on whether VAR is filled; no
-                            <code>==</code>
-                            . Use a
-                            <code>choices</code>
-                            dropdown with one field per branch. Must open and
-                            close within one section.
+                            <code>==</code>. Use a <code>choices</code> dropdown
+                            with one field per branch. Must open and close
+                            within one section.
                           </td>
                         </tr>
                         <tr>
@@ -2724,17 +2716,17 @@
                         <tr>
                           <td><code data-syntax>!!! Section Name</code></td>
                           <td>
-                            Starts a copyable section. Five (
-                            <code data-syntax>!!!!!</code>
-                            ) mark it critical with a red header.
+                            Starts a copyable section.
+                            <code data-syntax>!!!!!</code> or more marks it
+                            important with a red header.
                           </td>
                         </tr>
                         <tr>
                           <td><code data-syntax>!KEYWORD: v1, v2</code></td>
                           <td>
                             End-of-line badge, e.g.
-                            <code data-syntax>!STIG: V-1234</code>
-                            . Any all-caps keyword; stripped from output.
+                            <code data-syntax>!STIG: V-1234</code>. Any all-caps
+                            keyword; stripped from output.
                           </td>
                         </tr>
                       </tbody>
