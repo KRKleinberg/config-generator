@@ -4983,12 +4983,9 @@ category = General
           validMsg.style.display = valid ? "none" : "";
         }
       }
-      function safeFieldId(varName) {
-        return varName.replace(/[^a-zA-Z0-9_-]/g, "_");
-      }
-      function buildSelectField(field, varName, config, safeId) {
+      function buildSelectField(field, varName, config) {
         const inputEl = document.createElement("select");
-        inputEl.id = `field-${safeId}`;
+        inputEl.id = `field-${varName}`;
         const emptyOpt = document.createElement("option");
         emptyOpt.value = "";
         emptyOpt.textContent = config.placeholder || "— select —";
@@ -5020,11 +5017,11 @@ category = General
         return inputEl;
       }
 
-      function buildTextField(field, varName, config, safeId) {
+      function buildTextField(field, varName, config) {
         const validationRE =
           config.compiledRegex instanceof RegExp ? config.compiledRegex : null;
         const inputEl = document.createElement("input");
-        inputEl.id = `field-${safeId}`;
+        inputEl.id = `field-${varName}`;
         inputEl.autocomplete = "off";
         inputEl.placeholder = config.placeholder || "";
         inputEl.type = "text";
@@ -5086,8 +5083,6 @@ category = General
         let currentCategory = "";
 
         for (const [varName, config] of Object.entries(variableDefs)) {
-          const safeId = safeFieldId(varName);
-
           if (config.category && config.category !== currentCategory) {
             currentCategory = config.category;
             const divider = document.createElement("div");
@@ -5099,14 +5094,14 @@ category = General
           const field = document.createElement("div");
           field.className = "field";
           const label = document.createElement("label");
-          label.setAttribute("for", `field-${safeId}`);
+          label.setAttribute("for", `field-${varName}`);
           label.textContent = varName;
           label.onclick = () => findVarInPreview(varName);
 
           const star = document.createElement("span");
           star.className = "req-star";
           star.textContent = "*";
-          star.id = `req-star-${safeId}`;
+          star.id = `req-star-${varName}`;
           label.appendChild(star);
           field.appendChild(label);
 
@@ -5124,8 +5119,8 @@ category = General
           }
 
           const inputEl = config.choices
-            ? buildSelectField(field, varName, config, safeId)
-            : buildTextField(field, varName, config, safeId);
+            ? buildSelectField(field, varName, config)
+            : buildTextField(field, varName, config);
 
           fragment.appendChild(field);
           // No blanket "" init: own-"" = user cleared; pre-init blocked late defaults.
@@ -5179,8 +5174,7 @@ category = General
         for (const [varName, config] of Object.entries(variableDefs)) {
           const isRequired =
             config.required || (config.group && activeGroups[config.group]);
-          const safeId = safeFieldId(varName);
-          const starEl = document.getElementById(`req-star-${safeId}`);
+          const starEl = document.getElementById(`req-star-${varName}`);
           if (starEl)
             starEl.style.display = isRequired ? "inline-block" : "none";
 
@@ -5206,8 +5200,7 @@ category = General
       }
 
       function focusVar(varName) {
-        const safeId = safeFieldId(varName);
-        let el = document.getElementById(`field-${safeId}`);
+        let el = document.getElementById(`field-${varName}`);
 
         if (!el) {
           variableDefs[varName] = {
@@ -5224,7 +5217,7 @@ category = General
           };
           buildForm();
           updateProgressBar();
-          el = document.getElementById(`field-${safeId}`);
+          el = document.getElementById(`field-${varName}`);
           showToast(`Added missing variable: ${varName}`);
         }
 
@@ -6030,8 +6023,7 @@ category = General
       function resetAll() {
         for (const varName of Object.keys(variableDefs)) {
           formValues[varName] = "";
-          const safeId = safeFieldId(varName);
-          const el = document.getElementById(`field-${safeId}`);
+          const el = document.getElementById(`field-${varName}`);
           if (!el) continue;
           el.value = "";
           el.classList.remove("invalid");
