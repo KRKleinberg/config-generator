@@ -2372,7 +2372,7 @@
       aria-labelledby="guideTitle"
       onclick="closeHelp(event)"
     >
-      <div class="lightbox-modal" onclick="event.stopPropagation()">
+      <div class="lightbox-modal">
         <div class="lightbox-header">
           <h2 id="guideTitle">
             <svg width="18" height="18">
@@ -3253,7 +3253,7 @@
           ...fields,
         };
       }
-      function commitINIItem(result, item, errorList = []) {
+      function commitINIItem(result, item, errorList) {
         const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = item.keyLines || {};
         const at = (key) => {
@@ -3824,7 +3824,6 @@
         badge.innerHTML = DIALECT.experimental
           ? `${escHtml(DIALECT.short)}<span class="dialect-flag">BETA</span>`
           : escHtml(DIALECT.short);
-        badge.title = "Switch platform";
 
         // Guide examples are written in IOS syntax; swap their comment leaders for the dialect's.
         document.querySelectorAll("[data-syntax]").forEach((el) => {
@@ -4285,18 +4284,18 @@
             exprTokens[i];
           const cls = filled ? "var-filled" : "var-unfilled";
           const safeVar = escHtml(baseVar);
-          const safeVars = escHtml((vars || []).join(" "));
+          const safeVars = escHtml(vars.join(" "));
           const safeRaw = escHtml(rawContent);
           const text = risky
             ? markRiskChars(escHtml(displayText))
             : escHtml(displayText);
-          return `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${text}</span>`;
+          return `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml(vars.join(", "))}">${text}</span>`;
         });
         result = result.replace(/\x00BG(\d+)\x00/g, (_, i) => {
           const tok = badgeTokens[i];
           const colorClass = `badge-c${order[tok.keyword] % BADGE_COLOR_COUNT}`;
           const valsHtml = tok.ids
-            .map((id) => `<span class="badge-val">${escHtml(id)}</span>`)
+            .map((id) => `<span>${escHtml(id)}</span>`)
             .join(`<span class="badge-divider"></span>`);
           const marker = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
           const pill = `<span class="badge ${colorClass}" data-marker="${marker}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
@@ -4489,11 +4488,8 @@
       function toInternalEOL(s) {
         return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
       }
-      function toWindowsEOL(s) {
-        return (s ?? "").replace(/\r?\n/g, "\r\n");
-      }
       function toOutputEOL(s) {
-        return OUTPUT_CRLF ? toWindowsEOL(s) : s;
+        return OUTPUT_CRLF ? s.replace(/\r?\n/g, "\r\n") : s;
       }
       function readFileAsText(file, errorMsg, onLoad) {
         const reader = new FileReader();
@@ -4551,14 +4547,10 @@
         document.getElementById("varsStatus").innerHTML =
           `<span class="filename" title="${safe}">${safe}</span>`;
         const badge = document.getElementById("varsCountBadge");
-        if (badge) {
-          const auto =
-            autoCount > 0
-              ? ` <span class="count-auto">+${autoCount}</span>`
-              : "";
-          badge.innerHTML = `— <span class="count-number">${count}</span>${auto}`;
-          badge.style.display = "inline-block";
-        }
+        const auto =
+          autoCount > 0 ? ` <span class="count-auto">+${autoCount}</span>` : "";
+        badge.innerHTML = `— <span class="count-number">${count}</span>${auto}`;
+        badge.style.display = "inline-block";
         if (markLoaded)
           document.getElementById("varsLoader").classList.add("loaded");
       }
@@ -4916,11 +4908,8 @@ category = General
       function isFieldValueValid(value, config) {
         const v = typeof value === "string" ? value.trim() : "";
         if (!v) return true;
-        const re =
-          config && config.compiledRegex instanceof RegExp
-            ? config.compiledRegex
-            : null;
-        return re ? re.test(v) : true;
+        const re = config.compiledRegex;
+        return re instanceof RegExp ? re.test(v) : true;
       }
       function applyValidity(inputEl, validMsg, value, config) {
         const valid = isFieldValueValid(value, config);
@@ -5083,7 +5072,6 @@ category = General
 
       function renderAutoDetectButtons() {
         const container = document.getElementById("autoDetectIcons");
-        if (!container) return;
         container.innerHTML = "";
         if (templateSource === null) return;
 
@@ -5725,15 +5713,6 @@ category = General
           }
         }
 
-        // rename+body-edit is indistinguishable from delete+add; surface the guess
-        const unmatchedBlocks = assigned.filter((a) => a === -1).length;
-        const unusedPriors = used.filter((u) => !u).length;
-        if (unmatchedBlocks > 0 && unusedPriors > 0) {
-          console.warn(
-            `disassembleFullEdit: ${unmatchedBlocks} edited block(s) could not be matched to ${unusedPriors} leftover record(s); treating as new sections (prior edit identity not carried).`,
-          );
-        }
-
         return blocks.map((b, i) => {
           if (assigned[i] !== -1) {
             const prior = priorRecords[assigned[i]];
@@ -5816,13 +5795,7 @@ category = General
       // Marker survives edits elsewhere; only the copied section going stale drops it.
       function refreshLastCopied() {
         if (!lastCopied) return;
-        let current = null;
-        try {
-          current = copiedTextFor(lastCopied);
-        } catch (err) {
-          current = null;
-        }
-        if (current !== lastCopied.text) {
+        if (copiedTextFor(lastCopied) !== lastCopied.text) {
           clearLastCopied();
           return;
         }
@@ -5868,7 +5841,7 @@ category = General
           ? window
           : document.querySelector(".preview-panel");
 
-        if (currentSection && nextSection && scroller) {
+        if (currentSection && nextSection) {
           const distance =
             nextSection.getBoundingClientRect().top -
             currentSection.getBoundingClientRect().top;
@@ -5996,8 +5969,6 @@ category = General
         sectionRecords = [];
         resetEditState();
         setViewMode("sections");
-
-        document.getElementById("templateInput").value = "";
         showNoTemplate();
         renderAutoDetectButtons();
 
@@ -6023,8 +5994,6 @@ category = General
         varsFromFile = {};
         varsFileName = "";
         Object.keys(formValues).forEach((k) => delete formValues[k]);
-
-        document.getElementById("varsInput").value = "";
         clearVarsStatus();
         setWarnBadge("varsErrorBadge", "variable definition issues", []);
         document.getElementById("formFields").innerHTML = "";
@@ -6184,8 +6153,9 @@ category = General
           window.scrollTo({ top: 0, behavior: "smooth" });
           return;
         }
-        const panel = document.querySelector(".preview-panel");
-        if (panel) panel.scrollTo({ top: 0, behavior: "smooth" });
+        document
+          .querySelector(".preview-panel")
+          .scrollTo({ top: 0, behavior: "smooth" });
       }
       // Candidates in preference order: the two sides, then centered beside the
       // anchor; the first that fits the viewport with the least section-header
@@ -6226,7 +6196,6 @@ category = General
       }
       function openBadgeCopy(el) {
         const popup = document.getElementById("badgeCopyPopup");
-        if (!popup) return;
         popup.querySelector(".badge-copy-text").textContent =
           el.dataset.marker || "";
         placePopup(popup, el.getBoundingClientRect());
@@ -6234,7 +6203,7 @@ category = General
       let warnPopupEl = null;
       function showWarnPopup(el, e) {
         const popup = document.getElementById("warnPopup");
-        if (!popup || el === warnPopupEl) return;
+        if (el === warnPopupEl) return;
         const msgs = (el.dataset.warns || "").split("\n").filter(Boolean);
         if (!msgs.length) return;
         warnPopupEl = el;
@@ -6311,7 +6280,7 @@ category = General
       }
       function hideWarnPopup() {
         const popup = document.getElementById("warnPopup");
-        if (popup) popup.hidden = true;
+        popup.hidden = true;
         warnPopupEl = null;
         clearTimeout(warnHideTimer);
         warnHideTimer = null;
@@ -6450,7 +6419,7 @@ category = General
 
       function closeBadgeCopy() {
         const popup = document.getElementById("badgeCopyPopup");
-        if (popup) popup.hidden = true;
+        popup.hidden = true;
       }
 
       document.addEventListener("click", (e) => {
@@ -6708,20 +6677,13 @@ category = General
             }
           });
 
-        // Footer version derives from the line-1 comment (a document child
-        // node) so releases bump one place; guarded - must never abort setup.
-        try {
-          const versionEl = document.getElementById("guideVersion");
-          const headerComment = [...document.childNodes].find(
-            (n) => n.nodeType === 8,
-          );
-          const version = (headerComment?.nodeValue || "").match(
-            /v\d{4}\.\d{2}\.\d{2}/,
-          );
-          if (versionEl && version) versionEl.textContent = version[0];
-        } catch (e) {
-          console.warn("Version lookup failed:", e);
-        }
+        // Version comes from the line-1 comment so a release bumps one place.
+        const headerComment = [...document.childNodes].find(
+          (n) => n.nodeType === Node.COMMENT_NODE,
+        );
+        const version = headerComment?.nodeValue.match(/v\d{4}\.\d{2}\.\d{2}/);
+        if (version)
+          document.getElementById("guideVersion").textContent = version[0];
       }
 
       initialize();
