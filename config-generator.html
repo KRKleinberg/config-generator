@@ -2823,6 +2823,10 @@
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
       const COPY_EOL = COPY_TRAILING_NEWLINE ? "\n" : "";
+      const FULL_EDIT_KEY = "__full__";
+      const SESSION_SCHEMA_VERSION = 1;
+      const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
+      const EXPR_RE = /\{\{(.+?)\}\}/g;
       let variableDefs = {};
       let templateSource = null;
       let originalTemplateSource = null;
@@ -2833,15 +2837,11 @@
       const sectionEditBackups = {};
       let viewMode = "sections";
       let fullModeEditBuffer = "";
-      const FULL_EDIT_KEY = "__full__";
-      const SESSION_SCHEMA_VERSION = 1;
       let templateFileName = "";
       let varsFromFile = {};
       let varsFileName = "";
       let emptyStateHtml = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
-      const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
-      const EXPR_RE = /\{\{(.+?)\}\}/g;
       // Written at the top of every saved or new template. Indented so older
       // tool copies don't parse the marker examples as markers.
       function templateHeader(c) {
@@ -3158,6 +3158,23 @@
           ],
         },
       ];
+      function escHtml(s) {
+        return !s
+          ? ""
+          : s
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+      }
+      function escRegex(s) {
+        return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+      // Strings only: session formValues are not type-checked.
+      function isValuePresent(v) {
+        return typeof v === "string" && v.trim() !== "";
+      }
       function parseINI(text, errorList = []) {
         const result = {};
         const groupLines = {};
@@ -3855,27 +3872,6 @@
       function closeDialectMenu() {
         document.getElementById("dialectMenu").hidden = true;
         document.getElementById("dialectBadge").ariaExpanded = "false";
-      }
-      const SAVE_MENU = [
-        ["saveSession", "Save session", "icon-save", "Ctrl+S"],
-        ["saveTemplate", "Save template", "icon-save"],
-        null,
-        ["saveConfig", "Export config", "icon-download"],
-      ];
-      function toggleSaveMenu(e) {
-        const menu = document.getElementById("saveMenu");
-        if (!menu.hidden) return closeSaveMenu();
-        menu.innerHTML = SAVE_MENU.map((row) =>
-          row
-            ? `<button role="menuitem" onclick="closeSaveMenu(); ${row[0]}()"><svg><use href="#${row[2]}"></use></svg>${row[1]}${row[3] ? `<span class="menu-kbd">${row[3]}</span>` : ""}</button>`
-            : "<hr />",
-        ).join("");
-        placePopup(menu, e.currentTarget.getBoundingClientRect(), false, true);
-        e.currentTarget.ariaExpanded = "true";
-      }
-      function closeSaveMenu() {
-        document.getElementById("saveMenu").hidden = true;
-        document.getElementById("saveBtn").ariaExpanded = "false";
       }
       // Sections are a tool concept and survive the switch; they are written
       // out with the new marker. Body text is re-cleaned, re-linted, re-colored.
@@ -4700,6 +4696,78 @@
           `Saved ${name}`,
         );
       }
+      function saveConfig() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        const hostname = saveFileStem();
+        const { raw, issues } = rawWithIssues(assembleFullEditableText());
+        const output = toOutputEOL(raw + "\n");
+        const base = `Saved ${hostname}${OUTPUT_EXTENSION}`;
+        const msg = copyToastMessage(base, output, issues);
+        saveTextFile(
+          output,
+          `${hostname}${OUTPUT_EXTENSION}`,
+          "text/plain",
+          msg ?? base,
+          msg ? "warn" : "",
+        );
+      }
+
+      async function saveTemplate() {
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+
+        const filename = `${templateBasename() || "template"}${OUTPUT_EXTENSION}`;
+
+        // Don't stack a second header on save -> load -> save.
+        const body = assembleFullEditableText();
+        const hasHeader = /^\s*\{#[\s\S]{0,200}Configuration Template/.test(
+          body,
+        );
+        const output = toOutputEOL(
+          hasHeader || !SAVE_TEMPLATE_HEADER ? body : TEMPLATE_HEADER + body,
+        );
+
+        const saved = await saveTextFile(
+          output,
+          filename,
+          "text/plain",
+          `Saved ${filename}`,
+        );
+        if (saved) {
+          templateFileName = saved;
+          setTemplateStatus(saved);
+        }
+      }
+
+      const SAVE_MENU = [
+        ["saveSession", "Save session", "icon-save", "Ctrl+S"],
+        ["saveTemplate", "Save template", "icon-save"],
+        null,
+        ["saveConfig", "Export config", "icon-download"],
+      ];
+      function toggleSaveMenu(e) {
+        const menu = document.getElementById("saveMenu");
+        if (!menu.hidden) return closeSaveMenu();
+        menu.innerHTML = SAVE_MENU.map((row) =>
+          row
+            ? `<button role="menuitem" onclick="closeSaveMenu(); ${row[0]}()"><svg><use href="#${row[2]}"></use></svg>${row[1]}${row[3] ? `<span class="menu-kbd">${row[3]}</span>` : ""}</button>`
+            : "<hr />",
+        ).join("");
+        placePopup(menu, e.currentTarget.getBoundingClientRect(), false, true);
+        e.currentTarget.ariaExpanded = "true";
+      }
+      function closeSaveMenu() {
+        document.getElementById("saveMenu").hidden = true;
+        document.getElementById("saveBtn").ariaExpanded = "false";
+      }
+
       function onOpenFileSelected(e) {
         const file = e.target.files[0];
         if (file) loadFile(file);
@@ -4718,6 +4786,73 @@
         };
         process[fileKind(file)](file);
       }
+      function validateSessionV1(session) {
+        if (session === null || typeof session !== "object")
+          return "Not a session object";
+        if (session.schemaVersion !== SESSION_SCHEMA_VERSION)
+          return `Unsupported session version: ${session.schemaVersion}`;
+        // Validate every consumed key up front: fail loud, load nothing.
+        if (
+          !(
+            session.templateSource === null ||
+            typeof session.templateSource === "string"
+          )
+        )
+          return "templateSource must be a string or null";
+        if (
+          !(
+            session.originalTemplateSource === null ||
+            typeof session.originalTemplateSource === "string"
+          )
+        )
+          return "originalTemplateSource must be a string or null";
+        if (typeof session.templateFileName !== "string")
+          return "templateFileName must be a string";
+        if (typeof session.varsFileName !== "string")
+          return "varsFileName must be a string";
+        for (const key of ["variableDefs", "varsFromFile", "formValues"]) {
+          const v = session[key];
+          if (v === null || typeof v !== "object" || Array.isArray(v))
+            return `${key} must be an object`;
+        }
+        if (!Array.isArray(session.sections))
+          return "Session is missing its sections array";
+        if (
+          session.dialect !== undefined &&
+          !Object.hasOwn(DIALECTS, session.dialect)
+        )
+          return `Unknown platform: ${session.dialect}`;
+        const text = (v) => v == null || typeof v === "string";
+        for (const s of session.sections) {
+          if (s === null || typeof s !== "object")
+            return "Malformed section entry";
+          if (!(s.name === null || typeof s.name === "string"))
+            return "Section name must be a string or null";
+          if (!text(s.baselineBody) || !text(s.override))
+            return "Section bodies must be strings or null";
+        }
+        for (const key of ["variableDefs", "varsFromFile"])
+          for (const [name, def] of Object.entries(session[key]))
+            if (
+              def === null ||
+              typeof def !== "object" ||
+              !text(def.description) ||
+              !(def.choices == null || Array.isArray(def.choices))
+            )
+              return `Malformed definition for ${name} in ${key}`;
+        return null;
+      }
+
+      function recordsFromSession(sections) {
+        return sections.map((s) => ({
+          id: nextRecordId++,
+          name: s.name === undefined ? null : s.name,
+          isImportant: s.isImportant === true,
+          baselineBody: s.baselineBody === undefined ? null : s.baselineBody,
+          override: s.override === undefined ? null : s.override,
+        }));
+      }
+
       function processSessionFile(file) {
         readFileAsText(file, "Error reading session file", (evt) => {
           try {
@@ -5396,73 +5531,6 @@ category = General
         }));
       }
 
-      function validateSessionV1(session) {
-        if (session === null || typeof session !== "object")
-          return "Not a session object";
-        if (session.schemaVersion !== SESSION_SCHEMA_VERSION)
-          return `Unsupported session version: ${session.schemaVersion}`;
-        // Validate every consumed key up front: fail loud, load nothing.
-        if (
-          !(
-            session.templateSource === null ||
-            typeof session.templateSource === "string"
-          )
-        )
-          return "templateSource must be a string or null";
-        if (
-          !(
-            session.originalTemplateSource === null ||
-            typeof session.originalTemplateSource === "string"
-          )
-        )
-          return "originalTemplateSource must be a string or null";
-        if (typeof session.templateFileName !== "string")
-          return "templateFileName must be a string";
-        if (typeof session.varsFileName !== "string")
-          return "varsFileName must be a string";
-        for (const key of ["variableDefs", "varsFromFile", "formValues"]) {
-          const v = session[key];
-          if (v === null || typeof v !== "object" || Array.isArray(v))
-            return `${key} must be an object`;
-        }
-        if (!Array.isArray(session.sections))
-          return "Session is missing its sections array";
-        if (
-          session.dialect !== undefined &&
-          !Object.hasOwn(DIALECTS, session.dialect)
-        )
-          return `Unknown platform: ${session.dialect}`;
-        const text = (v) => v == null || typeof v === "string";
-        for (const s of session.sections) {
-          if (s === null || typeof s !== "object")
-            return "Malformed section entry";
-          if (!(s.name === null || typeof s.name === "string"))
-            return "Section name must be a string or null";
-          if (!text(s.baselineBody) || !text(s.override))
-            return "Section bodies must be strings or null";
-        }
-        for (const key of ["variableDefs", "varsFromFile"])
-          for (const [name, def] of Object.entries(session[key]))
-            if (
-              def === null ||
-              typeof def !== "object" ||
-              !text(def.description) ||
-              !(def.choices == null || Array.isArray(def.choices))
-            )
-              return `Malformed definition for ${name} in ${key}`;
-        return null;
-      }
-
-      function recordsFromSession(sections) {
-        return sections.map((s) => ({
-          id: nextRecordId++,
-          name: s.name === undefined ? null : s.name,
-          isImportant: s.isImportant === true,
-          baselineBody: s.baselineBody === undefined ? null : s.baselineBody,
-          override: s.override === undefined ? null : s.override,
-        }));
-      }
-
       function recordEffectiveBody(record) {
         return record.override !== null
           ? record.override
@@ -5871,56 +5939,6 @@ category = General
           });
       }
 
-      function saveConfig() {
-        if (templateSource === null) {
-          showToast("Load a template first");
-          return;
-        }
-        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        const hostname = saveFileStem();
-        const { raw, issues } = rawWithIssues(assembleFullEditableText());
-        const output = toOutputEOL(raw + "\n");
-        const base = `Saved ${hostname}${OUTPUT_EXTENSION}`;
-        const msg = copyToastMessage(base, output, issues);
-        saveTextFile(
-          output,
-          `${hostname}${OUTPUT_EXTENSION}`,
-          "text/plain",
-          msg ?? base,
-          msg ? "warn" : "",
-        );
-      }
-
-      async function saveTemplate() {
-        if (templateSource === null) {
-          showToast("Load a template first");
-          return;
-        }
-        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-
-        const filename = `${templateBasename() || "template"}${OUTPUT_EXTENSION}`;
-
-        // Don't stack a second header on save -> load -> save.
-        const body = assembleFullEditableText();
-        const hasHeader = /^\s*\{#[\s\S]{0,200}Configuration Template/.test(
-          body,
-        );
-        const output = toOutputEOL(
-          hasHeader || !SAVE_TEMPLATE_HEADER ? body : TEMPLATE_HEADER + body,
-        );
-
-        const saved = await saveTextFile(
-          output,
-          filename,
-          "text/plain",
-          `Saved ${filename}`,
-        );
-        if (saved) {
-          templateFileName = saved;
-          setTemplateStatus(saved);
-        }
-      }
-
       function resetAll() {
         for (const varName of Object.keys(variableDefs))
           formValues[varName] = "";
@@ -6151,6 +6169,8 @@ category = General
         placePopup(popup, el.getBoundingClientRect());
       }
       let warnPopupEl = null;
+      // Grace period so the pointer can cross into the popup.
+      let warnHideTimer = null;
       function showWarnPopup(el, e) {
         const popup = document.getElementById("warnPopup");
         if (el === warnPopupEl) return;
@@ -6235,8 +6255,6 @@ category = General
         clearTimeout(warnHideTimer);
         warnHideTimer = null;
       }
-      // Grace period so the pointer can cross into the popup.
-      let warnHideTimer = null;
       function scheduleHideWarn() {
         warnHideTimer ??= setTimeout(hideWarnPopup, 200);
       }
@@ -6304,24 +6322,6 @@ category = General
       function closeBadgeCopy() {
         const popup = document.getElementById("badgeCopyPopup");
         popup.hidden = true;
-      }
-
-      function escHtml(s) {
-        return !s
-          ? ""
-          : s
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#039;");
-      }
-      function escRegex(s) {
-        return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      }
-      // Strings only: session formValues are not type-checked.
-      function isValuePresent(v) {
-        return typeof v === "string" && v.trim() !== "";
       }
 
       function flashCopied(id) {
