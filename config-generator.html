@@ -4220,9 +4220,10 @@
       function jinjaRaw(template) {
         return jinjaRawParts(template).output;
       }
-      function lintBody(template) {
-        const { lintText, restore } = jinjaRawParts(template);
-        return lintConfigLines(lintText, restore);
+      // One pipeline run: the text that is copied or saved, and its paste warnings.
+      function rawWithIssues(template) {
+        const { output, lintText, restore } = jinjaRawParts(template);
+        return { raw: output, issues: lintConfigLines(lintText, restore) };
       }
       function headerWarnHtml(issues) {
         if (!issues.length) return "";
@@ -5929,13 +5930,13 @@ category = General
       function copySectionByName(id, index) {
         const r = recordById(id);
         if (!r) return;
-        const body = recordEffectiveBody(r);
-        const output = jinjaRaw(body) + COPY_EOL;
+        const { raw, issues } = rawWithIssues(recordEffectiveBody(r));
+        const output = raw + COPY_EOL;
         return navigator.clipboard
           .writeText(output)
           .then(() => {
             flashBadge(`badge-${index}`);
-            const msg = copyToastMessage("Copied", output, lintBody(body));
+            const msg = copyToastMessage("Copied", output, issues);
             if (msg) showToast(msg, "warn");
             clearLastCopied();
             lastCopied = { kind: "section", id, text: output };
@@ -5978,14 +5979,14 @@ category = General
           return;
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        const body = assembleFullEditableText();
-        const output = jinjaRaw(body) + COPY_EOL;
+        const { raw, issues } = rawWithIssues(assembleFullEditableText());
+        const output = raw + COPY_EOL;
 
         navigator.clipboard
           .writeText(output)
           .then(() => {
             flashBadge("badge-full");
-            const msg = copyToastMessage("Copied", output, lintBody(body));
+            const msg = copyToastMessage("Copied", output, issues);
             if (msg) showToast(msg, "warn");
             clearLastCopied();
             lastCopied = { kind: "full", text: output };
@@ -6005,10 +6006,10 @@ category = General
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const hostname = outputHostname();
-        const body = assembleFullEditableText();
-        const output = toOutputEOL(jinjaRaw(body) + "\n");
+        const { raw, issues } = rawWithIssues(assembleFullEditableText());
+        const output = toOutputEOL(raw + "\n");
         const base = `Saved ${hostname}${OUTPUT_EXTENSION}`;
-        const msg = copyToastMessage(base, output, lintBody(body));
+        const msg = copyToastMessage(base, output, issues);
         saveTextFile(
           output,
           `${hostname}${OUTPUT_EXTENSION}`,
