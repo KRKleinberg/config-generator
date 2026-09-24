@@ -575,9 +575,9 @@
       }
 
       .preview-var.flash-search {
-        background: var(--accent) !important;
-        color: var(--on-accent) !important;
-        box-shadow: 0 0 0 4px var(--accent) !important;
+        background: var(--accent);
+        color: var(--on-accent);
+        box-shadow: 0 0 0 4px var(--accent);
         border-radius: var(--radius-sm);
         transition: all 0.3s ease;
       }
@@ -1127,20 +1127,21 @@
         color: var(--text-dim);
       }
 
+      .var-unfilled,
+      .var-filled {
+        font-weight: 600;
+        padding: 1px 0;
+        border-radius: var(--radius-sm);
+      }
+
       .var-unfilled {
         color: var(--warn);
         background: var(--warn-dim);
-        font-weight: 600;
-        padding: 1px 0px;
-        border-radius: var(--radius-sm);
       }
 
       .var-filled {
         color: var(--success);
         background: var(--success-dim);
-        font-weight: 600;
-        padding: 1px 0px;
-        border-radius: var(--radius-sm);
       }
 
       .badge-group {
@@ -1311,10 +1312,6 @@
         font-size: 12px;
         line-height: 1.5;
         color: var(--text);
-      }
-
-      .warn-popup[hidden] {
-        display: none;
       }
 
       .warn-popup-title {
@@ -1493,9 +1490,12 @@
         max-width: 440px;
         padding: 6px 8px;
       }
-      .badge-copy-popup[hidden] {
+
+      .badge-copy-popup[hidden],
+      .warn-popup[hidden] {
         display: none;
       }
+
       .badge-copy-text {
         user-select: text;
         white-space: normal;
@@ -2035,9 +2035,8 @@
       }
 
       .mini-btn {
-        width: 24px !important;
-        height: 24px !important;
-        padding: 0 !important;
+        width: 24px;
+        height: 24px;
       }
     </style>
   </head>
