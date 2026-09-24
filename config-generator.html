@@ -4498,22 +4498,28 @@
           msgs.push(`\`${tag}\` without a matching \`{% endif %}\``);
         return [...new Set(msgs)];
       }
+      function templateSyntaxIssues() {
+        if (!LINT_TEMPLATE) return [];
+        const msgs = new Set();
+        // Per-body scan first: {% if %} spanning !!! breaks section copy (limitation).
+        const seen = new Set();
+        for (const r of sectionRecords)
+          for (const m of scanTemplateForErrors(recordEffectiveBody(r))) {
+            seen.add(m);
+            msgs.add(r.name === null ? m : `[${r.name}] ${m}`);
+          }
+        // Whole-template scan adds only what no single section already reports.
+        for (const m of scanTemplateForErrors(assembleFullEditableText()))
+          if (!seen.has(m)) msgs.add(m);
+        return [...msgs];
+      }
       function updateTemplateErrorBadge() {
         if (templateSource === null) return;
-        const msgs = new Set();
-        if (LINT_TEMPLATE) {
-          // Per-body scan first: {% if %} spanning !!! breaks section copy (limitation).
-          const seen = new Set();
-          for (const r of sectionRecords)
-            for (const m of scanTemplateForErrors(recordEffectiveBody(r))) {
-              seen.add(m);
-              msgs.add(r.name === null ? m : `[${r.name}] ${m}`);
-            }
-          // Whole-template scan adds only what no single section already reports.
-          for (const m of scanTemplateForErrors(assembleFullEditableText()))
-            if (!seen.has(m)) msgs.add(m);
-        }
-        setWarnBadge("templateErrorBadge", "syntax issues", [...msgs]);
+        setWarnBadge(
+          "templateErrorBadge",
+          "syntax issues",
+          templateSyntaxIssues(),
+        );
       }
       function toInternalEOL(s) {
         return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -4621,9 +4627,7 @@
             resetEditState();
             setTemplateStatus(fullName);
             applyAutoViewMode();
-            const syntaxIssues = LINT_TEMPLATE
-              ? scanTemplateForErrors(templateSource).length
-              : 0;
+            const syntaxIssues = templateSyntaxIssues().length;
             if (syntaxIssues)
               showToast(
                 `Template file has ${syntaxIssues} syntax issue${syntaxIssues === 1 ? "" : "s"}`,
