@@ -6026,16 +6026,9 @@ category = General
       }
 
       function resetAll() {
-        for (const varName of Object.keys(variableDefs)) {
+        for (const varName of Object.keys(variableDefs))
           formValues[varName] = "";
-          const el = document.getElementById(`field-${varName}`);
-          if (!el) continue;
-          el.value = "";
-          el.classList.remove("invalid");
-          if (el.tagName === "SELECT") el.selectedIndex = 0;
-          const validMsg = el.parentNode.querySelector(".validation-msg");
-          if (validMsg) validMsg.style.display = "none";
-        }
+        buildForm();
         render();
       }
 
