@@ -4522,14 +4522,14 @@
         const dot = templateFileName.lastIndexOf(".");
         return dot > 0 ? templateFileName.slice(0, dot) : templateFileName;
       }
-      function outputStem() {
+      function templateStem() {
         return templateBasename().replace(/\.template$/i, "");
       }
-      function outputHostname() {
+      function saveFileStem() {
         const key = Object.keys(formValues).find(
           (k) => k.toLowerCase() === FILENAME_VAR.toLowerCase(),
         );
-        return (key && formValues[key]) || outputStem() || "config";
+        return (key && formValues[key]) || templateStem() || "config";
       }
       // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
@@ -4699,7 +4699,7 @@
             override: r.override,
           })),
         };
-        const name = `${outputHostname()}.session.json`;
+        const name = `${saveFileStem()}.session.json`;
         saveTextFile(
           JSON.stringify(session, null, 2),
           name,
@@ -4879,7 +4879,7 @@ category = General
 `;
         }
 
-        const name = `${outputStem() || "auto_detected"}.vars.ini`;
+        const name = `${templateStem() || "auto_detected"}.vars.ini`;
         saveTextFile(ini, name, "text/plain", `Saved ${name}`);
       }
 
@@ -5884,7 +5884,7 @@ category = General
           return;
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        const hostname = outputHostname();
+        const hostname = saveFileStem();
         const { raw, issues } = rawWithIssues(assembleFullEditableText());
         const output = toOutputEOL(raw + "\n");
         const base = `Saved ${hostname}${OUTPUT_EXTENSION}`;
