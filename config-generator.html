@@ -3963,7 +3963,7 @@
         const m = b && line.match(b.start);
         if (!m) return null;
         if (b.delimiter) return { delim: b.delimiter, at: m[0].length - 1 };
-        const afterFirst = line.slice(line.indexOf(m[1]) + 1);
+        const afterFirst = line.slice(m[0].length);
         return {
           delim: afterFirst.includes(m[1]) ? null : m[1],
           at: m[0].length - 1,
