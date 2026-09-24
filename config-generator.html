@@ -2251,12 +2251,7 @@
               Load
             </button>
           </div>
-          <input
-            type="file"
-            id="templateInput"
-            class="hidden"
-            accept=".config,.txt,.cfg,.tpl,.conf,.template"
-          />
+          <input type="file" id="templateInput" class="hidden" />
         </div>
         <div class="panel-header" style="margin-top: 20px">
           Variables
@@ -2826,14 +2821,32 @@
     <script>
       "use strict";
       // ---- Site configuration ----
+      // Output
+      const STRIP_COMMENTS = true; // drop comment lines and inline comments from output
+      const STRIP_BADGES = true; // render and drop !KEYWORD: badges; off leaves them as comment text
+      const STRIP_INDENT = true; // remove leading indentation from output lines
+      const FREEFORM_COMMANDS = []; // extra commands whose mid-line comment char is data, e.g. ["my-cmd"]
+      const OUTPUT_EXTENSION = ".config"; // saved config and template files
+      const OUTPUT_CRLF = true; // Windows line endings in saved config and template files
+      const COPY_TRAILING_NEWLINE = true; // copied text ends with a newline so the last line executes
+      // Files and naming
+      const FILENAME_VAR = "HOSTNAME"; // form variable (any casing) that names saved files
+      const TEMPLATE_EXTENSIONS = ".config,.txt,.cfg,.tpl,.conf,.template"; // template picker filter
+      const SAVE_TEMPLATE_HEADER = true; // prepend the syntax header when saving a template
+      // Variables
+      const AUTO_DETECT_VARS = true; // resync the form on template load and edit commit; the lightning stays manual
+      // Linting
       const LINT_PASTE_WARNINGS = true; // preview marks, header icons, copy/save toasts
+      const LINT_NON_ASCII = true; // flag non-ASCII characters; off for sites with umlauts in banners
       const LINT_TEMPLATE = true; // template structure badge
       const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
+      // Platform and editor
       const DIALECT_NAME = "ios"; // ios, nxos, eos, junos (see DIALECTS); only ios is device-tested
       const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
       const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
+      const COPY_EOL = COPY_TRAILING_NEWLINE ? "\n" : "";
       let variableDefs = {};
       let templateSource = null;
       let originalTemplateSource = null;
@@ -3804,7 +3817,12 @@
         MARKER = COMMENT.repeat(3);
         keywordGroups = DIALECT.keywords;
         MAX_DESCRIPTION_LEN = DIALECT.descriptionMax;
-        FREEFORM_CMD_RE = DIALECT.freeform;
+        FREEFORM_CMD_RE = FREEFORM_COMMANDS.length
+          ? new RegExp(
+              `${DIALECT.freeform.source}|^\\s*(?:${FREEFORM_COMMANDS.map(escRegex).join("|")})\\b`,
+              "i",
+            )
+          : DIALECT.freeform;
         TEMPLATE_HEADER = templateHeader(COMMENT);
         const c = escRegex(COMMENT);
         SECTION_RE = new RegExp(`^(${c}{3,})\\s*(.+)$`);
@@ -3969,7 +3987,7 @@
           }
           const b = bannerStart(line);
           if (b) {
-            out.push(line.replace(/^\s+/, ""));
+            out.push(dedent(line));
             bannerDelim = b.delim;
             continue;
           }
@@ -3977,14 +3995,14 @@
             out.push(COMMENT); // bare comment char passes through: answers device prompts on paste
             continue;
           }
-          if (COMMENT_LINE_RE.test(line)) continue;
-          if (FREEFORM_CMD_RE.test(line)) {
-            out.push(line.replace(/^\s+/, ""));
-            continue;
-          }
-          out.push(line.replace(INLINE_COMMENT_RE, "").replace(/^\s+/, ""));
+          if (SECTION_RE.test(line)) continue; // tool syntax, never output
+          if (STRIP_COMMENTS && COMMENT_LINE_RE.test(line)) continue;
+          out.push(dedent(commandPart(line)));
         }
         return out.join("\n");
+      }
+      function dedent(line) {
+        return STRIP_INDENT ? line.replace(/^\s+/, "") : line;
       }
       function cleanFormatting(text) {
         return text
@@ -3994,8 +4012,12 @@
           .trim();
       }
       // Paste hazards. Ctrl-V (0x16) escapes the editor keys ? and tab; encoding hazards have no escape.
-      const RISK_CHAR_RE = /(?<!\x16)[\t?]|[\u0080-\u{10FFFF}]/gu;
-      const MARK_CHAR_RE = /\x16|(?<!\x16)[\t?]|[\u0080-\u{10FFFF}]/gu;
+      const NON_ASCII_ALT = LINT_NON_ASCII ? "|[\\u0080-\\u{10FFFF}]" : "";
+      const RISK_CHAR_RE = new RegExp(`(?<!\\x16)[\\t?]${NON_ASCII_ALT}`, "gu");
+      const MARK_CHAR_RE = new RegExp(
+        `\\x16|(?<!\\x16)[\\t?]${NON_ASCII_ALT}`,
+        "gu",
+      );
       // Jinja syntax that survived rendering: a full tag, or a stray opener/closer.
       const SYNTAX_RE = /\{[{%#](?:[^{}%#]*[}%#]\})?|[}%#]\}/g;
       const SYNTAX_MSG =
@@ -4008,10 +4030,11 @@
         if (ch === "\u00a0") return "Non-breaking space";
         return `Non-ASCII character \`${ch}\``;
       }
-      // Part of a line that reaches the device; must match cleanOutputLines.
+      // Part of a line that reaches the device; cleanOutputLines emits exactly this.
       function commandPart(line) {
+        if (SECTION_RE.test(line)) return "";
+        if (!STRIP_COMMENTS || FREEFORM_CMD_RE.test(line)) return line;
         if (COMMENT_LINE_RE.test(line)) return "";
-        if (FREEFORM_CMD_RE.test(line)) return line;
         return line.replace(INLINE_COMMENT_RE, "");
       }
       // Banner-aware line walk shared by lint and preview marking.
@@ -4141,7 +4164,7 @@
           rendered.push(r.text);
           return `\x00RV${rendered.length - 1}\x00`;
         });
-        result = result.replace(CLEAN_BADGE_RE, "");
+        if (STRIP_BADGES) result = result.replace(CLEAN_BADGE_RE, "");
         const restore = (s) =>
           s.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
         const lintText = cleanFormatting(result);
@@ -4193,8 +4216,9 @@
         });
         const badgeTokens = [];
         const order = badgeColorMap || {};
+        // Off, badges stay in the text and read as comments, matching the output.
         result = result.replace(
-          BADGE_RE,
+          STRIP_BADGES ? BADGE_RE : /(?!)/g,
           (match, keyword, ids, offset, str) => {
             // Badge alone on its line: drop the inline left-margin to avoid a spurious indent.
             const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
@@ -4489,6 +4513,9 @@
       function toWindowsEOL(s) {
         return (s ?? "").replace(/\r?\n/g, "\r\n");
       }
+      function toOutputEOL(s) {
+        return OUTPUT_CRLF ? toWindowsEOL(s) : s;
+      }
       function readFileAsText(file, errorMsg, onLoad) {
         const reader = new FileReader();
         reader.onerror = () => showToast(errorMsg, "error");
@@ -4519,7 +4546,7 @@
       }
       function outputHostname() {
         const key = Object.keys(formValues).find(
-          (k) => k.toLowerCase() === "hostname",
+          (k) => k.toLowerCase() === FILENAME_VAR.toLowerCase(),
         );
         return (key && formValues[key]) || outputStem() || "config";
       }
@@ -4783,6 +4810,7 @@
           if (!quiet) showToast("Load a template first");
           return;
         }
+        if (quiet && !AUTO_DETECT_VARS) return render();
         const found = collectTemplateVarNames(assembleFullEditableText());
         if (!found.size) {
           variableDefs = structuredClone(varsFromFile);
@@ -5802,9 +5830,9 @@ category = General
 
       function copiedTextFor(mark) {
         if (mark.kind === "full")
-          return jinjaRaw(assembleFullEditableText()) + "\n";
+          return jinjaRaw(assembleFullEditableText()) + COPY_EOL;
         const r = recordById(mark.id);
-        return r ? jinjaRaw(recordEffectiveBody(r)) + "\n" : null;
+        return r ? jinjaRaw(recordEffectiveBody(r)) + COPY_EOL : null;
       }
 
       // Marker survives edits elsewhere; only the copied section going stale drops it.
@@ -5828,7 +5856,7 @@ category = General
         const r = recordById(id);
         if (!r) return;
         const body = recordEffectiveBody(r);
-        const output = jinjaRaw(body) + "\n";
+        const output = jinjaRaw(body) + COPY_EOL;
         navigator.clipboard
           .writeText(output)
           .then(() => {
@@ -5881,7 +5909,7 @@ category = General
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const body = assembleFullEditableText();
-        const output = jinjaRaw(body) + "\n";
+        const output = jinjaRaw(body) + COPY_EOL;
 
         navigator.clipboard
           .writeText(output)
@@ -5913,12 +5941,12 @@ category = General
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const hostname = outputHostname();
         const body = assembleFullEditableText();
-        const output = toWindowsEOL(jinjaRaw(body) + "\n");
-        const base = `Saved ${hostname}.config`;
+        const output = toOutputEOL(jinjaRaw(body) + "\n");
+        const base = `Saved ${hostname}${OUTPUT_EXTENSION}`;
         const msg = copyToastMessage(base, output, lintBody(body));
         saveTextFile(
           output,
-          `${hostname}.config`,
+          `${hostname}${OUTPUT_EXTENSION}`,
           "text/plain",
           msg ?? base,
           msg ? "warn" : "",
@@ -5932,14 +5960,16 @@ category = General
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
 
-        const filename = `${templateBasename() || "template"}.config`;
+        const filename = `${templateBasename() || "template"}${OUTPUT_EXTENSION}`;
 
         // Don't stack a second header on save -> load -> save.
         const body = assembleFullEditableText();
         const hasHeader = /^\s*\{#[\s\S]{0,200}Configuration Template/.test(
           body,
         );
-        const output = toWindowsEOL(hasHeader ? body : TEMPLATE_HEADER + body);
+        const output = toOutputEOL(
+          hasHeader || !SAVE_TEMPLATE_HEADER ? body : TEMPLATE_HEADER + body,
+        );
 
         const saved = await saveTextFile(
           output,
@@ -6581,6 +6611,7 @@ category = General
       }
 
       function initialize() {
+        document.getElementById("templateInput").accept = TEMPLATE_EXTENSIONS;
         document
           .getElementById("templateInput")
           .addEventListener("change", onTemplateFileSelected);
@@ -6632,7 +6663,7 @@ category = General
                 : (frag.textContent ?? "")
             ).replace(/\n+$/, "");
             if (!text.trim()) return;
-            e.clipboardData.setData("text/plain", text + "\n");
+            e.clipboardData.setData("text/plain", text + COPY_EOL);
             e.preventDefault();
             if (text.includes("{{"))
               showToast(

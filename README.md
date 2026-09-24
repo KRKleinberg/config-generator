@@ -27,7 +27,19 @@ Constants at the top of the script:
 
 | Constant | Default | Effect |
 | --- | --- | --- |
+| `STRIP_COMMENTS` | `true` | Drop comment lines and inline comments from output |
+| `STRIP_BADGES` | `true` | Render `!KEYWORD:` badges and drop them from output; off leaves them as comment text |
+| `STRIP_INDENT` | `true` | Remove leading indentation from output lines |
+| `FREEFORM_COMMANDS` | `[]` | Extra commands whose mid-line comment character is data |
+| `OUTPUT_EXTENSION` | `".config"` | Extension for saved config and template files |
+| `OUTPUT_CRLF` | `true` | Windows line endings in saved config and template files |
+| `COPY_TRAILING_NEWLINE` | `true` | Copied text ends with a newline so the last line executes |
+| `FILENAME_VAR` | `"HOSTNAME"` | Form variable (any casing) that names saved files |
+| `TEMPLATE_EXTENSIONS` | `".config,.txt,..."` | Template picker filter |
+| `SAVE_TEMPLATE_HEADER` | `true` | Prepend the syntax header when saving a template |
+| `AUTO_DETECT_VARS` | `true` | Resync the form on template load and edit commit; the lightning button stays manual |
 | `LINT_PASTE_WARNINGS` | `true` | Paste warnings in the preview, editors, headers, and toasts |
+| `LINT_NON_ASCII` | `true` | Flag non-ASCII characters; off for sites with umlauts in banners |
 | `LINT_TEMPLATE` | `true` | Template syntax badge |
 | `LINT_VARS_FILE` | `true` | Advisory vars file checks (parse errors always show) |
 | `DIALECT_NAME` | `"ios"` | Startup platform: `ios`, `nxos`, `eos`, `junos` |
