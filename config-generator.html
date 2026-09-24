@@ -4444,7 +4444,7 @@
         if (count(/\{\{/g) !== count(/\}\}/g)) msgs.push("Unbalanced `{{ }}`");
         if (count(/\{%/g) !== count(/%\}/g)) msgs.push("Unbalanced `{% %}`");
         const unsupportedTag = cleanText.match(
-          /\{%\s*(?!if\b|else\b|endif\b)([\w-]+)\b/i,
+          /\{%\s*(?!if\b|else\b|endif\b)([\w-]+)\b/,
         );
         if (unsupportedTag)
           msgs.push(`Unsupported tag \`{% ${unsupportedTag[1]} %}\``);
@@ -4471,7 +4471,7 @@
         if (/\{\{|\}\}/.test(cleanText.replace(/\{\{(.+?)\}\}/g, "")))
           msgs.push("`{{ }}` split across lines");
         // Only bare-var conditions are evaluatable; anything else renders literally.
-        const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/gi;
+        const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/g;
         let condMatch;
         while ((condMatch = ifCondRE.exec(cleanText)) !== null) {
           if (!/^\s+[\w.-]+\s*$/.test(condMatch[1]))
@@ -4479,10 +4479,10 @@
         }
         // Open ifs as written, so the message names the one left unpaired.
         const open = [];
-        const logicRegex = /\{%\s*(if|else|endif)\b[\s\S]*?%\}/gi;
+        const logicRegex = /\{%\s*(if|else|endif)\b[\s\S]*?%\}/g;
         let match;
         while ((match = logicRegex.exec(cleanText)) !== null) {
-          const keyword = match[1].toLowerCase();
+          const keyword = match[1];
           if (keyword === "if") {
             open.push({ tag: match[0], hasElse: false });
           } else if (keyword === "else") {
