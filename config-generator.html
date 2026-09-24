@@ -842,6 +842,10 @@
         margin: 0;
         flex: 1 1 auto;
         min-width: 156px;
+        border: none;
+        border-radius: 16px;
+        background: none;
+        font: inherit;
         cursor: pointer;
         user-select: none;
       }
@@ -2351,15 +2355,23 @@
                 title="Switch platform"
               ></button>
             </h2>
-            <div class="view-toggle" onclick="toggleView()">
-              <div class="view-toggle-track">
-                <div class="view-toggle-thumb" id="viewThumb"></div>
+            <button
+              type="button"
+              class="view-toggle"
+              id="viewToggle"
+              role="switch"
+              aria-checked="false"
+              aria-label="Full config view"
+              onclick="toggleView()"
+            >
+              <span class="view-toggle-track">
+                <span class="view-toggle-thumb" id="viewThumb"></span>
                 <span class="view-toggle-label" id="viewLabelSections">
                   Sections
                 </span>
                 <span class="view-toggle-label" id="viewLabelFull">Full</span>
-              </div>
-            </div>
+              </span>
+            </button>
           </div>
         </div>
         <div id="previewContainer">
@@ -5241,6 +5253,9 @@ category = General
         document
           .getElementById("viewThumb")
           .classList.toggle("right", mode === "full");
+        document
+          .getElementById("viewToggle")
+          .setAttribute("aria-checked", mode === "full");
       }
 
       function render() {
