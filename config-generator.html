@@ -274,6 +274,19 @@
         margin-top: 1px;
       }
 
+      .panel-warn {
+        display: none;
+        margin-left: auto;
+        color: var(--warn);
+        cursor: help;
+      }
+
+      .panel-warn svg {
+        width: 15px;
+        height: 15px;
+        transform: translateY(2px);
+      }
+
       /* "— N" suffix after an uppercase header; the number carries the color. */
       .vars-count,
       .warn-popup-count {
@@ -2168,30 +2181,12 @@
           Template
           <span
             id="templateErrorBadge"
+            class="panel-warn"
             data-warns=""
             tabindex="0"
             aria-label="Template syntax issues"
-            style="
-              display: none;
-              color: var(--warn);
-              cursor: help;
-              margin-left: auto;
-            "
           >
-            <svg
-              style="
-                width: 15px;
-                height: 15px;
-                stroke: currentColor;
-                stroke-width: 2;
-                stroke-linecap: round;
-                stroke-linejoin: round;
-                fill: none;
-                transform: translateY(2px);
-              "
-            >
-              <use href="#icon-alert"></use>
-            </svg>
+            <svg><use href="#icon-alert"></use></svg>
           </span>
         </div>
         <div class="file-loader" id="templateLoader">
@@ -2230,30 +2225,12 @@
           <span id="varsCountBadge" class="vars-count"></span>
           <span
             id="varsErrorBadge"
+            class="panel-warn"
             data-warns=""
             tabindex="0"
             aria-label="Variable definition issues"
-            style="
-              display: none;
-              color: var(--warn);
-              cursor: help;
-              margin-left: auto;
-            "
           >
-            <svg
-              style="
-                width: 15px;
-                height: 15px;
-                stroke: currentColor;
-                stroke-width: 2;
-                stroke-linecap: round;
-                stroke-linejoin: round;
-                fill: none;
-                transform: translateY(2px);
-              "
-            >
-              <use href="#icon-alert"></use>
-            </svg>
+            <svg><use href="#icon-alert"></use></svg>
           </span>
         </div>
         <div class="file-loader" id="varsLoader">
