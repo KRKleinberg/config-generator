@@ -338,20 +338,26 @@
         color: var(--text);
       }
 
+      /* The group is right-aligned, so extra width grows leftward; the
+         negative margin keeps the X where the bare button had it. */
       .file-loader.loaded .clear-file-btn.armed {
         width: auto;
-        padding: 0 6px;
+        padding: 0 8px;
+        margin-right: -3.5px;
+        gap: 6px;
         opacity: 1;
         pointer-events: auto;
-        color: var(--warn);
+        color: var(--error);
         font: 600 11px var(--sans);
+        border-radius: var(--radius);
+        transition: background 0.15s;
       }
 
-      .clear-file-btn.armed svg {
-        display: none;
+      .file-loader.loaded .clear-file-btn.armed:hover {
+        background: rgba(var(--rgb-error), 0.15);
       }
 
-      .clear-file-btn.armed::after {
+      .clear-file-btn.armed::before {
         content: "Clear?";
       }
 
