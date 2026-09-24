@@ -20,9 +20,10 @@
         --border: #20242c;
         --text: #d5d7dd;
         --text-dim: #8a8e96;
-        --text-hint: #70747e;
+        --text-hint: #787c86;
         --rgb-accent: 59, 130, 246;
         --rgb-accent-dim: 37, 99, 235;
+        --rgb-accent-deep: 29, 78, 216;
         --rgb-success: 96, 165, 250;
         --rgb-warn: 221, 154, 31;
         --rgb-error: 229, 83, 75;
@@ -30,6 +31,7 @@
         --rgb-black: 0, 0, 0;
         --accent: rgb(var(--rgb-accent));
         --accent-dim: rgb(var(--rgb-accent-dim));
+        --accent-deep: rgb(var(--rgb-accent-deep));
         --border-focus: var(--accent);
         --success: rgb(var(--rgb-success));
         --success-dim: rgba(var(--rgb-success), 0.15);
@@ -530,7 +532,7 @@
       .field select {
         cursor: pointer;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2370747e'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23787c86'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 12px center;
       }
@@ -649,15 +651,16 @@
         color: var(--accent);
       }
 
+      /* White on --accent is 3.7:1; the dim step is the first to reach 4.5:1. */
       .btn-primary {
-        background: var(--accent);
-        border-color: var(--accent);
+        background: var(--accent-dim);
+        border-color: var(--accent-dim);
         color: var(--on-accent);
       }
 
       .btn-primary:hover {
-        background: var(--accent-dim);
-        border-color: var(--accent-dim);
+        background: var(--accent-deep);
+        border-color: var(--accent-deep);
         color: var(--on-accent);
       }
 
@@ -869,7 +872,7 @@
         left: 2px;
         width: calc(50% - 2px);
         height: 26px;
-        background: var(--accent);
+        background: var(--accent-dim);
         border-radius: 14px;
         transition: left 0.2s ease;
         z-index: 1;
