@@ -3894,8 +3894,7 @@
       function switchDialect(name) {
         closeDialectMenu();
         if (DIALECTS[name] === DIALECT) return;
-        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
-        for (const id of [...activeSectionEditors]) commitSectionEdit(id);
+        commitOpenEditors();
         // The original is marker-bound; re-emit it so a switch is not an edit.
         const original =
           originalTemplateSource === null
@@ -4573,13 +4572,9 @@
         document.getElementById("templateLoader").classList.add("loaded");
       }
       function applyAutoViewMode() {
-        if (templateSource !== null && getNamedSections().length === 0) {
-          viewMode = "full";
-          document.getElementById("viewThumb").classList.add("right");
-        } else {
-          viewMode = "sections";
-          document.getElementById("viewThumb").classList.remove("right");
-        }
+        const sectionless =
+          templateSource !== null && getNamedSections().length === 0;
+        setViewMode(sectionless ? "full" : "sections");
       }
       function setVarsStatus(
         name,
@@ -5237,13 +5232,19 @@ category = General
 
       // Switching views commits and closes every open editor, in either direction.
       function toggleView() {
+        commitOpenEditors();
+        setViewMode(viewMode === "sections" ? "full" : "sections");
+        render();
+      }
+      function commitOpenEditors() {
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         for (const id of [...activeSectionEditors]) commitSectionEdit(id);
-        viewMode = viewMode === "sections" ? "full" : "sections";
+      }
+      function setViewMode(mode) {
+        viewMode = mode;
         document
           .getElementById("viewThumb")
-          .classList.toggle("right", viewMode === "full");
-        render();
+          .classList.toggle("right", mode === "full");
       }
 
       function render() {
@@ -6065,11 +6066,10 @@ category = General
         templateFileName = "";
         sectionRecords = [];
         resetEditState();
-        viewMode = "sections";
+        setViewMode("sections");
 
         document.getElementById("templateInput").value = "";
         showNoTemplate();
-        document.getElementById("viewThumb").classList.remove("right");
         renderAutoDetectButtons();
 
         if (Object.keys(varsFromFile).length === 0) {
