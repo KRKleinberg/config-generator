@@ -4289,15 +4289,14 @@
         if (keywordGroups && keywordGroups.length) {
           result = applyKeywordHighlighting(result, keywordGroups);
         }
-        for (let i = 0; i < marks.length; i++) {
+        // One pass per kind, outermost first: a mark can contain chips and pills.
+        result = result.replace(/\x00RK(\d+)\x00/g, (_, i) => {
           const { text, message } = marks[i];
-          result = result.replace(`\x00RK${i}\x00`, () =>
-            message
-              ? markRange(escHtml(text), message)
-              : markRiskChars(escHtml(text)),
-          );
-        }
-        for (let i = 0; i < exprTokens.length; i++) {
+          return message
+            ? markRange(escHtml(text), message)
+            : markRiskChars(escHtml(text));
+        });
+        result = result.replace(/\x00EX(\d+)\x00/g, (_, i) => {
           const { displayText, filled, baseVar, vars, rawContent, risky } =
             exprTokens[i];
           const cls = filled ? "var-filled" : "var-unfilled";
@@ -4307,13 +4306,9 @@
           const text = risky
             ? markRiskChars(escHtml(displayText))
             : escHtml(displayText);
-          result = result.replace(
-            `\x00EX${i}\x00`,
-            () =>
-              `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${text}</span>`,
-          );
-        }
-        for (let i = 0; i < badgeTokens.length; i++) {
+          return `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml((vars || []).join(", "))}">${text}</span>`;
+        });
+        result = result.replace(/\x00BG(\d+)\x00/g, (_, i) => {
           const tok = badgeTokens[i];
           const colorClass = `badge-c${order[tok.keyword] % BADGE_COLOR_COUNT}`;
           const valsHtml = tok.ids
@@ -4322,11 +4317,8 @@
           const marker = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
           const pill = `<span class="badge ${colorClass}" data-marker="${marker}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
           const cls = tok.alone ? "badge-group badge-alone" : "badge-group";
-          result = result.replace(
-            `\x00BG${i}\x00`,
-            () => `<span class="${cls}">${pill}</span>`,
-          );
-        }
+          return `<span class="${cls}">${pill}</span>`;
+        });
         const warnByLine = {};
         for (const { line, message } of issues)
           (warnByLine[line] ??= []).push(message);
