@@ -4688,7 +4688,9 @@
             const writable = await handle.createWritable();
             await writable.write(content);
             await writable.close();
-            return handle.name; // the Save As dialog is its own confirmation - no toast
+            // The Save As dialog confirms a clean save; warnings still need a toast.
+            if (toastKind === "warn") showToast(successMsg, toastKind);
+            return handle.name;
           } catch (e) {
             if (e && e.name === "AbortError") return null; // user cancelled
             // any other failure (e.g. disabled by policy): fall through
