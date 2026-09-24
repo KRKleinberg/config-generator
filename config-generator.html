@@ -5895,7 +5895,12 @@ category = General
           clearLastCopied();
           return;
         }
-        const el = document.getElementById(lastCopied.elementId);
+        const index = getNamedSections().findIndex(
+          (s) => s.id === lastCopied.id,
+        );
+        const el = document.getElementById(
+          lastCopied.kind === "full" ? "section-full" : `section-${index}`,
+        );
         if (el) el.classList.add("last-copied");
       }
 
@@ -5911,12 +5916,7 @@ category = General
             const msg = copyToastMessage("Copied", output, lintBody(body));
             if (msg) showToast(msg, "warn");
             clearLastCopied();
-            lastCopied = {
-              kind: "section",
-              id,
-              text: output,
-              elementId: `section-${index}`,
-            };
+            lastCopied = { kind: "section", id, text: output };
             const currentSection = document.getElementById(`section-${index}`);
             if (currentSection) currentSection.classList.add("last-copied");
           })
@@ -5966,11 +5966,7 @@ category = General
             showToast(msg ?? base, msg ? "warn" : "");
             flashBadge("badge-full");
             clearLastCopied();
-            lastCopied = {
-              kind: "full",
-              text: output,
-              elementId: "section-full",
-            };
+            lastCopied = { kind: "full", text: output };
             const fullSection = document.getElementById("section-full");
             if (fullSection) fullSection.classList.add("last-copied");
           })
