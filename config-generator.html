@@ -5968,10 +5968,7 @@ category = General
       function editorHtml(id, rows, text, onInput) {
         return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; refreshEditor(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
       }
-      // Template text highlighted for the editor mirror: keywords and comments
-      // as in the preview, Jinja tokens in blue, risk chars underlined in place
-      // (no glyphs: the mirror must keep the textarea's exact widths). Issues
-      // are the per-line risk-char findings, for the header icon.
+      // Risk chars get underlines, not glyphs: widths must match the textarea.
       function highlightTemplate(text) {
         const jinja = [];
         const marks = [];
@@ -6078,9 +6075,7 @@ category = General
           .querySelector(".preview-panel")
           .scrollTo({ top: 0, behavior: "smooth" });
       }
-      // Candidates in preference order: the two sides, then centered beside the
-      // anchor; the first that fits the viewport with the least section-header
-      // coverage wins.
+      // Below, above, beside: the fit covering the fewest section headers wins.
       function placePopup(popup, r, above = false, alignRight = false) {
         // Measure at the origin: a fixed box near the right edge shrinks to fit.
         popup.style.left = popup.style.top = "0px";
@@ -6130,8 +6125,7 @@ category = General
         const msgs = (el.dataset.warns || "").split("\n").filter(Boolean);
         if (!msgs.length) return;
         warnPopupEl = el;
-        // Header rows jump to their line (the preview shows no line numbers).
-        // "[Section] msg" rows group under the section and jump to its mark.
+        // Header rows jump to their line; "[Section] msg" rows group and jump.
         const fromHeader = el.classList.contains("header-warn");
         const canJump =
           fromHeader &&
@@ -6161,8 +6155,7 @@ category = General
           : `${kind}<span class="warn-popup-count">— <span class="count-number">${msgs.length}</span></span>`;
         popup.innerHTML =
           `<div class="warn-popup-title">${title}</div>` + rows.join("");
-        // Preview marks open above their line so nothing below is covered;
-        // header icons anchor to the whole header. x follows the pointer.
+        // Marks open above their line; header icons anchor to the header.
         const inLines = el.closest(".config-lines") !== null;
         const r = (el.closest(".section-header") ?? el).getBoundingClientRect();
         placePopup(
@@ -6171,8 +6164,7 @@ category = General
           inLines,
         );
       }
-      // "Line N:" becomes the gutter; quoted text becomes a chip colored by
-      // kind. `link` makes the row a jump: {line} or {section, literal}.
+      // 'name' chips match escHtml's &#039;, so the two must change together.
       function warnRowHtml(msg, link = null) {
         const m = msg.match(/^Line (\d+): ([\s\S]*)$/);
         const litClass = (lit) =>
@@ -6211,10 +6203,7 @@ category = General
       function scheduleHideWarn() {
         warnHideTimer ??= setTimeout(hideWarnPopup, 200);
       }
-      // Lines of one section: its card in section view, the span after its
-      // !!! marker in full view. Every mark equal to the literal or its bare
-      // delimiters flashes (so a split `{{ }}` lights both lines); else the first
-      // mark by opening, else the first mark, else the first line.
+      // Flashes marks matching the literal (or its halves), else the first line.
       function issueLines(name, literal) {
         const heading = (c) => c.querySelector("h3")?.textContent ?? "";
         let lines;
@@ -6479,8 +6468,7 @@ category = General
           )
             scheduleHideWarn();
         });
-        // A drag that selected text ends in a click too; a live selection means
-        // "copying", not "go".
+        // A drag-select also ends in a click; a live selection means copying.
         document.addEventListener("click", (e) => {
           const row = e.target.closest(".warn-row-link");
           if (!row || !window.getSelection().isCollapsed) return;
@@ -6509,8 +6497,7 @@ category = General
             closeGuide();
             hideWarnPopup();
           }
-          // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
-          // and Open File dialogs are never wanted here.
+          // Ctrl-S/Ctrl-O replace the browser's Save Page and Open File.
           if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
             const key = e.key.toLowerCase();
             if (key === "s") {
@@ -6562,8 +6549,7 @@ category = General
             frag
               .querySelectorAll("[data-ch]")
               .forEach((n) => (n.textContent = n.dataset.ch));
-            // Lines are block spans containing no newline chars, so plain
-            // textContent would flatten a multi-line selection onto one line.
+            // Block spans hold no \n, so plain textContent would flatten lines.
             const lineEls = frag.querySelectorAll(".config-line");
             const text = (
               lineEls.length
@@ -6577,8 +6563,7 @@ category = General
             if (msg) showToast(msg, "warn");
           });
 
-        // Whole window is the drop target. dragenter/dragleave fire for every
-        // element crossed, so a depth counter tells a real leave from a child hop.
+        // Enter/leave fire per child crossed; depth tells a real leave.
         let dragDepth = 0;
         document.addEventListener("dragenter", (e) => {
           e.preventDefault();
