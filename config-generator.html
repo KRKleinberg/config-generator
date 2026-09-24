@@ -66,6 +66,7 @@
         --radius-sm: 4px;
         --radius: 8px;
         --radius-lg: 10px;
+        --radius-xl: 12px;
         --section-header-h: 40px;
         --panel-pad-y: 28px;
         --panel-pad-x: 28px;
@@ -1586,7 +1587,7 @@
       .lightbox-modal {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 12px;
+        border-radius: var(--radius-xl);
         width: 90%;
         max-width: 800px;
         max-height: 85vh;
@@ -1608,7 +1609,7 @@
         justify-content: space-between;
         align-items: center;
         background: var(--surface-alt);
-        border-radius: 12px 12px 0 0;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
       }
 
       .lightbox-header h2 {
@@ -1965,6 +1966,36 @@
         color: var(--error);
       }
 
+      .link-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .link-btn:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-hint);
+        font-size: 14px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-lg);
+        padding: 40px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
       .empty-title {
         color: var(--text-dim);
         font-weight: 600;
@@ -1986,38 +2017,8 @@
         color: var(--text-hint);
       }
 
-      .link-btn {
-        background: none;
-        border: none;
-        padding: 0;
-        font: inherit;
-        color: inherit;
-        cursor: pointer;
-      }
-
-      .link-btn:hover {
-        color: var(--accent);
-        text-decoration: underline;
-      }
-
       .empty-state code {
         font-size: 13px;
-      }
-
-      .empty-state {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-hint);
-        font-size: 14px;
-        border: 1px dashed var(--border);
-        border-radius: var(--radius-lg);
-        padding: 40px;
-        text-align: center;
-        line-height: 1.6;
       }
 
       @media (max-width: 640px) {
