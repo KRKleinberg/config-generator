@@ -4568,11 +4568,7 @@
         setViewMode(sectionless ? "full" : "sections");
       }
 
-      function setVarsStatus(
-        name,
-        count,
-        { autoCount = 0, markLoaded = false } = {},
-      ) {
+      function setVarsStatus(name, count, { autoCount = 0 } = {}) {
         const safe = escHtml(name);
         document.getElementById("varsStatus").innerHTML =
           `<span class="filename" title="${safe}">${safe}</span>`;
@@ -4581,8 +4577,12 @@
           autoCount > 0 ? ` <span class="count-auto">+${autoCount}</span>` : "";
         badge.innerHTML = `— <span class="count-number">${count}</span>${auto}`;
         badge.style.display = "inline-block";
-        if (markLoaded)
-          document.getElementById("varsLoader").classList.add("loaded");
+        // With auto-detect on, detected fields mirror the template; only a file clears.
+        const loader = document.getElementById("varsLoader");
+        loader.classList.toggle(
+          "loaded",
+          varsFileName !== "" || !AUTO_DETECT_VARS,
+        );
       }
 
       function clearVarsStatus() {
@@ -4656,7 +4656,7 @@
                 `Vars file has ${iniErrors.length} definition issue${iniErrors.length === 1 ? "" : "s"}`,
                 "warn",
               );
-            setVarsStatus(file.name, count, { markLoaded: true });
+            setVarsStatus(file.name, count);
             buildForm();
             // Same auto-merge as template load, so load order doesn't matter.
             if (templateSource !== null) autoDetectVars({ quiet: true });
@@ -4934,7 +4934,6 @@
               setVarsStatus(
                 varsFileName || "auto-detected",
                 Object.keys(variableDefs).length,
-                { markLoaded: true },
               );
             } else {
               clearVarsStatus();
@@ -5003,7 +5002,7 @@
             autoCount: missing.length,
           });
         } else {
-          setVarsStatus("auto-detected", found.size, { markLoaded: true });
+          setVarsStatus("auto-detected", found.size);
         }
         buildForm();
         render();
