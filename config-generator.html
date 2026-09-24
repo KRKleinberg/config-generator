@@ -6066,7 +6066,7 @@ category = General
         document.getElementById("previewContainer").innerHTML = emptyStateHtml;
       }
       function clearTemplate() {
-        if (!templateSource) return;
+        if (templateSource === null) return;
         templateSource = null;
         originalTemplateSource = null;
         templateFileName = "";
