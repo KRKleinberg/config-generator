@@ -5441,8 +5441,6 @@ category = General
       function parseSections(template) {
         const sections = [];
         let current = { name: null, isImportant: false, lines: [] };
-        const nameCounts = {};
-
         for (const { line, startsInComment } of linesWithCommentState(
           template,
         )) {
@@ -5450,15 +5448,8 @@ category = General
           if (match) {
             if (current.lines.length > 0 || current.name !== null)
               sections.push(current);
-            let rawName = match[2].trim();
-            nameCounts[rawName] = (nameCounts[rawName] || 0) + 1;
-            let finalName =
-              nameCounts[rawName] > 1
-                ? `${rawName} (${nameCounts[rawName]})`
-                : rawName;
             current = {
-              name: finalName,
-              rawName: rawName,
+              name: match[2].trim(),
               isImportant: match[1].length >= 5,
               lines: [],
             };
@@ -5468,7 +5459,10 @@ category = General
         }
         if (current.lines.length > 0 || current.name !== null)
           sections.push(current);
-        return sections;
+        return sections.map(({ lines, ...s }) => ({
+          ...s,
+          body: lines.join("\n"),
+        }));
       }
 
       // Normalize marker spacing on load so assembleFromRecords is a fixed point; prevents phantom "(edited)" on fresh load.
@@ -5494,11 +5488,11 @@ category = General
       }
 
       function deriveRecordsFromTemplate(templateText) {
-        return parseSections(templateText).map((section) => ({
+        return parseSections(templateText).map((s) => ({
           id: nextRecordId++,
-          name: section.name === null ? null : section.rawName,
-          isImportant: section.isImportant,
-          baselineBody: section.lines.join("\n"),
+          name: s.name,
+          isImportant: s.isImportant,
+          baselineBody: s.body,
           override: null,
         }));
       }
@@ -5763,11 +5757,7 @@ category = General
         bufferText,
         trimTolerant = false,
       ) {
-        const blocks = parseSections(bufferText).map((s) => ({
-          name: s.name === null ? null : s.rawName,
-          isImportant: s.isImportant,
-          body: s.lines.join("\n"),
-        }));
+        const blocks = parseSections(bufferText);
         const used = new Array(priorRecords.length).fill(false);
         const assigned = new Array(blocks.length).fill(-1);
 
