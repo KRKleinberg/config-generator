@@ -84,6 +84,15 @@
         min-height: 100vh;
       }
 
+      /* Inline icons are stroked line art; components set size and color only. */
+      svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -363,16 +372,6 @@
         content: "Clear?";
       }
 
-      .clear-file-btn svg {
-        width: 15px;
-        height: 15px;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
-      }
-
       .file-status {
         flex: 1;
         min-width: 0;
@@ -636,14 +635,10 @@
       .subtle-icon-btn svg,
       .header-icon-btn svg,
       .split-btn .btn-part svg,
-      .header-warn svg {
+      .header-warn svg,
+      .clear-file-btn svg {
         width: 15px;
         height: 15px;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
       }
 
       .btn:hover {
@@ -802,11 +797,6 @@
       .scroll-top-btn svg {
         width: 20px;
         height: 20px;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
       }
 
       .preview-toolbar {
@@ -1455,11 +1445,6 @@
         width: 14px;
         height: 14px;
         flex-shrink: 0;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
         color: var(--text-hint);
       }
 
@@ -1624,11 +1609,6 @@
 
       .lightbox-header h2 svg {
         transform: translateY(2px);
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
       }
 
       .lightbox-close {
@@ -1643,11 +1623,6 @@
       .lightbox-close svg {
         width: 18px;
         height: 18px;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
       }
 
       .lightbox-close:hover {
@@ -1748,10 +1723,6 @@
         width: 20px;
         height: 20px;
         stroke: var(--accent);
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
       }
 
       .qs-arrow {
@@ -1759,10 +1730,6 @@
         height: 14px;
         flex-shrink: 0;
         stroke: var(--text-hint);
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
         transform: rotate(90deg);
       }
 
@@ -1799,10 +1766,6 @@
         height: 14px;
         flex-shrink: 0;
         stroke: var(--text-hint);
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
         transform: rotate(90deg);
         transition: transform 0.25s ease;
       }
@@ -1938,11 +1901,6 @@
       .guide-icon {
         width: 14px;
         height: 14px;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
       }
 
       .copied-badge {
