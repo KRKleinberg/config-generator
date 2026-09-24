@@ -4129,7 +4129,7 @@
       // Values that can add or clear a paste warning bypass the fast path.
       function lintSensitive(value) {
         if (!LINT_PASTE_WARNINGS) return false;
-        return value.search(MARK_CHAR_RE) !== -1 || value.length > 80;
+        return value.search(MARK_CHAR_RE) !== -1;
       }
       function warnAttrs(kind, msgs) {
         return ` data-warns="${escHtml(msgs.join("\n"))}" data-warn-kind="${escHtml(kind)}"`;
@@ -4940,6 +4940,16 @@ category = General
         renderTimeout = setTimeout(() => render(), 150);
       }
 
+      // Description length is checked per line, so any value on one can cross it.
+      function feedsDescription(varName) {
+        if (!LINT_PASTE_WARNINGS) return false;
+        return [...document.querySelectorAll(".preview-var")].some(
+          (span) =>
+            span.dataset.vars.split(" ").includes(varName) &&
+            /^\s*description\s/i.test(span.closest(".config-line").textContent),
+        );
+      }
+
       function fastUpdatePreview(varName) {
         // Query data-raw, not data-var: list spans refresh when any member changes.
         const spans = document.querySelectorAll(".preview-var");
@@ -5047,7 +5057,8 @@ category = General
           if (
             !!oldVal !== !!newVal ||
             lintSensitive(oldVal) ||
-            lintSensitive(newVal)
+            lintSensitive(newVal) ||
+            feedsDescription(varName)
           )
             debouncedRender();
           else {
