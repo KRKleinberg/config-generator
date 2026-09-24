@@ -4004,6 +4004,10 @@
       function dedent(line) {
         return STRIP_INDENT ? line.replace(/^\s+/, "") : line;
       }
+      // What dedent removes; lint and marks start after it.
+      function indentOf(line) {
+        return STRIP_INDENT ? line.match(/^\s*/)[0].length : 0;
+      }
       function cleanFormatting(text) {
         return text
           .split("\n")
@@ -4046,7 +4050,7 @@
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           if (bannerDelim) {
-            parts.push({ i, line, cmd: line, banner: true });
+            parts.push({ i, line, cmd: line, banner: true, indent: 0 });
             if (bannerCloses(line, bannerDelim)) bannerDelim = null;
             continue;
           }
@@ -4056,10 +4060,12 @@
               bannerDelim = b.delim;
               bannerLine = i;
             }
-            parts.push({ i, line, cmd: line, banner: true });
+            const indent = indentOf(line);
+            parts.push({ i, line, cmd: line, banner: true, indent });
             continue;
           }
-          parts.push({ i, line, cmd: commandPart(line), banner: false });
+          const cmd = commandPart(line);
+          parts.push({ i, line, cmd, banner: false, indent: indentOf(cmd) });
         }
         const unclosed = bannerDelim
           ? { delim: bannerDelim, line: bannerLine }
@@ -4089,11 +4095,12 @@
         const add = (line, message, range = null) =>
           issues.push({ line, message, range });
         const { parts, unclosed } = walkConfigLines(text);
-        for (const { i, cmd, banner } of parts) {
+        for (const { i, cmd, banner, indent } of parts) {
           const cmdText = restore(cmd);
           if (cmdText.trim() === "") continue;
           const seen = new Set();
           for (const m of cmdText.matchAll(RISK_CHAR_RE)) {
+            if (m.index < indent) continue;
             const name = riskCharName(m[0]);
             if (!seen.has(name)) add(i, `Contains ${name}`);
             seen.add(name);
@@ -4258,14 +4265,14 @@
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
         if (LINT_PASTE_WARNINGS)
           result = walkConfigLines(result)
-            .parts.map(({ i, line, cmd }) => {
+            .parts.map(({ i, line, cmd, indent }) => {
               for (const m of cmd.matchAll(/\x00EX(\d+)\x00/g))
                 exprTokens[m[1]].risky = true;
               const ranges = issues
                 .filter((x) => x.line === i && x.range && x.range[0] >= 0)
                 .sort((a, b) => a.range[0] - b.range[0]);
-              let out = "";
-              let pos = 0;
+              let out = cmd.slice(0, indent);
+              let pos = indent;
               for (const {
                 range: [s, e],
                 message,
@@ -6146,10 +6153,10 @@ category = General
                 .join("\n"),
           ),
         )
-          .parts.map(({ i, line, cmd }) => {
+          .parts.map(({ i, line, cmd, indent }) => {
             if (!LINT_PASTE_WARNINGS) return line;
             const seen = new Set();
-            const marked = cmd.replace(RISK_CHAR_RE, (ch) => {
+            const marked = cmd.slice(indent).replace(RISK_CHAR_RE, (ch) => {
               const name = riskCharName(ch);
               if (!seen.has(name))
                 issues.push({ line: i, message: `Contains ${name}` });
@@ -6157,7 +6164,7 @@ category = General
               marks.push(ch);
               return `\x00R${marks.length - 1}\x00`;
             });
-            return marked + line.slice(cmd.length);
+            return cmd.slice(0, indent) + marked + line.slice(cmd.length);
           })
           .join("\n");
         const warned = new Set(issues.map((x) => x.line));
