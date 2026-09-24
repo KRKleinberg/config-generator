@@ -5223,6 +5223,7 @@ category = General
             choices: null,
           };
           buildForm();
+          updateProgressBar();
           el = document.getElementById(`field-${safeId}`);
           showToast(`Added missing variable: ${varName}`);
         }
