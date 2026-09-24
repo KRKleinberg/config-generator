@@ -6108,7 +6108,7 @@ category = General
         document.getElementById("formFields").innerHTML = "";
         renderAutoDetectButtons();
         updateProgressBar();
-        render();
+        autoDetectVars({ quiet: true });
         showToast("Variables cleared");
       }
 
