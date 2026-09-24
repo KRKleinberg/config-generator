@@ -5450,6 +5450,10 @@ category = General
         }));
       }
 
+      function markerLine(name, isImportant) {
+        return `${isImportant ? COMMENT.repeat(5) : MARKER} ${name}`;
+      }
+
       // Normalize marker spacing on load so assembleFromRecords is a fixed point; prevents phantom "(edited)" on fresh load.
       function canonicalizeMarkers(text) {
         return linesWithCommentState(text)
@@ -5457,9 +5461,7 @@ category = General
             if (startsInComment) return line; // comment content, not a marker
             const m = line.match(SECTION_RE);
             if (!m) return line;
-            return (
-              `${m[1].length >= 5 ? COMMENT.repeat(5) : MARKER} ` + m[2].trim()
-            );
+            return markerLine(m[2].trim(), m[1].length >= 5);
           })
           .join("\n");
       }
@@ -5576,10 +5578,7 @@ category = General
       function assembleFromRecords(records) {
         const parts = [];
         for (const r of records) {
-          if (r.name !== null)
-            parts.push(
-              `${r.isImportant ? COMMENT.repeat(5) : MARKER} ` + r.name,
-            );
+          if (r.name !== null) parts.push(markerLine(r.name, r.isImportant));
           parts.push(recordEffectiveBody(r));
         }
         return parts.join("\n");
