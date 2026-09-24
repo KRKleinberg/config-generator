@@ -3301,6 +3301,22 @@
         errorList.sort((a, b) => lineOf(a) - lineOf(b));
         return result;
       }
+      // Shape of a generated definition: required free text, no hints.
+      function newVarDef(fields = {}) {
+        return {
+          category: "",
+          description: "",
+          placeholder: "",
+          default: "",
+          required: true,
+          group: null,
+          type: null,
+          regex: null,
+          error: null,
+          choices: null,
+          ...fields,
+        };
+      }
       function commitINIItem(result, item, errorList = []) {
         const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = item.keyLines || {};
@@ -4885,20 +4901,13 @@
         }
 
         for (const varName of missing) {
-          variableDefs[varName] = {
-            category: hasFileVars ? "Auto-detected" : "",
-            description: hasFileVars
-              ? "Found in template but not in vars file"
-              : "",
-            placeholder: "",
-            default: "",
-            required: !hasFileVars,
-            group: null,
-            type: null,
-            regex: null,
-            error: null,
-            choices: null,
-          };
+          variableDefs[varName] = hasFileVars
+            ? newVarDef({
+                category: "Auto-detected",
+                description: "Found in template but not in vars file",
+                required: false,
+              })
+            : newVarDef();
         }
 
         if (hasFileVars) {
@@ -5223,18 +5232,10 @@ category = General
         let el = document.getElementById(`field-${varName}`);
 
         if (!el) {
-          variableDefs[varName] = {
+          variableDefs[varName] = newVarDef({
             category: "Auto-detected",
             description: "Added from preview",
-            placeholder: "",
-            default: "",
-            required: true,
-            group: null,
-            type: null,
-            regex: null,
-            error: null,
-            choices: null,
-          };
+          });
           buildForm();
           updateProgressBar();
           el = document.getElementById(`field-${varName}`);
