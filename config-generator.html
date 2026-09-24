@@ -7,7 +7,7 @@
     <title>Config Generator</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Ctext x='16' y='23' font-size='22' font-family='monospace' font-weight='700' fill='white' text-anchor='middle'%3ES%26gt;%3C/text%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Cpath fill='white' d='M13.38 5.68L16.88 5.68 16.15 9.1 12.65 9.1ZM11.56 14.25L15.06 14.25 14.31 17.75 10.81 17.75ZM9.72 22.9L13.22 22.9 12.49 26.32 8.99 26.32ZM19.51 5.68L23.01 5.68 22.28 9.1 18.78 9.1ZM17.69 14.25L21.19 14.25 20.44 17.75 16.94 17.75ZM15.85 22.9L19.35 22.9 18.62 26.32 15.12 26.32ZM8 9.96L25.12 9.96 25.74 7.01 30 11.67 23.76 16.34 24.39 13.39 7.27 13.39ZM24.73 18.61L7.61 18.61 8.24 15.66 2 20.33 6.26 24.99 6.88 22.04 24 22.04Z'/%3E%3C/svg%3E"
     />
 
     <style>
@@ -191,18 +191,14 @@
         gap: 10px;
       }
 
+      /* Filled artwork, so it opts out of the stroked-icon base rule. */
       .brand-icon {
         width: 36px;
         height: 36px;
         background: var(--accent-dim);
         border-radius: var(--radius);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--mono);
-        font-weight: 700;
-        font-size: 20px;
-        color: var(--on-accent);
+        fill: var(--on-accent);
+        stroke: none;
       }
 
       .brand h1 {
@@ -2119,7 +2115,11 @@
       <div class="form-panel">
         <div class="brand">
           <div class="brand-title">
-            <div class="brand-icon">S&gt;</div>
+            <svg class="brand-icon" viewBox="0 0 32 32" aria-hidden="true">
+              <path
+                d="M13.46 7.31L16.38 7.31 15.89 9.65 12.96 9.65ZM11.98 14.25L14.91 14.25 14.16 17.76 11.24 17.76ZM10.26 22.35L13.19 22.35 12.69 24.69 9.76 24.69ZM19.31 7.31L22.24 7.31 21.74 9.65 18.81 9.65ZM17.84 14.25L20.76 14.25 20.02 17.76 17.09 17.76ZM16.11 22.35L19.04 22.35 18.54 24.69 15.62 24.69ZM8.3 10.52L24.84 10.52 25.27 8.49 28.43 11.95 23.81 15.41 24.24 13.38 7.69 13.38ZM24.31 18.62L7.76 18.62 8.19 16.59 3.57 20.05 6.73 23.51 7.16 21.48 23.7 21.48Z"
+              ></path>
+            </svg>
             <h1>Config Generator</h1>
           </div>
           <div style="display: flex; gap: 2px">
