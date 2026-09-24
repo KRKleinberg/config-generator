@@ -1816,10 +1816,6 @@
         margin: 0 0 12px 0;
       }
 
-      .keep-together {
-        white-space: nowrap;
-      }
-
       .guide-note-after {
         margin: 12px 0 0 0;
       }
@@ -2589,6 +2585,9 @@
                       entries intact and your manual edits baked in.
                       <strong>Export config</strong>
                       writes the device-ready output.
+                      <strong>Export vars</strong>
+                      writes a starter
+                      <code>.vars.ini</code>.
                     </dd>
                   </dl>
                 </div>
@@ -2751,16 +2750,9 @@
                   </div>
                   <p class="guide-note guide-note-after">
                     <strong>Starter file:</strong>
-                    with a template loaded and no vars file, the
-                    <span class="keep-together">
-                      download icon
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-download"></use>
-                        </svg>
-                      </span>
-                    </span>
-                    beside the lightning exports a boilerplate
+                    with a template loaded and no vars file,
+                    <strong>Export vars</strong>
+                    in the Save menu writes a boilerplate
                     <code>.vars.ini</code>
                     for the template's variables.
                   </p>
@@ -4790,6 +4782,7 @@
         ["saveTemplate", "Save template", "icon-save"],
         null,
         ["saveConfig", "Export config", "icon-download"],
+        ["exportAutoVarsToINI", "Export vars", "icon-download"],
       ];
       function toggleSaveMenu(e) {
         const menu = document.getElementById("saveMenu");
@@ -5009,7 +5002,20 @@
       }
 
       function exportAutoVarsToINI() {
-        if (Object.keys(variableDefs).length === 0) return;
+        if (templateSource === null) {
+          showToast("Load a template first");
+          return;
+        }
+        if (varsFileName !== "") {
+          showToast("Vars file already loaded");
+          return;
+        }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
+        const names = collectTemplateVarNames(assembleFullEditableText());
+        if (!names.size) {
+          showToast("No variables found in template");
+          return;
+        }
 
         let ini = `# =============================================================================
 #  VARIABLES - Customize form fields shown to the technician
@@ -5034,7 +5040,7 @@
 
 `;
 
-        for (const varName of Object.keys(variableDefs)) {
+        for (const varName of names) {
           ini += `[${varName}]
 description = Enter ${varName}
 category = General
@@ -5263,12 +5269,6 @@ category = General
           Object.keys(varsFromFile).length === 0
         ) {
           btn.title = "Re-detect variables";
-          const exportBtn = document.createElement("button");
-          exportBtn.className = "subtle-icon-btn mini-btn";
-          exportBtn.onclick = exportAutoVarsToINI;
-          exportBtn.title = "Export to INI";
-          exportBtn.innerHTML = `<svg><use href="#icon-download"></use></svg>`;
-          container.appendChild(exportBtn);
         }
       }
 
