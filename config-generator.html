@@ -3518,7 +3518,7 @@
       }
       // opts.commentFalse: whole-line false blocks render as "! " comments
       // instead of vanishing (preview only - jinjaRaw omits them as before).
-      function processConditionals(template, formValues, opts = {}) {
+      function processConditionals(template, values, opts = {}) {
         let result = template;
         let prev = "";
         let iterations = 0;
@@ -3526,14 +3526,14 @@
         while (result !== prev && iterations < MAX_ITERATIONS) {
           prev = result;
           result = result.replace(INNER_IF_ELSE_RE, (_, v, yes, __, no) =>
-            isValuePresent(formValues[v])
+            isValuePresent(values[v])
               ? yes.replace(/^\n/, "").replace(/\n$/, "")
               : no.replace(/^\n/, "").replace(/\n$/, ""),
           );
           result = result.replace(
             INNER_IF_RE,
             (_, v, content, _inner, tail, offset, str) => {
-              if (isValuePresent(formValues[v]))
+              if (isValuePresent(values[v]))
                 return content.replace(/^\n/, "").replace(/\n$/, "") + tail;
               if (opts.commentFalse) {
                 const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
@@ -3786,7 +3786,7 @@
       };
       // Everything derived from the dialect; applyDialect rebuilds it, at
       // startup and on a live switch from the platform badge.
-      let DIALECT, COMMENT, MARKER, keywordGroups, MAX_DESCRIPTION_LEN;
+      let DIALECT, COMMENT, MARKER, KEYWORD_GROUPS, MAX_DESCRIPTION_LEN;
       let FREEFORM_CMD_RE,
         TEMPLATE_HEADER,
         SECTION_RE,
@@ -3800,7 +3800,7 @@
         DIALECT = DIALECTS[name] ?? DIALECTS.ios;
         COMMENT = DIALECT.comment;
         MARKER = COMMENT.repeat(3);
-        keywordGroups = DIALECT.keywords;
+        KEYWORD_GROUPS = DIALECT.keywords;
         MAX_DESCRIPTION_LEN = DIALECT.descriptionMax;
         FREEFORM_CMD_RE = FREEFORM_COMMANDS.length
           ? new RegExp(
@@ -5206,7 +5206,7 @@ category = General
           ? null
           : jinjaDisplay(
               trimBodyEnds(assembleFullEditableText()),
-              keywordGroups,
+              KEYWORD_GROUPS,
               badgeColorMap,
             );
         let html = `<div class="config-section" id="section-full">
@@ -5268,7 +5268,7 @@ category = General
           const body = isEdited && r ? recordEffectiveBody(r) : displayBody;
           const preview = isEditing
             ? null
-            : jinjaDisplay(trimBodyEnds(body), keywordGroups, badgeColorMap);
+            : jinjaDisplay(trimBodyEnds(body), KEYWORD_GROUPS, badgeColorMap);
           html += `<div class="config-section" id="section-${i}">
                            <div class="section-header${headerClass}">
                              <h3>${escHtml(name)}</h3>
@@ -6072,7 +6072,7 @@ category = General
         const escaped = escHtml(tokenized);
         const html = (
           EDITOR_HIGHLIGHTING
-            ? applyKeywordHighlighting(escaped, keywordGroups)
+            ? applyKeywordHighlighting(escaped, KEYWORD_GROUPS)
             : escaped
         )
           .replace(/\x00J(\d+)\x00/g, (_, i) =>
