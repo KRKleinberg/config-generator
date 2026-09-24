@@ -1674,7 +1674,7 @@
         text-decoration: underline;
       }
 
-      .sop-content h4 {
+      .guide-content h4 {
         font-size: 13px;
         color: var(--accent);
         margin: 16px 0 8px 0;
@@ -1682,11 +1682,11 @@
         letter-spacing: 0.5px;
       }
 
-      .sop-content p {
+      .guide-content p {
         margin-bottom: 12px;
       }
 
-      .sop-content code,
+      .guide-content code,
       .empty-state code {
         background: var(--surface-alt);
         border: 1px solid var(--border);
@@ -1721,7 +1721,7 @@
         margin-bottom: 8px;
       }
 
-      .qs-step {
+      .quick-start-step {
         flex: 0 1 auto;
         display: flex;
         flex-direction: column;
@@ -1733,13 +1733,13 @@
         color: var(--text);
       }
 
-      .qs-step > svg {
+      .quick-start-step > svg {
         width: 20px;
         height: 20px;
         stroke: var(--accent);
       }
 
-      .qs-arrow {
+      .quick-start-arrow {
         width: 14px;
         height: 14px;
         flex-shrink: 0;
@@ -2153,7 +2153,7 @@
             </button>
             <button
               class="subtle-icon-btn"
-              onclick="openHelp()"
+              onclick="openGuide()"
               title="Open Guide"
               aria-label="Open Guide"
             >
@@ -2366,11 +2366,11 @@
     <div class="toast" id="toast" role="status"></div>
     <div
       class="lightbox-overlay"
-      id="helpLightbox"
+      id="guideLightbox"
       role="dialog"
       aria-modal="true"
       aria-labelledby="guideTitle"
-      onclick="closeHelp(event)"
+      onclick="closeGuide(event)"
     >
       <div class="lightbox-modal">
         <div class="lightbox-header">
@@ -2382,7 +2382,7 @@
           </h2>
           <button
             class="lightbox-close"
-            onclick="closeHelp()"
+            onclick="closeGuide()"
             title="Close guide"
             aria-label="Close guide"
           >
@@ -2392,7 +2392,7 @@
           </button>
         </div>
         <div class="lightbox-body">
-          <div class="sop-content">
+          <div class="guide-content">
             <h4 class="guide-h4-first">Overview</h4>
             <p class="guide-intro">
               Builds device configs from a template, entirely in the browser.
@@ -2400,22 +2400,28 @@
               a session to keep your progress.
             </p>
             <div class="quick-start">
-              <div class="qs-step">
+              <div class="quick-start-step">
                 <svg><use href="#icon-load"></use></svg>
                 <span>Load a template</span>
               </div>
-              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
-              <div class="qs-step">
+              <svg class="quick-start-arrow">
+                <use href="#icon-chevron-up"></use>
+              </svg>
+              <div class="quick-start-step">
                 <svg><use href="#icon-lightning"></use></svg>
                 <span>Load or detect variables</span>
               </div>
-              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
-              <div class="qs-step">
+              <svg class="quick-start-arrow">
+                <use href="#icon-chevron-up"></use>
+              </svg>
+              <div class="quick-start-step">
                 <svg><use href="#icon-edit"></use></svg>
                 <span>Fill out the form</span>
               </div>
-              <svg class="qs-arrow"><use href="#icon-chevron-up"></use></svg>
-              <div class="qs-step">
+              <svg class="quick-start-arrow">
+                <use href="#icon-chevron-up"></use>
+              </svg>
+              <div class="quick-start-step">
                 <svg><use href="#icon-copy"></use></svg>
                 <span>Copy or save the config</span>
               </div>
@@ -6424,7 +6430,7 @@ category = General
           closeBadgeCopy();
           closeDialectMenu();
           closeSaveMenu();
-          closeHelp();
+          closeGuide();
           hideWarnPopup();
         }
         // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
@@ -6491,15 +6497,15 @@ category = General
 
       let guideOpener = null;
       // The page behind goes inert, which also keeps Tab inside the guide.
-      function openHelp() {
-        const box = document.getElementById("helpLightbox");
+      function openGuide() {
+        const box = document.getElementById("guideLightbox");
         guideOpener = document.activeElement;
         for (const el of document.body.children) el.inert = el !== box;
         box.classList.add("show");
         box.querySelector(".lightbox-close").focus();
       }
-      function closeHelp(e) {
-        const box = document.getElementById("helpLightbox");
+      function closeGuide(e) {
+        const box = document.getElementById("guideLightbox");
         if (!box.classList.contains("show") || (e && e.target !== box)) return;
         box.classList.remove("show");
         for (const el of document.body.children) el.inert = false;
