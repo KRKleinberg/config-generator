@@ -4770,11 +4770,12 @@
             override: r.override,
           })),
         };
+        const name = `${outputHostname()}.session.json`;
         saveTextFile(
           JSON.stringify(session, null, 2),
-          `${outputHostname()}.session.json`,
+          name,
           "application/json",
-          "Session saved to file",
+          `Saved ${name}`,
         );
       }
       function onOpenFileSelected(e) {
@@ -4843,7 +4844,7 @@
             applyAutoViewMode();
             buildForm();
             render();
-            showToast("Session loaded successfully");
+            showToast(`Loaded ${file.name}`);
           } catch (err) {
             console.error("Session Parse Error:", err);
             showToast("Failed to load session JSON", "error");
@@ -4956,13 +4957,8 @@ category = General
 `;
         }
 
-        const cleanBaseName = outputStem() || "auto_detected";
-        saveTextFile(
-          ini,
-          `${cleanBaseName}.vars.ini`,
-          "text/plain",
-          "Exported variables schema to INI",
-        );
+        const name = `${outputStem() || "auto_detected"}.vars.ini`;
+        saveTextFile(ini, name, "text/plain", `Saved ${name}`);
       }
 
       let renderTimeout = null;
@@ -6048,7 +6044,7 @@ category = General
           output,
           filename,
           "text/plain",
-          `Saved template: ${filename}`,
+          `Saved ${filename}`,
         );
         if (saved) {
           templateFileName = saved;
@@ -6767,11 +6763,8 @@ category = General
             if (!text.trim()) return;
             e.clipboardData.setData("text/plain", text + COPY_EOL);
             e.preventDefault();
-            if (text.includes("{{"))
-              showToast(
-                "Warning: copied text has unfilled {{ }} fields",
-                "warn",
-              );
+            const msg = copyToastMessage("Copied", text, []);
+            if (msg) showToast(msg, "warn");
           });
 
         // Whole window is the drop target. dragenter/dragleave fire for every
