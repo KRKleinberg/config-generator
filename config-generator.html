@@ -6549,8 +6549,15 @@ category = General
           }
         }
       });
-      window.addEventListener("scroll", closeBadgeCopy, true);
-      window.addEventListener("scroll", hideWarnPopup, true);
+      // Capture sees every scroller; the popup's own scroll must not close it.
+      window.addEventListener(
+        "scroll",
+        (e) => {
+          closeBadgeCopy();
+          if (!e.target.closest?.("#warnPopup")) hideWarnPopup();
+        },
+        true,
+      );
 
       function escHtml(s) {
         return !s
