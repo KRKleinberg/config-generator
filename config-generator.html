@@ -5999,10 +5999,9 @@ category = General
         navigator.clipboard
           .writeText(output)
           .then(() => {
-            const base = "Copied full config";
-            const msg = copyToastMessage(base, output, lintBody(body));
-            showToast(msg ?? base, msg ? "warn" : "");
             flashBadge("badge-full");
+            const msg = copyToastMessage("Copied", output, lintBody(body));
+            if (msg) showToast(msg, "warn");
             clearLastCopied();
             lastCopied = { kind: "full", text: output };
             const fullSection = document.getElementById("section-full");
