@@ -1565,13 +1565,17 @@
         align-items: center;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.2s ease;
+        transition:
+          opacity 0.2s ease,
+          visibility 0s 0.2s;
         backdrop-filter: blur(1px);
       }
 
+      /* Visible at once on open so focus can land; hidden only after the fade. */
       .lightbox-overlay.show {
         opacity: 1;
         visibility: visible;
+        transition: opacity 0.2s ease;
       }
 
       .lightbox-modal {
@@ -1585,7 +1589,7 @@
         flex-direction: column;
         box-shadow: 0 10px 30px rgba(var(--rgb-black), 0.5);
         transform: translateY(20px);
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease;
       }
 
       .lightbox-overlay.show .lightbox-modal {
@@ -6518,6 +6522,7 @@ category = General
           closeBadgeCopy();
           closeDialectMenu();
           closeSaveMenu();
+          closeHelp();
         }
         // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
         // and Open File dialogs are never wanted here.
@@ -6587,12 +6592,21 @@ category = General
         );
       }
 
+      let guideOpener = null;
+      // The page behind goes inert, which also keeps Tab inside the guide.
       function openHelp() {
-        document.getElementById("helpLightbox").classList.add("show");
+        const box = document.getElementById("helpLightbox");
+        guideOpener = document.activeElement;
+        for (const el of document.body.children) el.inert = el !== box;
+        box.classList.add("show");
+        box.querySelector(".lightbox-close").focus();
       }
       function closeHelp(e) {
-        if (!e || e.target === document.getElementById("helpLightbox"))
-          document.getElementById("helpLightbox").classList.remove("show");
+        const box = document.getElementById("helpLightbox");
+        if (!box.classList.contains("show") || (e && e.target !== box)) return;
+        box.classList.remove("show");
+        for (const el of document.body.children) el.inert = false;
+        guideOpener?.focus();
       }
 
       const searchIndexes = Object.create(null);
