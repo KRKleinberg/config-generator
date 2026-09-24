@@ -734,11 +734,11 @@
         padding: 0;
       }
 
-      .split-btn .copy-only {
+      .split-btn .copy-main {
         position: relative;
       }
 
-      .split-btn .copy-only::after {
+      .split-btn .copy-main::after {
         content: "";
         position: absolute;
         right: 0;
@@ -757,19 +757,19 @@
         color: var(--text);
       }
 
-      .split-btn:has(.copy-only:hover) {
+      .split-btn:has(.copy-main:hover) {
         background: transparent;
       }
 
-      .split-btn:has(.copy-only:hover) .copy-down {
+      .split-btn:has(.copy-main:hover) .copy-next {
         color: var(--text-hint);
       }
 
-      .split-btn:has(.copy-only:hover) .copy-only::after {
+      .split-btn:has(.copy-main:hover) .copy-main::after {
         opacity: 0.2;
       }
 
-      .split-btn .copy-only:hover {
+      .split-btn .copy-main:hover {
         background: rgba(var(--rgb-slate), 0.05);
         color: var(--text);
       }
@@ -5222,7 +5222,7 @@ category = General
           if (edited)
             html += `<button class="header-icon-btn" title="Reset Edits" onclick="resetAllEdits()"><svg><use href="#icon-reset"></use></svg></button>`;
           html += `<button class="header-icon-btn" title="Edit" onclick="toggleFullEdit()"><svg><use href="#icon-edit"></use></svg></button>
-                         <div class="split-btn"><button class="btn-part copy-down" title="Copy Full Config" onclick="copyAll()"><svg><use href="#icon-copy"></use></svg></button></div>`;
+                         <div class="split-btn"><button class="btn-part" title="Copy Full Config" onclick="copyAll()"><svg><use href="#icon-copy"></use></svg></button></div>`;
         }
 
         html += `</div></div>`;
@@ -5286,13 +5286,13 @@ category = General
 
             if (i === sections.length - 1) {
               html += `<div class="split-btn">
-                               <button class="btn-part copy-only" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
-                               <button class="btn-part copy-down" title="Copy and Go to Top" onclick="copyAndGoTop(${id}, ${i})"><svg><use href="#icon-copy-top"></use></svg></button>
+                               <button class="btn-part copy-main" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-next" title="Copy and Go to Top" onclick="copyAndGoTop(${id}, ${i})"><svg><use href="#icon-copy-top"></use></svg></button>
                              </div>`;
             } else {
               html += `<div class="split-btn">
-                               <button class="btn-part copy-only" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
-                               <button class="btn-part copy-down" title="Copy and Go to Next" onclick="copyAndGoDown(${id}, ${i})"><svg><use href="#icon-copy-down"></use></svg></button>
+                               <button class="btn-part copy-main" title="Copy Only" onclick="copySection(${id}, ${i})"><svg><use href="#icon-copy"></use></svg></button>
+                               <button class="btn-part copy-next" title="Copy and Go to Next" onclick="copyAndGoDown(${id}, ${i})"><svg><use href="#icon-copy-down"></use></svg></button>
                              </div>`;
             }
           }
