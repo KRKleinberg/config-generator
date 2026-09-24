@@ -4709,6 +4709,7 @@
           showToast("Nothing to save yet");
           return;
         }
+        if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const session = {
           schemaVersion: SESSION_SCHEMA_VERSION,
           dialect: Object.keys(DIALECTS).find((k) => DIALECTS[k] === DIALECT),
