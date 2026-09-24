@@ -4303,8 +4303,8 @@
           const valsHtml = tok.ids
             .map((id) => `<span>${escHtml(id)}</span>`)
             .join(`<span class="badge-divider"></span>`);
-          const marker = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
-          const pill = `<span class="badge ${colorClass}" data-marker="${marker}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
+          const copyText = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
+          const pill = `<span class="badge ${colorClass}" data-copy-text="${copyText}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
           const cls = tok.alone ? "badge-group badge-alone" : "badge-group";
           return `<span class="${cls}">${pill}</span>`;
         });
@@ -6195,7 +6195,7 @@ category = General
       function openBadgeCopy(el) {
         const popup = document.getElementById("badgeCopyPopup");
         popup.querySelector(".badge-copy-text").textContent =
-          el.dataset.marker || "";
+          el.dataset.copyText || "";
         placePopup(popup, el.getBoundingClientRect());
       }
       let warnPopupEl = null;
