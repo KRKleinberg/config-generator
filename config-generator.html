@@ -5946,7 +5946,7 @@ category = General
         if (!r) return;
         const body = recordEffectiveBody(r);
         const output = jinjaRaw(body) + COPY_EOL;
-        navigator.clipboard
+        return navigator.clipboard
           .writeText(output)
           .then(() => {
             flashBadge(`badge-${index}`);
@@ -5956,15 +5956,17 @@ category = General
             lastCopied = { kind: "section", id, text: output };
             const currentSection = document.getElementById(`section-${index}`);
             if (currentSection) currentSection.classList.add("last-copied");
+            return true;
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
             showToast("Failed to copy to clipboard", "error");
+            return false;
           });
       }
 
-      function copyAndGoDown(id, index) {
-        copySectionByName(id, index);
+      async function copyAndGoDown(id, index) {
+        if (!(await copySectionByName(id, index))) return;
 
         const currentSection = document.getElementById(`section-${index}`);
         const nextSection = document.getElementById(`section-${index + 1}`);
@@ -5981,9 +5983,8 @@ category = General
         }
       }
 
-      function copyAndGoTop(id, index) {
-        copySectionByName(id, index);
-        scrollToTop();
+      async function copyAndGoTop(id, index) {
+        if (await copySectionByName(id, index)) scrollToTop();
       }
 
       function copyAll() {
