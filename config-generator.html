@@ -4649,10 +4649,8 @@
           try {
             const raw = toInternalEOL(evt.target.result);
             const guess = DIALECT_AUTODETECT && detectDialect(raw);
-            if (guess && DIALECTS[guess] !== DIALECT) {
-              applyDialect(guess);
-              showToast(`Platform: ${DIALECT.label} (detected)`);
-            }
+            const detected = guess && DIALECTS[guess] !== DIALECT;
+            if (detected) applyDialect(guess);
             templateSource = canonicalizeMarkers(raw);
             // Committed only on a successful read.
             templateFileName = fullName;
@@ -4662,11 +4660,14 @@
             setTemplateStatus(fullName);
             applyAutoViewMode();
             const syntaxIssues = templateSyntaxIssues().length;
+            const notes = [];
+            if (detected) notes.push(`Platform: ${DIALECT.label} (detected)`);
             if (syntaxIssues)
-              showToast(
+              notes.push(
                 `Template file has ${syntaxIssues} syntax issue${syntaxIssues === 1 ? "" : "s"}`,
-                "warn",
               );
+            if (notes.length)
+              showToast(notes.join(" — "), syntaxIssues ? "warn" : "");
             render();
             renderAutoDetectButtons();
             // Auto-generate the form on load; lightning re-detects after edits.
