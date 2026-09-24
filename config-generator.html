@@ -6269,6 +6269,8 @@ category = General
       // anchor; the first that fits the viewport with the least section-header
       // coverage wins.
       function placePopup(popup, r, above = false, alignRight = false) {
+        // Measure at the origin: a fixed box near the right edge shrinks to fit.
+        popup.style.left = popup.style.top = "0px";
         popup.hidden = false;
         const pr = popup.getBoundingClientRect();
         const sides = [r.bottom + 6, r.top - pr.height - 6];
