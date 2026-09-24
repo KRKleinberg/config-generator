@@ -1917,7 +1917,7 @@
         height: 14px;
       }
 
-      .copied-badge {
+      .copied-label {
         font-size: 11px;
         color: var(--success);
         font-weight: 600;
@@ -1929,7 +1929,7 @@
         padding: 0 8px;
       }
 
-      .copied-badge.show {
+      .copied-label.show {
         opacity: 1;
       }
 
@@ -5213,7 +5213,7 @@ category = General
                             <div class="section-header${headerClass}">
                               <h3>Full Config</h3>
                               <div class="btn-group">
-                                <span class="copied-badge" id="badge-full">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
+                                <span class="copied-label" id="copied-full">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
 
         if (isEditing) {
           html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelFullEdit()"><svg><use href="#icon-close"></use></svg></button>
@@ -5273,7 +5273,7 @@ category = General
                            <div class="section-header${headerClass}">
                              <h3>${escHtml(name)}</h3>
                              <div class="btn-group">
-                               <span class="copied-badge" id="badge-${i}">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
+                               <span class="copied-label" id="copied-${i}">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
 
           if (isEditing) {
             html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelSectionEdit(${id})"><svg><use href="#icon-close"></use></svg></button>
@@ -5814,7 +5814,7 @@ category = General
         return navigator.clipboard
           .writeText(output)
           .then(() => {
-            flashBadge(`badge-${index}`);
+            flashCopied(`copied-${index}`);
             const msg = copyToastMessage("Copied", output, issues);
             if (msg) showToast(msg, "warn");
             clearLastCopied();
@@ -5864,7 +5864,7 @@ category = General
         navigator.clipboard
           .writeText(output)
           .then(() => {
-            flashBadge("badge-full");
+            flashCopied("copied-full");
             const msg = copyToastMessage("Copied", output, issues);
             if (msg) showToast(msg, "warn");
             clearLastCopied();
@@ -6138,7 +6138,7 @@ category = General
         // Header icon tracks the editor live.
         const badge = el
           .closest(".config-section")
-          ?.querySelector(".copied-badge");
+          ?.querySelector(".copied-label");
         if (!badge) return;
         badge.parentElement.querySelector(".header-warn")?.remove();
         badge.insertAdjacentHTML("afterend", headerWarnHtml(issues));
@@ -6476,7 +6476,7 @@ category = General
         return typeof v === "string" && v.trim() !== "";
       }
 
-      function flashBadge(id) {
+      function flashCopied(id) {
         const badge = document.getElementById(id);
         if (!badge) return;
         badge.classList.add("show");
