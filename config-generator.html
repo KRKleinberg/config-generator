@@ -1028,7 +1028,7 @@
         background: rgba(var(--rgb-accent), 0.35);
       }
 
-      .tpl-jinja {
+      .editor-jinja {
         color: var(--success);
       }
 
@@ -5191,7 +5191,7 @@ category = General
         // Editors come out of the markup empty-mirrored; size and highlight them.
         container
           .querySelectorAll("textarea.section-edit")
-          .forEach(autoSizeTextarea);
+          .forEach(refreshEditor);
         refreshLastCopied();
         updateProgressBar();
         updateTemplateWarnBadge();
@@ -5593,7 +5593,7 @@ category = General
           if (ta) {
             ta.focus();
             ta.setSelectionRange(ta.value.length, ta.value.length);
-            autoSizeTextarea(ta);
+            refreshEditor(ta);
           }
         }
       }
@@ -5638,7 +5638,7 @@ category = General
           if (ta) {
             ta.focus();
             ta.setSelectionRange(ta.value.length, ta.value.length);
-            autoSizeTextarea(ta);
+            refreshEditor(ta);
           }
         }
       }
@@ -6029,7 +6029,7 @@ category = General
         ta.setSelectionRange(from, from + shifted.length);
       });
       function editorHtml(id, rows, text, onInput) {
-        return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; autoSizeTextarea(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
+        return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; refreshEditor(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
       }
       // Template text highlighted for the editor mirror: keywords and comments
       // as in the preview, Jinja tokens in blue, risk chars underlined in place
@@ -6077,7 +6077,7 @@ category = General
         )
           .replace(/\x00J(\d+)\x00/g, (_, i) =>
             EDITOR_HIGHLIGHTING
-              ? `<span class="tpl-jinja">${escHtml(jinja[i])}</span>`
+              ? `<span class="editor-jinja">${escHtml(jinja[i])}</span>`
               : escHtml(jinja[i]),
           )
           .replace(
@@ -6126,7 +6126,7 @@ category = General
             ?.querySelector(".editor-cursor-line")
             ?.setAttribute("hidden", "");
       });
-      function autoSizeTextarea(el) {
+      function refreshEditor(el) {
         el.style.height = "auto";
         el.style.height = `${el.scrollHeight}px`;
         updateCursorLine(el);
