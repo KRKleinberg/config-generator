@@ -2174,6 +2174,7 @@
               title="Save"
               aria-label="Save"
               aria-haspopup="menu"
+              aria-expanded="false"
             >
               <svg>
                 <use href="#icon-save"></use>
@@ -2360,6 +2361,8 @@
                 class="dialect-btn"
                 onclick="toggleDialectMenu(event)"
                 title="Switch platform"
+                aria-haspopup="menu"
+                aria-expanded="false"
               ></button>
             </h2>
             <button
@@ -2401,8 +2404,13 @@
             </div>
           </div>
         </div>
-        <div id="dialectMenu" class="popup-menu" hidden></div>
-        <div id="saveMenu" class="popup-menu action-menu" hidden></div>
+        <div id="dialectMenu" class="popup-menu" role="menu" hidden></div>
+        <div
+          id="saveMenu"
+          class="popup-menu action-menu"
+          role="menu"
+          hidden
+        ></div>
         <div id="warnPopup" class="warn-popup" hidden></div>
         <div id="badgeCopyPopup" class="badge-copy-popup" hidden>
           <span class="badge-copy-text"></span>
@@ -2420,17 +2428,29 @@
         <use href="#icon-chevron-up"></use>
       </svg>
     </button>
-    <div class="toast" id="toast"></div>
-    <div class="lightbox-overlay" id="helpLightbox" onclick="closeHelp(event)">
+    <div class="toast" id="toast" role="status"></div>
+    <div
+      class="lightbox-overlay"
+      id="helpLightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guideTitle"
+      onclick="closeHelp(event)"
+    >
       <div class="lightbox-modal" onclick="event.stopPropagation()">
         <div class="lightbox-header">
-          <h2>
+          <h2 id="guideTitle">
             <svg width="18" height="18">
               <use href="#icon-book"></use>
             </svg>
             Guide
           </h2>
-          <button class="lightbox-close" onclick="closeHelp()">
+          <button
+            class="lightbox-close"
+            onclick="closeHelp()"
+            title="Close guide"
+            aria-label="Close guide"
+          >
             <svg viewBox="0 0 24 24">
               <use href="#icon-close"></use>
             </svg>
@@ -3885,13 +3905,15 @@
         menu.innerHTML = Object.entries(DIALECTS)
           .map(
             ([key, d]) =>
-              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="menu-key">${escHtml(d.short)}</span><span class="menu-desc">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag">BETA</span>' : ""}</button>`,
+              `<button role="menuitem" class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="menu-key">${escHtml(d.short)}</span><span class="menu-desc">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag">BETA</span>' : ""}</button>`,
           )
           .join("");
         placePopup(menu, e.currentTarget.getBoundingClientRect());
+        e.currentTarget.ariaExpanded = "true";
       }
       function closeDialectMenu() {
         document.getElementById("dialectMenu").hidden = true;
+        document.getElementById("dialectBadge").ariaExpanded = "false";
       }
       const SAVE_MENU = [
         ["saveSession", "Save session", "icon-save", "Ctrl+S"],
@@ -3904,13 +3926,15 @@
         if (!menu.hidden) return closeSaveMenu();
         menu.innerHTML = SAVE_MENU.map((row) =>
           row
-            ? `<button onclick="closeSaveMenu(); ${row[0]}()"><svg><use href="#${row[2]}"></use></svg>${row[1]}${row[3] ? `<span class="menu-kbd">${row[3]}</span>` : ""}</button>`
+            ? `<button role="menuitem" onclick="closeSaveMenu(); ${row[0]}()"><svg><use href="#${row[2]}"></use></svg>${row[1]}${row[3] ? `<span class="menu-kbd">${row[3]}</span>` : ""}</button>`
             : "<hr />",
         ).join("");
         placePopup(menu, e.currentTarget.getBoundingClientRect(), false, true);
+        e.currentTarget.ariaExpanded = "true";
       }
       function closeSaveMenu() {
         document.getElementById("saveMenu").hidden = true;
+        document.getElementById("saveBtn").ariaExpanded = "false";
       }
       // Sections are a tool concept and survive the switch; they are written
       // out with the new marker. Body text is re-cleaned, re-linted, re-colored.
@@ -6151,7 +6175,7 @@ category = General
         ta.setSelectionRange(from, from + shifted.length);
       });
       function editorHtml(id, rows, text, onInput) {
-        return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; autoSizeTextarea(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
+        return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; autoSizeTextarea(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
       }
       // Template text highlighted for the editor mirror: keywords and comments
       // as in the preview, Jinja tokens in blue, risk chars underlined in place
