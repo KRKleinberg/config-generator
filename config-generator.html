@@ -4788,16 +4788,19 @@
             Object.assign(formValues, session.formValues);
             sectionRecords = recordsFromSession(session.sections);
             resetEditState(); // drop any open edit buffer before adopting loaded records
-            if (templateSource !== null) {
-              setTemplateStatus(templateFileName);
-            }
+            if (templateSource !== null) setTemplateStatus(templateFileName);
+            else showNoTemplate();
             if (Object.keys(variableDefs).length > 0) {
               setVarsStatus(
                 varsFileName || "auto-detected",
                 Object.keys(variableDefs).length,
                 { markLoaded: true },
               );
+            } else {
+              clearVarsStatus();
             }
+            // Sessions carry no vars-file diagnostics; drop the previous file's.
+            setWarnBadge("varsErrorBadge", "variable definition issues", []);
             applyAutoViewMode();
             buildForm();
             render();
@@ -6036,6 +6039,13 @@ category = General
         armedClear.btn.classList.remove("armed");
         armedClear = null;
       }
+      function showNoTemplate() {
+        document.getElementById("templateLoader").classList.remove("loaded");
+        document.getElementById("templateStatus").innerHTML =
+          '<span class="not-loaded">No template loaded</span>';
+        setWarnBadge("templateErrorBadge", "syntax issues", []);
+        document.getElementById("previewContainer").innerHTML = emptyStateHtml;
+      }
       function clearTemplate() {
         if (!templateSource) return;
         templateSource = null;
@@ -6046,12 +6056,8 @@ category = General
         viewMode = "sections";
 
         document.getElementById("templateInput").value = "";
-        document.getElementById("templateLoader").classList.remove("loaded");
-        document.getElementById("templateStatus").innerHTML =
-          '<span class="not-loaded">No template loaded</span>';
-        setWarnBadge("templateErrorBadge", "syntax issues", []);
+        showNoTemplate();
         document.getElementById("viewThumb").classList.remove("right");
-        document.getElementById("previewContainer").innerHTML = emptyStateHtml;
         renderAutoDetectButtons();
 
         if (Object.keys(varsFromFile).length === 0) {
