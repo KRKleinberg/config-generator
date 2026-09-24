@@ -1160,29 +1160,36 @@
         color: var(--badge-fg);
         transition: background 0.15s ease;
       }
+
       .badge-c0 {
         --badge-rgb: var(--rgb-badge-0);
         --badge-fg: var(--badge-fg-0);
       }
+
       .badge-c1 {
         --badge-rgb: var(--rgb-badge-1);
         --badge-fg: var(--badge-fg-1);
       }
+
       .badge-c2 {
         --badge-rgb: var(--rgb-badge-2);
         --badge-fg: var(--badge-fg-2);
       }
+
       .badge-c3 {
         --badge-rgb: var(--rgb-badge-3);
         --badge-fg: var(--badge-fg-3);
       }
+
       .badge-c4 {
         --badge-rgb: var(--rgb-badge-4);
         --badge-fg: var(--badge-fg-4);
       }
+
       .badge-group.badge-alone {
         margin-left: 0;
       }
+
       .badge-group.badge-alone .badge:first-child {
         margin-left: 0;
       }
@@ -1190,6 +1197,7 @@
       .badge:hover {
         background: rgba(var(--badge-rgb), 0.4);
       }
+
       .badge-kw {
         display: inline-flex;
         align-items: center;
@@ -1198,12 +1206,14 @@
         padding: 2px 14px 2px 8px;
         clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
       }
+
       .badge-vals {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         padding: 0 8px;
       }
+
       .badge-divider {
         align-self: stretch;
         width: 2px;
@@ -1211,6 +1221,7 @@
         opacity: 0.3;
         transform: skewX(25deg);
       }
+
       /* Platform badge: the title's own type; reads as text until hovered. */
       .dialect-btn {
         display: inline-flex;
@@ -1392,6 +1403,7 @@
         40% {
           box-shadow: inset 0 0 0 100vmax rgba(var(--rgb-warn), 0.35);
         }
+
         100% {
           box-shadow: inset 0 0 0 100vmax transparent;
         }
@@ -2843,6 +2855,7 @@
                                             any all-caps keyword works, e.g. ${c}STIG: V-1234, ${c}CIS: 1.5.2
 =============================================================== #}\n\n`;
       }
+
       const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
       // Recognized .vars.ini keys; shared by the parser and warn-row coloring.
       const INI_KEYS = new Set([
@@ -3146,13 +3159,16 @@
               .replace(/"/g, "&quot;")
               .replace(/'/g, "&#039;");
       }
+
       function escRegex(s) {
         return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
+
       // Strings only: session formValues are not type-checked.
       function isValuePresent(v) {
         return typeof v === "string" && v.trim() !== "";
       }
+
       function parseINI(text, errorList = []) {
         const result = {};
         const groupLines = {};
@@ -3239,6 +3255,7 @@
         errorList.sort((a, b) => lineOf(a) - lineOf(b));
         return result;
       }
+
       // Shape of a generated definition: required free text, no hints.
       function newVarDef(fields = {}) {
         return {
@@ -3255,6 +3272,7 @@
           ...fields,
         };
       }
+
       function commitINIItem(result, item, errorList) {
         const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = item.keyLines || {};
@@ -3342,6 +3360,7 @@
           choices: parsedChoices,
         };
       }
+
       // RegExp doesn't survive JSON; restore compiledRegex on session load.
       function recompileRegexes(defs) {
         if (!defs) return;
@@ -3359,6 +3378,7 @@
           }
         }
       }
+
       function parseINIInlineList(val) {
         if (!val) return null;
         const match = val.match(/^\[(.*)\]$/);
@@ -3368,9 +3388,11 @@
           .map((s) => stripINIQuotes(s.trim()))
           .filter(Boolean);
       }
+
       function stripINIQuotes(val) {
         return val.replace(/^["'](.*)["']$/, "$1");
       }
+
       function evaluateExpression(content) {
         const trimmed = content.trim();
         const { baseExpr, filters } = parseExprParts(trimmed);
@@ -3398,6 +3420,7 @@
         }
         return { text: isList ? value.join(",") : value, filled };
       }
+
       function parseExprParts(expr) {
         let baseEnd = -1;
         let bracketDepth = 0;
@@ -3419,6 +3442,7 @@
         }
         return { baseExpr, filters };
       }
+
       // "[A, B]" -> ["A", "B"]; null when the expression is not a list.
       function listMembers(baseExpr) {
         if (!baseExpr.startsWith("[") || !baseExpr.endsWith("]")) return null;
@@ -3427,9 +3451,11 @@
           .split(",")
           .map((s) => s.trim());
       }
+
       function isValidVarName(name) {
         return /^\w[\w.-]*$/.test(name);
       }
+
       // All vars an expression depends on; exact tokens so VLAN_ID != VLAN.
       function exprReferencesVars(rawContent) {
         const { baseExpr } = parseExprParts((rawContent ?? "").trim());
@@ -3437,6 +3463,7 @@
         if (members) return members.filter(isValidVarName);
         return isValidVarName(baseExpr) ? [baseExpr] : [];
       }
+
       function collectTemplateVarNames(templateText) {
         const source = (templateText ?? "").replace(JINJA_COMMENT_RE, "");
         const found = new Set();
@@ -3446,6 +3473,7 @@
           if (isValidVarName(name)) found.add(name);
         return found;
       }
+
       function splitOnPipe(chain) {
         const parts = [];
         let current = "";
@@ -3467,6 +3495,7 @@
         if (current.trim()) parts.push(current);
         return parts;
       }
+
       function applyFilter(name, arg, value, isList) {
         switch (name) {
           case "default":
@@ -3493,6 +3522,7 @@
             return { value, isList };
         }
       }
+
       function simplifyExpression(expr) {
         if (expr.startsWith("[")) {
           const end = expr.indexOf("]");
@@ -3511,6 +3541,7 @@
           ? `{{ ${expr.substring(0, pipe).trim()} }}`
           : `{{ ${expr} }}`;
       }
+
       // opts.commentFalse (preview): whole-line false blocks render as comments.
       function processConditionals(template, values, opts = {}) {
         let result = template;
@@ -3552,6 +3583,7 @@
           console.warn("Template conditional parser hit iteration limit.");
         return result;
       }
+
       // ---- Dialects ----
       // banner.delimiter: fixed closing line, or null for the captured char.
       const IOS_BANNER = {
@@ -3827,6 +3859,7 @@
           );
         });
       }
+
       function toggleDialectMenu(e) {
         const menu = document.getElementById("dialectMenu");
         if (!menu.hidden) return closeDialectMenu();
@@ -3839,10 +3872,12 @@
         placePopup(menu, e.currentTarget.getBoundingClientRect());
         e.currentTarget.ariaExpanded = "true";
       }
+
       function closeDialectMenu() {
         document.getElementById("dialectMenu").hidden = true;
         document.getElementById("dialectBadge").ariaExpanded = "false";
       }
+
       // Records survive a switch and are written out with the new marker.
       function switchDialect(name) {
         closeDialectMenu();
@@ -3857,6 +3892,7 @@
         if (original) originalTemplateSource = assembleFromRecords(original);
         if (templateSource !== null) render();
       }
+
       // Weighted signatures unique to each dialect; a guess needs a clear lead.
       const DIALECT_SIGNS = {
         junos: [
@@ -3902,6 +3938,7 @@
         const [[best, top], [, next]] = scores;
         return top >= 4 && top - next >= 3 ? best : null;
       }
+
       // { delim, at } for an opening banner line (delim null: closes there).
       function bannerStart(line) {
         const b = DIALECT.banner;
@@ -3914,11 +3951,13 @@
           at: m[0].length - 1,
         };
       }
+
       function bannerCloses(line, delim) {
         return DIALECT.banner.delimiter
           ? line.trim() === delim
           : line.includes(delim);
       }
+
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
@@ -3944,13 +3983,16 @@
         }
         return out.join("\n");
       }
+
       function dedent(line) {
         return STRIP_INDENT ? line.replace(/^\s+/, "") : line;
       }
+
       // What dedent removes; lint and marks start after it.
       function indentOf(line) {
         return STRIP_INDENT ? line.match(/^\s*/)[0].length : 0;
       }
+
       function cleanFormatting(text) {
         return text
           .split("\n")
@@ -3958,6 +4000,7 @@
           .join("\n")
           .trim();
       }
+
       // Ctrl-V (0x16) escapes ? and tab; encoding hazards have no escape.
       const NON_ASCII_ALT = LINT_NON_ASCII ? "|[\\u0080-\\u{10FFFF}]" : "";
       const RISK_CHAR_RE = new RegExp(`(?<!\\x16)[\\t?]${NON_ASCII_ALT}`, "gu");
@@ -3977,6 +4020,7 @@
         if (ch === "\u00a0") return "Non-breaking space";
         return `Non-ASCII character \`${ch}\``;
       }
+
       // Device-bound part of a line; cleanOutputLines emits it, dedented.
       function commandPart(line) {
         if (SECTION_RE.test(line)) return "";
@@ -3985,6 +4029,7 @@
         if (FREEFORM_CMD_RE.test(line)) return line;
         return line.replace(INLINE_COMMENT_RE, "");
       }
+
       // Banner-aware line walk shared by lint, preview marks, and the editor.
       function walkConfigLines(text) {
         const parts = [];
@@ -4016,6 +4061,7 @@
           : null;
         return { parts, unclosed };
       }
+
       // Restored offset to tokenized index; inside a value, the value's start.
       function tokenizedIndex(cmd, restore, at) {
         let pos = 0;
@@ -4029,6 +4075,7 @@
         }
         return -1;
       }
+
       // Values stay tokenized so their ! is never a comment; restore fills them.
       function lintConfigLines(text, restore = (s) => s) {
         const issues = [];
@@ -4066,14 +4113,17 @@
         }
         return issues;
       }
+
       // Values that can add or clear a paste warning bypass the fast path.
       function lintSensitive(value) {
         if (!LINT_PASTE_WARNINGS) return false;
         return value.search(MARK_CHAR_RE) !== -1;
       }
+
       function warnAttrs(kind, msgs) {
         return ` data-warns="${escHtml(msgs.join("\n"))}" data-warn-kind="${escHtml(kind)}"`;
       }
+
       // Glyph-drawn chars carry data-ch so a selection copy restores the real byte.
       function markRiskChars(escapedHtml) {
         return escapedHtml.replace(MARK_CHAR_RE, (ch) => {
@@ -4084,9 +4134,11 @@
           return `<span class="risk-char" data-ch="${escHtml(ch)}"${warnAttrs("paste warnings", [riskCharName(ch)])}>${escHtml(shown)}</span>`;
         });
       }
+
       function markRange(escapedHtml, message) {
         return `<span class="risk-char"${warnAttrs("paste warnings", [message])}>${markRiskChars(escapedHtml)}</span>`;
       }
+
       // Single chokepoint for {{ }} evaluation so render paths can't drift.
       function renderExpr(content) {
         const trimmed = content.trim();
@@ -4100,6 +4152,7 @@
           vars,
         };
       }
+
       function jinjaRawParts(template) {
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues);
@@ -4118,14 +4171,17 @@
         result = cleanOutputLines(result);
         return { output: cleanFormatting(restore(result)), lintText, restore };
       }
+
       function jinjaRaw(template) {
         return jinjaRawParts(template).output;
       }
+
       // One pipeline run: the text that is copied or saved, and its paste warnings.
       function rawWithIssues(template) {
         const { output, lintText, restore } = jinjaRawParts(template);
         return { raw: output, issues: lintConfigLines(lintText, restore) };
       }
+
       function headerWarnHtml(issues) {
         if (!issues.length) return "";
         const msgs = issues.map(
@@ -4133,6 +4189,7 @@
         );
         return `<span class="header-warn" tabindex="0" aria-label="Paste warnings"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
       }
+
       function copyToastMessage(base, output, issues) {
         const warns = [];
         if (output.includes("{{")) warns.push("unfilled {{ }} fields");
@@ -4142,6 +4199,7 @@
           );
         return warns.length ? `${base} — warning: ${warns.join(", ")}` : null;
       }
+
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues, {
@@ -4275,6 +4333,7 @@
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
       }
+
       // One pass: sequential replaces would re-match their own output.
       function getKeywordMap(keywordGroups) {
         if (keywordGroups === cachedKwGroupsRef && cachedKwMap)
@@ -4301,6 +4360,7 @@
         };
         return cachedKwMap;
       }
+
       function applyKeywordHighlighting(html, keywordGroups) {
         const { pattern, colors } = getKeywordMap(keywordGroups);
         const lines = html.split("\n");
@@ -4331,6 +4391,7 @@
         }
         return lines.join("\n");
       }
+
       // FS Access avoids stale same-size re-reads; else the hidden <input>.
       async function openTextFile(inputId, process) {
         const input = document.getElementById(inputId);
@@ -4361,11 +4422,13 @@
         }
         input.click();
       }
+
       function onTemplateFileSelected(e) {
         const file = e.target.files[0];
         if (file) processTemplateFile(file);
         e.target.value = "";
       }
+
       function scanTemplateForErrors(text) {
         const msgs = [];
         const cleanText = text.replace(JINJA_COMMENT_RE, "");
@@ -4420,6 +4483,7 @@
           msgs.push(`\`${tag}\` without a matching \`{% endif %}\``);
         return [...new Set(msgs)];
       }
+
       function templateSyntaxIssues() {
         if (!LINT_TEMPLATE) return [];
         const msgs = new Set();
@@ -4435,6 +4499,7 @@
           if (!seen.has(m)) msgs.add(m);
         return [...msgs];
       }
+
       function updateTemplateWarnBadge() {
         if (templateSource === null) return;
         setWarnBadge(
@@ -4443,18 +4508,22 @@
           templateSyntaxIssues(),
         );
       }
+
       function toInternalEOL(s) {
         return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
       }
+
       function toOutputEOL(s) {
         return OUTPUT_CRLF ? s.replace(/\r?\n/g, "\r\n") : s;
       }
+
       function readFileAsText(file, errorMsg, onLoad) {
         const reader = new FileReader();
         reader.onerror = () => showToast(errorMsg, "error");
         reader.onload = onLoad;
         reader.readAsText(file);
       }
+
       function newTemplate() {
         templateSource = TEMPLATE_HEADER;
         originalTemplateSource = templateSource;
@@ -4467,19 +4536,23 @@
         renderAutoDetectButtons();
         toggleFullEdit();
       }
+
       function templateBasename() {
         const dot = templateFileName.lastIndexOf(".");
         return dot > 0 ? templateFileName.slice(0, dot) : templateFileName;
       }
+
       function templateStem() {
         return templateBasename().replace(/\.template$/i, "");
       }
+
       function saveFileStem() {
         const key = Object.keys(formValues).find(
           (k) => k.toLowerCase() === FILENAME_VAR.toLowerCase(),
         );
         return (key && formValues[key]) || templateStem() || "config";
       }
+
       // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
         const safe = escHtml(name);
@@ -4488,11 +4561,13 @@
           : '<span class="not-loaded">Unsaved template</span>';
         document.getElementById("templateLoader").classList.add("loaded");
       }
+
       function applyAutoViewMode() {
         const sectionless =
           templateSource !== null && getNamedSections().length === 0;
         setViewMode(sectionless ? "full" : "sections");
       }
+
       function setVarsStatus(
         name,
         count,
@@ -4509,6 +4584,7 @@
         if (markLoaded)
           document.getElementById("varsLoader").classList.add("loaded");
       }
+
       function clearVarsStatus() {
         document.getElementById("varsLoader").classList.remove("loaded");
         document.getElementById("varsStatus").innerHTML =
@@ -4517,6 +4593,7 @@
         badge.style.display = "none";
         badge.innerHTML = "";
       }
+
       function processTemplateFile(file) {
         const fullName = file.name;
         readFileAsText(file, "Error reading template file", (evt) => {
@@ -4549,11 +4626,13 @@
           }
         });
       }
+
       function onVarsFileSelected(e) {
         const file = e.target.files[0];
         if (file) processVarsFile(file);
         e.target.value = "";
       }
+
       function processVarsFile(file) {
         readFileAsText(file, "Error reading vars file", (evt) => {
           try {
@@ -4587,6 +4666,7 @@
           }
         });
       }
+
       // FS Access sidesteps the download danger list for .ini/.config.
       async function saveTextFile(
         content,
@@ -4654,6 +4734,7 @@
           `Saved ${name}`,
         );
       }
+
       function saveConfig() {
         if (templateSource === null) {
           showToast("Load a template first");
@@ -4721,6 +4802,7 @@
         placePopup(menu, e.currentTarget.getBoundingClientRect(), false, true);
         e.currentTarget.ariaExpanded = "true";
       }
+
       function closeSaveMenu() {
         document.getElementById("saveMenu").hidden = true;
         document.getElementById("saveBtn").ariaExpanded = "false";
@@ -4731,11 +4813,13 @@
         if (file) loadFile(file);
         e.target.value = "";
       }
+
       // One routing rule for Open and drop: session, vars, else template.
       function fileKind(file) {
         const ext = file.name.split(".").pop().toLowerCase();
         return ext === "json" ? "session" : ext === "ini" ? "vars" : "template";
       }
+
       function loadFile(file) {
         const process = {
           session: processSessionFile,
@@ -4744,6 +4828,7 @@
         };
         process[fileKind(file)](file);
       }
+
       function validateSessionV1(session) {
         if (session === null || typeof session !== "object")
           return "Not a session object";
@@ -4866,6 +4951,7 @@
           }
         });
       }
+
       // quiet: automatic runs skip the informational toasts.
       function autoDetectVars({ quiet = false } = {}) {
         if (templateSource === null) {
@@ -5002,6 +5088,7 @@ category = General
         const re = config.compiledRegex;
         return re instanceof RegExp ? re.test(v) : true;
       }
+
       function applyValidity(inputEl, validMsg, value, config) {
         const valid = isFieldValueValid(value, config);
         inputEl.classList.toggle("invalid", !valid);
@@ -5010,6 +5097,7 @@ category = General
           validMsg.style.display = valid ? "none" : "";
         }
       }
+
       function buildSelectField(field, varName, config) {
         const inputEl = document.createElement("select");
         inputEl.id = `field-${varName}`;
@@ -5248,10 +5336,12 @@ category = General
         setViewMode(viewMode === "sections" ? "full" : "sections");
         render();
       }
+
       function commitOpenEditors() {
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         for (const id of [...activeSectionEditors]) commitSectionEdit(id);
       }
+
       function setViewMode(mode) {
         viewMode = mode;
         document
@@ -5577,6 +5667,7 @@ category = General
             !startsInComment && SECTION_RE.test(line),
         );
       }
+
       function commitSectionEdit(id) {
         activeSectionEditors.delete(id);
         delete sectionEditBackups[id];
@@ -5595,6 +5686,7 @@ category = General
         }
         autoDetectVars({ quiet: true });
       }
+
       function toggleSectionEdit(id, index) {
         if (activeSectionEditors.has(id)) {
           commitSectionEdit(id);
@@ -5779,6 +5871,7 @@ category = General
         activeSectionEditors.clear();
         fullModeEditBuffer = "";
       }
+
       function resetAllEdits() {
         if (originalTemplateSource !== null) {
           templateSource = originalTemplateSource;
@@ -5910,12 +6003,14 @@ category = General
         btn.classList.add("armed");
         armedClear = { btn, timer: setTimeout(disarmClear, 3000) };
       }
+
       function disarmClear() {
         if (!armedClear) return;
         clearTimeout(armedClear.timer);
         armedClear.btn.classList.remove("armed");
         armedClear = null;
       }
+
       function showNoTemplate() {
         document.getElementById("templateLoader").classList.remove("loaded");
         document.getElementById("templateStatus").innerHTML =
@@ -5923,6 +6018,7 @@ category = General
         setWarnBadge("templateWarnBadge", "syntax issues", []);
         document.getElementById("previewContainer").innerHTML = emptyStateHtml;
       }
+
       function clearTemplate() {
         if (templateSource === null) return;
         templateSource = null;
@@ -5968,6 +6064,7 @@ category = General
       function editorHtml(id, rows, text, onInput) {
         return `<div class="editor-wrap"><div class="editor-cursor-line" hidden></div><div class="editor-flash"></div><pre class="editor-mirror" aria-hidden="true"></pre><textarea class="section-edit" id="${id}" aria-label="Template editor" rows="${rows}" spellcheck="false" autocapitalize="off" autocomplete="off" oninput="${onInput}; refreshEditor(this)" onscroll="this.previousElementSibling.scrollLeft = this.scrollLeft">${escHtml(text)}</textarea></div>`;
       }
+
       // Risk chars get underlines, not glyphs: widths must match the textarea.
       function highlightTemplate(text) {
         const jinja = [];
@@ -6027,12 +6124,14 @@ category = General
           .join("");
         return { html, issues };
       }
+
       function placeEditorStrip(ta, strip, row) {
         const cs = getComputedStyle(ta);
         const lineHeight = parseFloat(cs.lineHeight);
         strip.style.top = `${parseFloat(cs.paddingTop) + row * lineHeight}px`;
         strip.style.height = `${lineHeight}px`;
       }
+
       function updateCursorLine(ta) {
         const strip = ta.parentElement?.querySelector(".editor-cursor-line");
         if (!strip) return;
@@ -6040,12 +6139,14 @@ category = General
         placeEditorStrip(ta, strip, row);
         strip.hidden = document.activeElement !== ta;
       }
+
       function flashEditorLine(ta, row) {
         const strip = ta.parentElement?.querySelector(".editor-flash");
         if (!strip) return;
         placeEditorStrip(ta, strip, row);
         flashLine(strip);
       }
+
       function refreshEditor(el) {
         el.style.height = "auto";
         el.style.height = `${el.scrollHeight}px`;
@@ -6063,9 +6164,11 @@ category = General
         badge.parentElement.querySelector(".header-warn")?.remove();
         badge.insertAdjacentHTML("afterend", headerWarnHtml(issues));
       }
+
       function pageScrolls() {
         return window.matchMedia("(max-width: 900px)").matches;
       }
+
       function scrollToTop() {
         if (pageScrolls()) {
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -6075,6 +6178,7 @@ category = General
           .querySelector(".preview-panel")
           .scrollTo({ top: 0, behavior: "smooth" });
       }
+
       // Below, above, beside: the fit covering the fewest section headers wins.
       function placePopup(popup, r, above = false, alignRight = false) {
         // Measure at the origin: a fixed box near the right edge shrinks to fit.
@@ -6110,12 +6214,14 @@ category = General
         popup.style.top = `${Math.max(8, top)}px`;
         popup.style.left = `${Math.max(8, left)}px`;
       }
+
       function openBadgeCopy(el) {
         const popup = document.getElementById("badgeCopyPopup");
         popup.querySelector(".badge-copy-text").textContent =
           el.dataset.copyText || "";
         placePopup(popup, el.getBoundingClientRect());
       }
+
       let warnPopupEl = null;
       // Grace period so the pointer can cross into the popup.
       let warnHideTimer = null;
@@ -6164,6 +6270,7 @@ category = General
           inLines,
         );
       }
+
       // 'name' chips match escHtml's &#039;, so the two must change together.
       function warnRowHtml(msg, link = null) {
         const m = msg.match(/^Line (\d+): ([\s\S]*)$/);
@@ -6193,6 +6300,7 @@ category = General
           ? `<div${attrs}><span class="warn-row-ln">${gutter}</span><span>${body}</span></div>`
           : `<div${attrs}><span class="warn-row-full">${body}</span></div>`;
       }
+
       function hideWarnPopup() {
         const popup = document.getElementById("warnPopup");
         popup.hidden = true;
@@ -6200,9 +6308,11 @@ category = General
         clearTimeout(warnHideTimer);
         warnHideTimer = null;
       }
+
       function scheduleHideWarn() {
         warnHideTimer ??= setTimeout(hideWarnPopup, 200);
       }
+
       // Flashes marks matching the literal (or its halves), else the first line.
       function issueLines(name, literal) {
         const heading = (c) => c.querySelector("h3")?.textContent ?? "";
@@ -6243,6 +6353,7 @@ category = General
         ];
         return found.length ? found : lines.slice(0, 1);
       }
+
       function flashLine(el, i = 0) {
         if (i === 0) el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.classList.remove("flash-jump");
@@ -6254,6 +6365,7 @@ category = General
           { once: true },
         );
       }
+
       function setWarnBadge(id, kind, msgs) {
         const el = document.getElementById(id);
         el.dataset.warns = msgs.join("\n");
@@ -6294,6 +6406,7 @@ category = General
         box.classList.add("show");
         box.querySelector(".lightbox-close").focus();
       }
+
       function closeGuide(e) {
         const box = document.getElementById("guideLightbox");
         if (!box.classList.contains("show") || (e && e.target !== box)) return;
@@ -6315,6 +6428,7 @@ category = General
         exprVarIndexes.set(span, next);
         return list[next];
       }
+
       function findVarInPreview(varName) {
         const instances = document.querySelectorAll(
           `.preview-var[data-vars~="${CSS.escape(varName)}"]`,
