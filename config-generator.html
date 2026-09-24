@@ -2821,8 +2821,7 @@
       let varsFileName = "";
       let emptyStateHtml = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
-      // Written at the top of every saved or new template. Indented so older
-      // tool copies don't parse the marker examples as markers.
+      // Examples are indented so older tool copies don't read them as markers.
       function templateHeader(c) {
         return `{# ===============================================================
    Device Configuration Template
@@ -3428,7 +3427,6 @@
           .split(",")
           .map((s) => s.trim());
       }
-      // Var-name rule shared by auto-detect, span clicks, and the error scan.
       function isValidVarName(name) {
         return /^\w[\w.-]*$/.test(name);
       }
@@ -3513,8 +3511,7 @@
           ? `{{ ${expr.substring(0, pipe).trim()} }}`
           : `{{ ${expr} }}`;
       }
-      // opts.commentFalse: whole-line false blocks render as "! " comments
-      // instead of vanishing (preview only - jinjaRaw omits them as before).
+      // opts.commentFalse (preview): whole-line false blocks render as comments.
       function processConditionals(template, values, opts = {}) {
         let result = template;
         let prev = "";
@@ -3555,12 +3552,8 @@
           console.warn("Template conditional parser hit iteration limit.");
         return result;
       }
-      // ---- Dialects: everything vendor-shaped lives here. `comment` is the
-      // comment leader (section markers are three of them, badges one);
-      // `freeform` names commands whose mid-line comment char is data;
-      // `banner` is null where the CLI has no delimited banner syntax, else
-      // the opening line pattern and either a fixed closing line or null to
-      // use the captured delimiter. Description limits are per platform.
+      // ---- Dialects ----
+      // banner.delimiter: fixed closing line, or null for the captured char.
       const IOS_BANNER = {
         start:
           /^\s*(?:banner\s+[\w-]+|vacant-message|refuse-message|aaa\s+authentication\s+(?:banner|fail-message))\s+(\S)/,
@@ -3781,8 +3774,7 @@
           keywords: JUNOS_KEYWORDS,
         },
       };
-      // Everything derived from the dialect; applyDialect rebuilds it, at
-      // startup and on a live switch from the platform badge.
+      // Derived from the active dialect; only applyDialect assigns these.
       let DIALECT, COMMENT, MARKER, KEYWORD_GROUPS, MAX_DESCRIPTION_LEN;
       let FREEFORM_CMD_RE,
         TEMPLATE_HEADER,
@@ -3808,8 +3800,7 @@
         TEMPLATE_HEADER = templateHeader(COMMENT);
         const c = escRegex(COMMENT);
         SECTION_RE = new RegExp(`^(${c}{3,})\\s*(.+)$`);
-        // (?<![^\s]) = line start or after whitespace: a glued bang is a value
-        // (P@ss!NOTE:1), never a badge.
+        // (?<![^\s]): line start or after whitespace; P@ss!NOTE:1 is a value.
         BADGE_RE = new RegExp(
           `(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`,
           "g",
@@ -3828,7 +3819,7 @@
           ? `${escHtml(DIALECT.short)}<span class="dialect-flag">BETA</span>`
           : escHtml(DIALECT.short);
 
-        // Guide examples are written in IOS syntax; swap their comment leaders for the dialect's.
+        // Guide examples are authored in IOS syntax.
         document.querySelectorAll("[data-syntax]").forEach((el) => {
           el.dataset.syntax ||= el.textContent;
           el.textContent = el.dataset.syntax.replace(/^!+/, (m) =>
@@ -3852,8 +3843,7 @@
         document.getElementById("dialectMenu").hidden = true;
         document.getElementById("dialectBadge").ariaExpanded = "false";
       }
-      // Sections are a tool concept and survive the switch; they are written
-      // out with the new marker. Body text is re-cleaned, re-linted, re-colored.
+      // Records survive a switch and are written out with the new marker.
       function switchDialect(name) {
         closeDialectMenu();
         if (DIALECTS[name] === DIALECT) return;
@@ -3867,8 +3857,7 @@
         if (original) originalTemplateSource = assembleFromRecords(original);
         if (templateSource !== null) render();
       }
-      // Platform guess from commands no other dialect uses. Returns a key only
-      // on a clear lead; anything ambiguous keeps the current platform.
+      // Weighted signatures unique to each dialect; a guess needs a clear lead.
       const DIALECT_SIGNS = {
         junos: [
           [
@@ -3913,8 +3902,7 @@
         const [[best, top], [, next]] = scores;
         return top >= 4 && top - next >= 3 ? best : null;
       }
-      // Opening banner line: { delim } with the closer, or delim null when it
-      // closes on the same line; null when the line is not a banner.
+      // { delim, at } for an opening banner line (delim null: closes there).
       function bannerStart(line) {
         const b = DIALECT.banner;
         const m = b && line.match(b.start);
@@ -3931,8 +3919,6 @@
           ? line.trim() === delim
           : line.includes(delim);
       }
-      // Output: drop comment lines and whitespace-preceded inline comments,
-      // then strip leading indent. Glued bangs are values; banners verbatim.
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
@@ -3952,7 +3938,7 @@
             out.push(COMMENT); // bare comment char passes through: answers device prompts on paste
             continue;
           }
-          if (SECTION_RE.test(line)) continue; // tool syntax, never output
+          if (SECTION_RE.test(line)) continue; // even with STRIP_COMMENTS off
           if (STRIP_COMMENTS && COMMENT_LINE_RE.test(line)) continue;
           out.push(dedent(commandPart(line)));
         }
@@ -3972,7 +3958,7 @@
           .join("\n")
           .trim();
       }
-      // Paste hazards. Ctrl-V (0x16) escapes the editor keys ? and tab; encoding hazards have no escape.
+      // Ctrl-V (0x16) escapes ? and tab; encoding hazards have no escape.
       const NON_ASCII_ALT = LINT_NON_ASCII ? "|[\\u0080-\\u{10FFFF}]" : "";
       const RISK_CHAR_RE = new RegExp(`(?<!\\x16)[\\t?]${NON_ASCII_ALT}`, "gu");
       const MARK_CHAR_RE = new RegExp(
@@ -3991,7 +3977,7 @@
         if (ch === "\u00a0") return "Non-breaking space";
         return `Non-ASCII character \`${ch}\``;
       }
-      // Part of a line that reaches the device; cleanOutputLines emits exactly this.
+      // Device-bound part of a line; cleanOutputLines emits it, dedented.
       function commandPart(line) {
         if (SECTION_RE.test(line)) return "";
         if (!STRIP_COMMENTS) return line;
@@ -3999,7 +3985,7 @@
         if (FREEFORM_CMD_RE.test(line)) return line;
         return line.replace(INLINE_COMMENT_RE, "");
       }
-      // Banner-aware line walk shared by lint and preview marking.
+      // Banner-aware line walk shared by lint, preview marks, and the editor.
       function walkConfigLines(text) {
         const parts = [];
         let bannerDelim = null;
@@ -4030,8 +4016,7 @@
           : null;
         return { parts, unclosed };
       }
-      // Index into tokenized `cmd` where the restored text reaches `at`; a hit
-      // inside a value token snaps to the token's start.
+      // Restored offset to tokenized index; inside a value, the value's start.
       function tokenizedIndex(cmd, restore, at) {
         let pos = 0;
         let seen = 0;
@@ -4044,9 +4029,7 @@
         }
         return -1;
       }
-      // `text` may hold value tokens so a value's ! never reads as a comment
-      // boundary; `restore` fills them in for the char scan and length check.
-      // Issues carry a [start, end] range on the tokenized line where one exists.
+      // Values stay tokenized so their ! is never a comment; restore fills them.
       function lintConfigLines(text, restore = (s) => s) {
         const issues = [];
         if (!LINT_PASTE_WARNINGS) return issues;
@@ -4104,7 +4087,7 @@
       function markRange(escapedHtml, message) {
         return `<span class="risk-char"${warnAttrs("paste warnings", [message])}>${markRiskChars(escapedHtml)}</span>`;
       }
-      // Single chokepoint for {{ }} evaluation; all render paths go here so they can't drift.
+      // Single chokepoint for {{ }} evaluation so render paths can't drift.
       function renderExpr(content) {
         const trimmed = content.trim();
         const { text, filled } = evaluateExpression(content);
@@ -4120,8 +4103,7 @@
       function jinjaRawParts(template) {
         let result = template.replace(JINJA_COMMENT_RE, "");
         result = processConditionals(result, formValues);
-        // Values are tokenized through the badge/comment strips so user input
-        // (secrets with bangs, badge-shaped text) is never mutilated.
+        // Values ride through the badge/comment strips as tokens, never mangled.
         const rendered = [];
         result = result.replace(EXPR_RE, (match, content) => {
           const r = renderExpr(content);
@@ -4165,7 +4147,7 @@
         result = processConditionals(result, formValues, {
           commentFalse: true,
         });
-        // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
+        // \x00: absent from configs and not \w, so no keyword spans a token.
         const exprTokens = [];
         result = result.replace(EXPR_RE, (match, content) => {
           const { text, filled, baseVar, vars } = renderExpr(content);
@@ -4186,7 +4168,7 @@
         result = result.replace(
           STRIP_BADGES ? BADGE_RE : /(?!)/g,
           (match, keyword, ids, offset, str) => {
-            // Badge alone on its line: drop the inline left-margin to avoid a spurious indent.
+            // A badge alone on its line drops its left margin.
             const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
             const lineEnd = str.indexOf("\n", offset);
             const before = str.slice(lineStart, offset);
@@ -4293,7 +4275,7 @@
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
       }
-      // Single pass: per-word replaces re-matched their own output ("access-list" -> "access" + "-list").
+      // One pass: sequential replaces would re-match their own output.
       function getKeywordMap(keywordGroups) {
         if (keywordGroups === cachedKwGroupsRef && cachedKwMap)
           return cachedKwMap;
@@ -4325,7 +4307,7 @@
         for (let i = 0; i < lines.length; i++) {
           let line = lines[i];
           let commentHtml = "";
-          // Free-form-arg lines only comment at line start; must match cleanOutputLines.
+          // Free-form lines only comment at line start, as in commandPart.
           const commentMatch = line.match(
             FREEFORM_CMD_RE.test(line)
               ? COMMENT_LINE_RE
