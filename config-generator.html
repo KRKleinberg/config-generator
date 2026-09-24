@@ -107,20 +107,6 @@
         min-height: 100vh;
       }
 
-      @media (max-width: 1100px) {
-        .toolbar-header {
-          width: 100%;
-        }
-
-        .toolbar-actions {
-          width: 100%;
-        }
-
-        .toolbar-actions .btn {
-          flex: 1;
-        }
-      }
-
       .form-panel,
       .preview-panel {
         max-height: 100vh;
@@ -844,11 +830,6 @@
         user-select: none;
       }
 
-      .toolbar-actions {
-        display: flex;
-        gap: 8px;
-      }
-
       .view-toggle-track {
         position: relative;
         display: flex;
@@ -1230,12 +1211,12 @@
         color: var(--text);
       }
 
-      .dialect-menu {
+      .popup-menu {
         padding: 4px;
         font-size: 12px;
       }
 
-      .dialect-menu button {
+      .popup-menu button {
         display: flex;
         align-items: baseline;
         gap: 10px;
@@ -1250,27 +1231,27 @@
         cursor: pointer;
       }
 
-      .dialect-menu button:hover {
+      .popup-menu button:hover {
         background: rgba(var(--rgb-slate), 0.05);
       }
 
-      .dialect-menu button.current {
+      .popup-menu button.current {
         color: var(--success);
       }
 
-      .dialect-menu .dialect-short {
+      .popup-menu .menu-key {
         font-family: var(--mono);
         font-size: 11px;
         font-weight: 600;
-        min-width: 4.5em;
+        min-width: 5.5em;
       }
 
-      .dialect-menu .dialect-label {
+      .popup-menu .menu-desc {
         color: var(--text-dim);
         padding-right: 24px;
       }
 
-      .dialect-menu .dialect-flag {
+      .popup-menu .dialect-flag {
         margin-left: auto;
         align-self: center;
         top: 0;
@@ -1433,9 +1414,48 @@
         color: var(--syn-secure);
       }
 
+      /* Save menu: a popup-menu shaped like a File menu. Icon, verb, and a
+         divider before the export. */
+      .action-menu {
+        min-width: 176px;
+      }
+
+      .action-menu button {
+        align-items: center;
+        gap: 9px;
+        padding: 7px 10px;
+        font-weight: 500;
+      }
+
+      .action-menu svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        color: var(--text-hint);
+      }
+
+      .action-menu .menu-kbd {
+        margin-left: auto;
+        padding-left: 18px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-hint);
+      }
+
+      .action-menu hr {
+        border: 0;
+        border-top: 1px solid var(--border);
+        margin: 4px 0;
+      }
+
       .badge-copy-popup,
       .warn-popup,
-      .dialect-menu {
+      .popup-menu {
         position: fixed;
         z-index: 100;
         background: var(--surface);
@@ -2112,19 +2132,21 @@
           <div style="display: flex; gap: 2px">
             <button
               class="subtle-icon-btn"
-              onclick="openTextFile('sessionInput', processSessionFile)"
-              title="Load Session"
-              aria-label="Load Session"
+              onclick="openTextFile('openInput', loadFile)"
+              title="Open (Ctrl+O)"
+              aria-label="Open"
             >
               <svg>
                 <use href="#icon-load"></use>
               </svg>
             </button>
             <button
+              id="saveBtn"
               class="subtle-icon-btn"
-              onclick="saveSession()"
-              title="Save Session"
-              aria-label="Save Session"
+              onclick="toggleSaveMenu(event)"
+              title="Save"
+              aria-label="Save"
+              aria-haspopup="menu"
             >
               <svg>
                 <use href="#icon-save"></use>
@@ -2142,9 +2164,10 @@
             </button>
             <input
               type="file"
-              id="sessionInput"
+              id="openInput"
               class="hidden"
               accept=".json"
+              data-filter="Session files"
             />
           </div>
         </div>
@@ -2323,20 +2346,6 @@
               </div>
             </div>
           </div>
-          <div class="toolbar-actions">
-            <button class="btn" onclick="saveTemplate()">
-              <svg>
-                <use href="#icon-save"></use>
-              </svg>
-              Save Template
-            </button>
-            <button class="btn btn-primary" onclick="saveConfig()">
-              <svg>
-                <use href="#icon-save"></use>
-              </svg>
-              Save Config
-            </button>
-          </div>
         </div>
         <div id="previewContainer">
           <div class="empty-state">
@@ -2356,7 +2365,8 @@
             </div>
           </div>
         </div>
-        <div id="dialectMenu" class="dialect-menu" hidden></div>
+        <div id="dialectMenu" class="popup-menu" hidden></div>
+        <div id="saveMenu" class="popup-menu action-menu" hidden></div>
         <div id="warnPopup" class="warn-popup" hidden></div>
         <div id="badgeCopyPopup" class="badge-copy-popup" hidden>
           <span class="badge-copy-text"></span>
@@ -2457,9 +2467,17 @@
                       <code>.vars.ini</code>
                       if one exists.
                     </dd>
-                    <dt>Drag and drop</dt>
+                    <dt>
+                      Open
+                      <span class="guide-btn">
+                        <svg class="guide-icon">
+                          <use href="#icon-load"></use>
+                        </svg>
+                      </span>
+                    </dt>
                     <dd>
-                      Drop files anywhere in the window:
+                      (Top left, or Ctrl+O) Any file, or drop files anywhere in
+                      the window:
                       <code>.session.json</code>
                       restores a session,
                       <code>.ini</code>
@@ -2564,16 +2582,7 @@
                 <div class="guide-body">
                   <dl class="guide-defs">
                     <dt>
-                      Save Config
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-save"></use>
-                        </svg>
-                      </span>
-                    </dt>
-                    <dd>(Top right) The device-ready config.</dd>
-                    <dt>
-                      Save Template
+                      Save
                       <span class="guide-btn">
                         <svg class="guide-icon">
                           <use href="#icon-save"></use>
@@ -2581,22 +2590,17 @@
                       </span>
                     </dt>
                     <dd>
-                      (Top right) The template with its
+                      (Top left) Opens a menu.
+                      <strong>Session</strong>
+                      (also Ctrl+S) saves your whole workspace as one
+                      <code>.session.json</code>
+                      file, the only way progress survives closing the tab.
+                      <strong>Template</strong>
+                      writes the template with its
                       <code>{{ VARIABLE }}</code>
                       entries intact and your manual edits baked in.
-                    </dd>
-                    <dt>
-                      Save Session
-                      <span class="guide-btn">
-                        <svg class="guide-icon">
-                          <use href="#icon-save"></use>
-                        </svg>
-                      </span>
-                    </dt>
-                    <dd>
-                      (Top left) The whole workspace as one
-                      <code>.session.json</code>
-                      file. The only way progress survives closing the tab.
+                      <strong>Export config</strong>
+                      writes the device-ready output.
                     </dd>
                   </dl>
                 </div>
@@ -3822,13 +3826,32 @@
         menu.innerHTML = Object.entries(DIALECTS)
           .map(
             ([key, d]) =>
-              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="dialect-short">${escHtml(d.short)}</span><span class="dialect-label">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag">BETA</span>' : ""}</button>`,
+              `<button class="${d === DIALECT ? "current" : ""}" onclick="switchDialect('${key}')"><span class="menu-key">${escHtml(d.short)}</span><span class="menu-desc">${escHtml(d.label)}</span>${d.experimental ? '<span class="dialect-flag">BETA</span>' : ""}</button>`,
           )
           .join("");
         placePopup(menu, e.currentTarget.getBoundingClientRect());
       }
       function closeDialectMenu() {
         document.getElementById("dialectMenu").hidden = true;
+      }
+      const SAVE_MENU = [
+        ["saveSession", "Save session", "icon-save", "Ctrl+S"],
+        ["saveTemplate", "Save template", "icon-save"],
+        null,
+        ["saveConfig", "Export config", "icon-download"],
+      ];
+      function toggleSaveMenu(e) {
+        const menu = document.getElementById("saveMenu");
+        if (!menu.hidden) return closeSaveMenu();
+        menu.innerHTML = SAVE_MENU.map((row) =>
+          row
+            ? `<button onclick="closeSaveMenu(); ${row[0]}()"><svg><use href="#${row[2]}"></use></svg>${row[1]}${row[3] ? `<span class="menu-kbd">${row[3]}</span>` : ""}</button>`
+            : "<hr />",
+        ).join("");
+        placePopup(menu, e.currentTarget.getBoundingClientRect(), false, true);
+      }
+      function closeSaveMenu() {
+        document.getElementById("saveMenu").hidden = true;
       }
       // Sections are a tool concept and survive the switch; they are written
       // out with the new marker. Body text is re-cleaned, re-linted, re-colored.
@@ -3849,6 +3872,7 @@
       document.addEventListener("click", (e) => {
         if (!e.target.closest("#dialectMenu, #dialectBadge"))
           closeDialectMenu();
+        if (!e.target.closest("#saveMenu, #saveBtn")) closeSaveMenu();
       });
       // Platform guess from commands no other dialect uses. Returns a key only
       // on a clear lead; anything ambiguous keeps the current platform.
@@ -4339,7 +4363,7 @@
             if (exts.length)
               options.types = [
                 {
-                  description: "Supported files",
+                  description: input.dataset.filter || "Supported files",
                   accept: { "text/plain": exts },
                 },
               ];
@@ -4665,10 +4689,23 @@
           "Session saved to file",
         );
       }
-      function onSessionFileSelected(e) {
+      function onOpenFileSelected(e) {
         const file = e.target.files[0];
-        if (file) processSessionFile(file);
+        if (file) loadFile(file);
         e.target.value = "";
+      }
+      // One routing rule for Open and drop: session, vars, else template.
+      function fileKind(file) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        return ext === "json" ? "session" : ext === "ini" ? "vars" : "template";
+      }
+      function loadFile(file) {
+        const process = {
+          session: processSessionFile,
+          vars: processVarsFile,
+          template: processTemplateFile,
+        };
+        process[fileKind(file)](file);
       }
       function processSessionFile(file) {
         readFileAsText(file, "Error reading session file", (evt) => {
@@ -6137,7 +6174,7 @@ category = General
       // Candidates in preference order: the two sides, then centered beside the
       // anchor; the first that fits the viewport with the least section-header
       // coverage wins.
-      function placePopup(popup, r, above = false) {
+      function placePopup(popup, r, above = false, alignRight = false) {
         popup.hidden = false;
         const pr = popup.getBoundingClientRect();
         const sides = [r.bottom + 6, r.top - pr.height - 6];
@@ -6163,7 +6200,7 @@ category = General
         let top = (fitting.length ? fitting : sides).reduce((best, t) =>
           covered(t) < covered(best) ? t : best,
         );
-        let left = r.left;
+        let left = alignRight ? r.right - pr.width : r.left;
         if (left + pr.width > window.innerWidth - 8)
           left = window.innerWidth - pr.width - 8;
         popup.style.top = `${Math.max(8, top)}px`;
@@ -6399,6 +6436,19 @@ category = General
         if (e.key === "Escape") {
           closeBadgeCopy();
           closeDialectMenu();
+          closeSaveMenu();
+        }
+        // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
+        // and Open File dialogs are never wanted here.
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+          const key = e.key.toLowerCase();
+          if (key === "s") {
+            e.preventDefault();
+            saveSession();
+          } else if (key === "o") {
+            e.preventDefault();
+            openTextFile("openInput", loadFile);
+          }
         }
       });
       window.addEventListener("scroll", closeBadgeCopy, true);
@@ -6520,8 +6570,8 @@ category = General
           .getElementById("varsInput")
           .addEventListener("change", onVarsFileSelected);
         document
-          .getElementById("sessionInput")
-          .addEventListener("change", onSessionFileSelected);
+          .getElementById("openInput")
+          .addEventListener("change", onOpenFileSelected);
 
         let lastMousedownTime = 0;
         document
@@ -6589,23 +6639,16 @@ category = General
           dragDepth = 0;
           document.body.classList.remove("drag-over");
           if (!e.dataTransfer.files.length) return;
-
-          let foundSession = false,
-            foundVars = false,
-            foundTemplate = false;
-          for (const file of e.dataTransfer.files) {
-            const ext = file.name.split(".").pop().toLowerCase();
-            if (ext === "json" && !foundSession) {
-              processSessionFile(file);
-              foundSession = true;
-              break;
-            } else if (["ini"].includes(ext) && !foundVars) {
-              processVarsFile(file);
-              foundVars = true;
-            } else if (!["ini", "json"].includes(ext) && !foundTemplate) {
-              processTemplateFile(file);
-              foundTemplate = true;
-            }
+          // A session restores everything, so it wins; otherwise one of each.
+          const files = [...e.dataTransfer.files];
+          const session = files.find((f) => fileKind(f) === "session");
+          if (session) return loadFile(session);
+          const seen = new Set();
+          for (const file of files) {
+            const kind = fileKind(file);
+            if (seen.has(kind)) continue;
+            seen.add(kind);
+            loadFile(file);
           }
         });
 
