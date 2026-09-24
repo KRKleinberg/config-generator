@@ -5612,11 +5612,11 @@ category = General
             r.override = null;
           }
         }
+        autoDetectVars({ quiet: true });
       }
       function toggleSectionEdit(id, index) {
         if (activeSectionEditors.has(id)) {
           commitSectionEdit(id);
-          autoDetectVars({ quiet: true });
         } else {
           const r = recordById(id);
           sectionEditBackups[id] = r ? r.override : null;
