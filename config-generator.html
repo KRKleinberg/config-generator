@@ -2207,6 +2207,8 @@
           <span
             id="templateErrorBadge"
             data-warns=""
+            tabindex="0"
+            aria-label="Template syntax issues"
             style="
               display: none;
               color: var(--warn);
@@ -2267,6 +2269,8 @@
           <span
             id="varsErrorBadge"
             data-warns=""
+            tabindex="0"
+            aria-label="Variable definition issues"
             style="
               display: none;
               color: var(--warn);
@@ -4206,7 +4210,7 @@
         const msgs = issues.map(
           ({ line, message }) => `Line ${line + 1}: ${message}`,
         );
-        return `<span class="header-warn"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
+        return `<span class="header-warn" tabindex="0" aria-label="Paste warnings"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
       }
       function copyToastMessage(base, output, issues) {
         const warns = [];
@@ -6415,6 +6419,14 @@ category = General
         cancelHide();
         showWarnPopup(el, e);
       });
+      // Keyboard route to the same popup: focus opens it, leaving closes it.
+      document.addEventListener("focusin", (e) => {
+        const el = e.target.closest?.("[data-warns]:not(.config-line)");
+        if (el) showWarnPopup(el, { clientX: el.getBoundingClientRect().left });
+      });
+      document.addEventListener("focusout", (e) => {
+        if (e.target.closest?.("[data-warns]")) hideWarnPopup();
+      });
       document.addEventListener("mouseout", (e) => {
         const from =
           e.target.closest("#warnPopup") ||
@@ -6538,6 +6550,7 @@ category = General
           closeDialectMenu();
           closeSaveMenu();
           closeHelp();
+          hideWarnPopup();
         }
         // Ctrl-S and Ctrl-O act on the session; the browser's own Save Page
         // and Open File dialogs are never wanted here.
