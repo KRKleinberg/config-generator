@@ -5484,12 +5484,29 @@ category = General
         }
         if (!Array.isArray(session.sections))
           return "Session is missing its sections array";
+        if (
+          session.dialect !== undefined &&
+          !Object.hasOwn(DIALECTS, session.dialect)
+        )
+          return `Unknown platform: ${session.dialect}`;
+        const text = (v) => v == null || typeof v === "string";
         for (const s of session.sections) {
           if (s === null || typeof s !== "object")
             return "Malformed section entry";
           if (!(s.name === null || typeof s.name === "string"))
             return "Section name must be a string or null";
+          if (!text(s.baselineBody) || !text(s.override))
+            return "Section bodies must be strings or null";
         }
+        for (const key of ["variableDefs", "varsFromFile"])
+          for (const [name, def] of Object.entries(session[key]))
+            if (
+              def === null ||
+              typeof def !== "object" ||
+              !text(def.description) ||
+              !(def.choices == null || Array.isArray(def.choices))
+            )
+              return `Malformed definition for ${name} in ${key}`;
         return null;
       }
 
