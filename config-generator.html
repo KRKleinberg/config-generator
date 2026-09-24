@@ -5270,7 +5270,7 @@ category = General
         html += `</div></div>`;
 
         if (isEditing) {
-          const editText = fullModeEditBuffer || assembleFullEditableText();
+          const editText = fullModeEditBuffer;
           const rows = editText.split("\n").length;
           html += editorHtml(
             "editor-full",
