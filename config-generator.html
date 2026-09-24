@@ -4660,7 +4660,6 @@
               );
             if (notes.length)
               showToast(notes.join(" — "), syntaxIssues ? "warn" : "");
-            render();
             renderAutoDetectButtons();
             // Auto-generate the form on load; lightning re-detects after edits.
             autoDetectVars({ quiet: true });
@@ -4700,11 +4699,8 @@
               );
             setVarsStatus(file.name, count, { markLoaded: true });
             buildForm();
-            if (templateSource !== null) {
-              render();
-              // Same auto-merge as template load, so load order doesn't matter.
-              autoDetectVars({ quiet: true });
-            }
+            // Same auto-merge as template load, so load order doesn't matter.
+            if (templateSource !== null) autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Vars Parse Error:", err);
             showToast("Failed to parse variables file", "error");
