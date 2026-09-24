@@ -4037,8 +4037,9 @@
       // Part of a line that reaches the device; cleanOutputLines emits exactly this.
       function commandPart(line) {
         if (SECTION_RE.test(line)) return "";
-        if (!STRIP_COMMENTS || FREEFORM_CMD_RE.test(line)) return line;
+        if (!STRIP_COMMENTS) return line;
         if (COMMENT_LINE_RE.test(line)) return "";
+        if (FREEFORM_CMD_RE.test(line)) return line;
         return line.replace(INLINE_COMMENT_RE, "");
       }
       // Banner-aware line walk shared by lint and preview marking.
