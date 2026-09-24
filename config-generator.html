@@ -6582,6 +6582,8 @@ category = General
         "scroll",
         (e) => {
           closeBadgeCopy();
+          closeDialectMenu();
+          closeSaveMenu();
           if (!e.target.closest?.("#warnPopup")) hideWarnPopup();
         },
         true,
