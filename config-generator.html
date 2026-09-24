@@ -3548,10 +3548,8 @@
           );
           iterations++;
         }
-        if (iterations >= MAX_ITERATIONS) {
+        if (iterations >= MAX_ITERATIONS)
           console.warn("Template conditional parser hit iteration limit.");
-          showToast("Malformed {% if %} tags in template", "error");
-        }
         return result;
       }
       // ---- Dialects: everything vendor-shaped lives here. `comment` is the
