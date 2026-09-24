@@ -4640,14 +4640,15 @@
         readFileAsText(file, "Error reading vars file", (evt) => {
           try {
             const iniErrors = [];
-            variableDefs = parseINI(evt.target.result, iniErrors);
-            varsFromFile = structuredClone(variableDefs);
-            varsFileName = file.name;
-            const count = Object.keys(variableDefs).length;
+            const defs = parseINI(evt.target.result, iniErrors);
+            const count = Object.keys(defs).length;
             if (count === 0) {
               showToast("No variables found — check INI format", "warn");
               return;
             }
+            variableDefs = defs;
+            varsFromFile = structuredClone(defs);
+            varsFileName = file.name;
             setWarnBadge(
               "varsErrorBadge",
               "variable definition issues",
