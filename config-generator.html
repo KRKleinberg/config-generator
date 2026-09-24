@@ -2899,6 +2899,7 @@
       let varsFileName = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
+      const EXPR_RE = /\{\{(.+?)\}\}/g;
       // Written at the top of every saved or new template. Indented so older
       // tool copies don't parse the marker examples as markers.
       function templateHeader(c) {
@@ -3436,19 +3437,15 @@
       function evaluateExpression(content) {
         const trimmed = content.trim();
         const { baseExpr, filters } = parseExprParts(trimmed);
+        const varNames = listMembers(baseExpr);
+        let isList = varNames !== null;
         let value;
-        let isList = false;
-        if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
-          const varNames = baseExpr
-            .slice(1, -1)
-            .split(",")
-            .map((s) => s.trim());
+        if (isList) {
           value = varNames
             .map((name) =>
               typeof formValues[name] === "string" ? formValues[name] : "",
             )
             .filter((v) => v.trim() !== "");
-          isList = true;
         } else {
           value =
             typeof formValues[baseExpr] === "string"
@@ -3485,6 +3482,14 @@
         }
         return { baseExpr, filters };
       }
+      // "[A, B]" -> ["A", "B"]; null when the expression is not a list.
+      function listMembers(baseExpr) {
+        if (!baseExpr.startsWith("[") || !baseExpr.endsWith("]")) return null;
+        return baseExpr
+          .slice(1, -1)
+          .split(",")
+          .map((s) => s.trim());
+      }
       // Var-name rule shared by auto-detect, span clicks, and the error scan.
       function isValidVarName(name) {
         return /^\w[\w.-]*$/.test(name);
@@ -3492,27 +3497,17 @@
       // All vars an expression depends on; exact tokens so VLAN_ID != VLAN.
       function exprReferencesVars(rawContent) {
         const { baseExpr } = parseExprParts((rawContent ?? "").trim());
-        if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
-          return baseExpr
-            .slice(1, -1)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(isValidVarName);
-        }
+        const members = listMembers(baseExpr);
+        if (members) return members.filter(isValidVarName);
         return isValidVarName(baseExpr) ? [baseExpr] : [];
       }
       function collectTemplateVarNames(templateText) {
         const source = (templateText ?? "").replace(JINJA_COMMENT_RE, "");
         const found = new Set();
-        const exprRE = /\{\{(.+?)\}\}/g;
-        let match;
-        while ((match = exprRE.exec(source)) !== null) {
-          for (const v of exprReferencesVars(match[1])) found.add(v);
-        }
-        const ifRE = /\{%\s*if\s+([\w.-]+)\s*%\}/g;
-        while ((match = ifRE.exec(source)) !== null) {
-          if (isValidVarName(match[1])) found.add(match[1]);
-        }
+        for (const [, expr] of source.matchAll(EXPR_RE))
+          for (const v of exprReferencesVars(expr)) found.add(v);
+        for (const [, name] of source.matchAll(/\{%\s*if\s+([\w.-]+)\s*%\}/g))
+          if (isValidVarName(name)) found.add(name);
         return found;
       }
       function splitOnPipe(chain) {
@@ -4220,7 +4215,7 @@
         // Values are tokenized through the badge/comment strips so user input
         // (secrets with bangs, badge-shaped text) is never mutilated.
         const rendered = [];
-        result = result.replace(/\{\{(.+?)\}\}/g, (match, content) => {
+        result = result.replace(EXPR_RE, (match, content) => {
           const r = renderExpr(content);
           if (!r.filled && !r.baseVar) return match;
           rendered.push(r.text);
@@ -4264,7 +4259,7 @@
         });
         // \x00 tokens: never in config text, not \w, so keyword regexes don't match across substituted values.
         const exprTokens = [];
-        result = result.replace(/\{\{(.+?)\}\}/g, (match, content) => {
+        result = result.replace(EXPR_RE, (match, content) => {
           const { text, filled, baseVar, vars } = renderExpr(content);
           if (!filled && !baseVar) return match;
           const token = `\x00EX${exprTokens.length}\x00`;
@@ -4496,26 +4491,16 @@
         if (unsupportedTag)
           msgs.push(`Unsupported tag \`{% ${unsupportedTag[1]} %}\``);
         // {{ }} referencing no valid variable: auto-detect skips it, so flag it.
-        const exprScanRE = /\{\{(.+?)\}\}/g;
-        let exprMatch;
-        while ((exprMatch = exprScanRE.exec(cleanText)) !== null) {
-          const { baseExpr } = parseExprParts(exprMatch[1].trim());
-          let valid;
-          if (baseExpr.startsWith("[") && baseExpr.endsWith("]")) {
-            const members = baseExpr
-              .slice(1, -1)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            valid = members.length > 0 && members.every(isValidVarName);
-          } else {
-            valid = isValidVarName(baseExpr);
-          }
-          if (!valid)
-            msgs.push(`Invalid variable expression \`{{${exprMatch[1]}}}\``);
+        for (const [, expr] of cleanText.matchAll(EXPR_RE)) {
+          const { baseExpr } = parseExprParts(expr.trim());
+          const members = listMembers(baseExpr)?.filter(Boolean);
+          const valid = members
+            ? members.length > 0 && members.every(isValidVarName)
+            : isValidVarName(baseExpr);
+          if (!valid) msgs.push(`Invalid variable expression \`{{${expr}}}\``);
         }
         // A {{ }} split across lines matches no expression regex; renders literally.
-        if (/\{\{|\}\}/.test(cleanText.replace(/\{\{(.+?)\}\}/g, "")))
+        if (/\{\{|\}\}/.test(cleanText.replace(EXPR_RE, "")))
           msgs.push("`{{ }}` split across lines");
         // Only bare-var conditions are evaluatable; anything else renders literally.
         const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/g;
