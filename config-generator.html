@@ -4331,7 +4331,7 @@
         }
         return lines.join("\n");
       }
-      // File System Access API avoids same-size stale-reload; falls back to hidden <input>. Cancel is silent.
+      // FS Access avoids stale same-size re-reads; else the hidden <input>.
       async function openTextFile(inputId, process) {
         const input = document.getElementById(inputId);
         if (window.showOpenFilePicker) {
@@ -4355,7 +4355,7 @@
             process(file);
             return;
           } catch (e) {
-            if (e && e.name === "AbortError") return; // user cancelled
+            if (e && e.name === "AbortError") return;
             // any other failure (e.g. disabled by policy): fall through
           }
         }
@@ -4423,7 +4423,7 @@
       function templateSyntaxIssues() {
         if (!LINT_TEMPLATE) return [];
         const msgs = new Set();
-        // Per-body scan first: {% if %} spanning !!! breaks section copy (limitation).
+        // Per-section first: an {% if %} spanning a marker breaks section copy.
         const seen = new Set();
         for (const r of sectionRecords)
           for (const m of scanTemplateForErrors(recordEffectiveBody(r))) {
@@ -4455,7 +4455,6 @@
         reader.onload = onLoad;
         reader.readAsText(file);
       }
-      // A fresh template: the standard header, opened in the full editor.
       function newTemplate() {
         templateSource = TEMPLATE_HEADER;
         originalTemplateSource = templateSource;
@@ -4527,7 +4526,6 @@
             const detected = guess && DIALECTS[guess] !== DIALECT;
             if (detected) applyDialect(guess);
             templateSource = canonicalizeMarkers(raw);
-            // Committed only on a successful read.
             templateFileName = fullName;
             originalTemplateSource = templateSource;
             sectionRecords = deriveRecordsFromTemplate(originalTemplateSource);
@@ -4544,7 +4542,6 @@
             if (notes.length)
               showToast(notes.join(" — "), syntaxIssues ? "warn" : "");
             renderAutoDetectButtons();
-            // Auto-generate the form on load; lightning re-detects after edits.
             autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Template Parse Error:", err);
@@ -4590,7 +4587,7 @@
           }
         });
       }
-      // File System Access API sidesteps the download danger-list for .ini/.config; falls back to blob download. Cancel is silent.
+      // FS Access sidesteps the download danger list for .ini/.config.
       async function saveTextFile(
         content,
         suggestedName,
@@ -4611,7 +4608,7 @@
             if (toastKind === "warn") showToast(successMsg, toastKind);
             return handle.name;
           } catch (e) {
-            if (e && e.name === "AbortError") return null; // user cancelled
+            if (e && e.name === "AbortError") return null;
             // any other failure (e.g. disabled by policy): fall through
           }
         }
@@ -4845,7 +4842,7 @@
             for (const k of Object.keys(formValues)) delete formValues[k];
             Object.assign(formValues, session.formValues);
             sectionRecords = recordsFromSession(session.sections);
-            resetEditState(); // drop any open edit buffer before adopting loaded records
+            resetEditState();
             if (templateSource !== null) setTemplateStatus(templateFileName);
             else showNoTemplate();
             if (Object.keys(variableDefs).length > 0) {
@@ -4995,7 +4992,6 @@ category = General
           const rawContent = span.getAttribute("data-raw");
           if (!rawContent) return;
           if (!exprReferencesVars(rawContent).includes(varName)) return;
-          // renderExpr keeps this path in lockstep with jinjaRaw/jinjaDisplay.
           span.textContent = renderExpr(rawContent).text;
         });
       }
@@ -5032,7 +5028,7 @@ category = General
           inputEl.appendChild(opt);
         }
 
-        // seed so untouched dropdown emits default; undefined guard lets session value win
+        // Seed the default only if the user never touched the field.
         if (
           !Object.hasOwn(formValues, varName) &&
           config.choices.includes(config.default)
@@ -5057,7 +5053,6 @@ category = General
         inputEl.placeholder = config.placeholder || "";
         inputEl.type = "text";
 
-        // mirror dropdown seeding; undefined guard lets session value win
         if (!Object.hasOwn(formValues, varName) && config.default) {
           formValues[varName] = config.default;
         }
@@ -5154,8 +5149,7 @@ category = General
             : buildTextField(field, varName, config);
 
           fragment.appendChild(field);
-          // No blanket "" init: own-"" = user cleared; pre-init blocked late defaults.
-          // Own "" is written so a cleared dropdown cannot display its default.
+          // An own "" means the user cleared the field; it beats the default.
           if (typeof formValues[varName] === "string") {
             inputEl.value = formValues[varName];
           }
@@ -5249,7 +5243,6 @@ category = General
         }
       }
 
-      // Switching views commits and closes every open editor, in either direction.
       function toggleView() {
         commitOpenEditors();
         setViewMode(viewMode === "sections" ? "full" : "sections");
@@ -5406,8 +5399,7 @@ category = General
         container.innerHTML = html;
       }
 
-      // A !!! marker only counts on a line starting OUTSIDE a {# #} comment;
-      // comments don't nest (matches JINJA_COMMENT_RE).
+      // Markers count only on lines that start outside {# #} (no nesting).
       function linesWithCommentState(text) {
         const out = [];
         let inComment = false;
@@ -5462,11 +5454,11 @@ category = General
         return `${isImportant ? COMMENT.repeat(5) : MARKER} ${name}`;
       }
 
-      // Normalize marker spacing on load so assembleFromRecords is a fixed point; prevents phantom "(edited)" on fresh load.
+      // Canonical markers keep a fresh load from reading as edited.
       function canonicalizeMarkers(text) {
         return linesWithCommentState(text)
           .map(({ line, startsInComment }) => {
-            if (startsInComment) return line; // comment content, not a marker
+            if (startsInComment) return line;
             const m = line.match(SECTION_RE);
             if (!m) return line;
             return markerLine(m[2].trim(), m[1].length >= 5);
@@ -5502,7 +5494,7 @@ category = General
         return (s ?? "").replace(/^\n+/, "").replace(/\n+$/, "");
       }
 
-      // trim-tolerant: spacing-only diffs don't flag a section as edited.
+      // Leading/trailing blank lines alone are not an edit.
       function bodiesEquivalent(a, b) {
         return trimBodyEnds(a) === trimBodyEnds(b);
       }
@@ -5589,7 +5581,7 @@ category = General
         activeSectionEditors.delete(id);
         delete sectionEditBackups[id];
         const r = recordById(id);
-        // Body-only edit: normalize this record (trim-tolerant). A typed !!! marker needs the full disassembler to split.
+        // A typed marker splits the section; else drop trim-equal edits.
         if (r && r.override !== null) {
           if (containsSectionMarker(r.override)) {
             sectionRecords = disassembleFullEdit(
@@ -5676,7 +5668,7 @@ category = General
         refreshLastCopied();
       }
 
-      // Four-pass match: exact survivor -> name-stable -> guarded rename -> new/deleted. Identity only; never alters output.
+      // Matches blocks to prior records for identity only; never alters output.
       function disassembleFullEdit(
         priorRecords,
         bufferText,
@@ -5780,7 +5772,7 @@ category = General
         autoDetectVars({ quiet: true });
       }
 
-      // Clear all in-progress edit state; every load/reset path routes here.
+      // Every load and reset path routes through here.
       function resetEditState() {
         for (const k of Object.keys(sectionEditBackups))
           delete sectionEditBackups[k];
@@ -5907,7 +5899,7 @@ category = General
         render();
       }
 
-      // First click arms the button ("Clear?"), the second clears; no system dialog.
+      // Two-click clear instead of a system dialog.
       let armedClear = null;
       function armClear(btn, action) {
         if (armedClear?.btn === btn) {
