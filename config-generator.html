@@ -2812,6 +2812,8 @@
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
       const COPY_EOL = COPY_TRAILING_NEWLINE ? "\n" : "";
+      // ".template" keeps it apart from export names; see templateStem().
+      const NEW_TEMPLATE_NAME = `untitled.template${OUTPUT_EXTENSION}`;
       const FULL_EDIT_KEY = "__full__";
       const SESSION_SCHEMA_VERSION = 1;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
@@ -4524,7 +4526,7 @@
       function newTemplate() {
         templateSource = TEMPLATE_HEADER;
         originalTemplateSource = templateSource;
-        templateFileName = "";
+        templateFileName = NEW_TEMPLATE_NAME;
         sectionRecords = deriveRecordsFromTemplate(templateSource);
         resetEditState();
         setTemplateStatus(templateFileName);
@@ -4550,12 +4552,10 @@
         return (key && formValues[key]) || templateStem() || "config";
       }
 
-      // An empty name is a template that exists only in the page until saved.
       function setTemplateStatus(name) {
         const safe = escHtml(name);
-        document.getElementById("templateStatus").innerHTML = name
-          ? `<span class="filename" title="${safe}">${safe}</span>`
-          : '<span class="not-loaded">Unsaved template</span>';
+        document.getElementById("templateStatus").innerHTML =
+          `<span class="filename" title="${safe}">${safe}</span>`;
         document.getElementById("templateLoader").classList.add("loaded");
       }
 
@@ -4759,7 +4759,7 @@
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
 
-        const filename = `${templateBasename() || "template"}${OUTPUT_EXTENSION}`;
+        const filename = `${templateBasename()}${OUTPUT_EXTENSION}`;
 
         // Don't stack a second header on save -> load -> save.
         const body = assembleFullEditableText();
@@ -4916,7 +4916,10 @@
               DIALECTS[session.dialect] !== DIALECT
             )
               applyDialect(session.dialect);
-            templateFileName = session.templateFileName;
+            // Sessions saved before new templates got a name store "".
+            templateFileName =
+              session.templateFileName ||
+              (templateSource !== null ? NEW_TEMPLATE_NAME : "");
             varsFromFile = session.varsFromFile;
             varsFileName = session.varsFileName;
             variableDefs = session.variableDefs;
