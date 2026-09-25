@@ -203,7 +203,7 @@
         gap: 10px;
       }
 
-      /* Filled artwork, so it opts out of the stroked-icon base rule. */
+      /* Filled artwork: opts out of the stroked-icon base rule. */
       .brand-icon {
         width: 36px;
         height: 36px;
@@ -844,7 +844,7 @@
         color: var(--text-dim);
         letter-spacing: 0.3px;
         text-transform: uppercase;
-        min-height: 1lh; /* one line tall, so the platform divider keeps its height */
+        min-height: 1lh; /* keeps the platform divider one line tall */
         margin: 0;
         white-space: nowrap;
       }
@@ -1001,7 +1001,6 @@
         color: var(--text);
       }
 
-      /* Caret's line (same tint as a hovered preview line) and the jump pulse. */
       .editor-cursor-line,
       .editor-flash {
         position: absolute;
@@ -1311,7 +1310,7 @@
         color: var(--warn);
       }
 
-      /* Two-column grid: the gutter sizes to its widest label so bodies align. */
+      /* The gutter sizes to its widest label so bodies align. */
       .warn-popup {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
@@ -3256,7 +3255,6 @@
         return result;
       }
 
-      // Shape of a generated definition: required free text, no hints.
       function newVarDef(fields = {}) {
         return {
           category: "",
@@ -3584,7 +3582,6 @@
         return result;
       }
 
-      // ---- Dialects ----
       // banner.delimiter: fixed closing line, or null for the captured char.
       const IOS_BANNER = {
         start:
@@ -6170,7 +6167,6 @@ category = General
         const { html, issues } = highlightTemplate(el.value);
         mirror.innerHTML = html;
         mirror.scrollLeft = el.scrollLeft;
-        // Header icon tracks the editor live.
         const badge = el
           .closest(".config-section")
           ?.querySelector(".copied-label");
