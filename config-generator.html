@@ -833,6 +833,7 @@
         font-weight: 600;
         color: var(--text-dim);
         letter-spacing: 0.3px;
+        text-transform: uppercase;
         margin: 0;
         white-space: nowrap;
       }
@@ -840,7 +841,7 @@
       .view-toggle {
         margin: 0;
         flex: 1 1 auto;
-        min-width: 156px;
+        min-width: 180px;
         border: none;
         border-radius: 16px;
         background: none;
@@ -884,7 +885,8 @@
         font-size: 11px;
         font-weight: 700;
         color: var(--text-dim);
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
         position: relative;
         z-index: 2;
         transition: color 0.2s;
@@ -1223,13 +1225,14 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        min-width: 7.75em; /* fits the widest name + BETA, so a switch never reflows the toolbar */
+        min-width: 8em; /* fits the widest name + BETA, so a switch never reflows the toolbar */
         background: none;
         border: none;
         border-left: 1px solid var(--border);
         padding: 0 0 0 10px;
         font: inherit;
         letter-spacing: inherit;
+        text-transform: inherit;
         color: var(--text-hint);
         cursor: pointer;
       }
@@ -1270,6 +1273,7 @@
         font-family: var(--mono);
         font-size: 11px;
         font-weight: 600;
+        text-transform: uppercase;
         min-width: 5.5em;
       }
 
@@ -1610,6 +1614,8 @@
       .lightbox-header h2 {
         font-size: 16px;
         font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
         color: var(--text);
         display: flex;
         align-items: center;
@@ -1862,6 +1868,8 @@
         text-align: left;
         font-size: 12px;
         font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
         color: var(--text-dim);
         background: var(--surface-raised);
         padding: 8px 14px;
@@ -1912,6 +1920,8 @@
         font-size: 11px;
         color: var(--success);
         font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
         opacity: 0;
         transition: opacity 0.2s;
         margin-right: 8px;
