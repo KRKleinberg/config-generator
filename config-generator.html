@@ -94,6 +94,18 @@
         stroke-linejoin: round;
       }
 
+      /* Single-line text beside an icon, bar or pill: center the letters, not the line box. */
+      .instructions li > span,
+      .panel-title,
+      .vars-count,
+      .preview-toolbar h2 > span,
+      .dialect-name,
+      .dialect-flag,
+      .view-toggle-label,
+      .lightbox-header h2 > span {
+        text-box: trim-both cap alphabetic;
+      }
+
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -224,9 +236,9 @@
       .instructions li {
         counter-increment: step;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
-        margin-bottom: 9px;
+        margin-bottom: 10px;
       }
 
       .instructions li:last-child {
@@ -247,7 +259,6 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        margin-top: 1px;
       }
 
       .panel-header {
@@ -257,6 +268,7 @@
         text-transform: uppercase;
         color: var(--text);
         margin: 0 0 10px 0;
+        min-height: 15px; /* the warn icon's height, so showing it doesn't shift the panel */
         display: flex;
         align-items: center;
         gap: 8px;
@@ -268,7 +280,6 @@
         height: 12px;
         background: var(--accent);
         border-radius: 2px;
-        margin-top: 1px;
       }
 
       .panel-warn {
@@ -281,7 +292,6 @@
       .panel-warn svg {
         width: 15px;
         height: 15px;
-        transform: translateY(2px);
       }
 
       /* Count suffix after an uppercase header; the number carries the color. */
@@ -834,6 +844,7 @@
         color: var(--text-dim);
         letter-spacing: 0.3px;
         text-transform: uppercase;
+        min-height: 1lh; /* one line tall, so the platform divider keeps its height */
         margin: 0;
         white-space: nowrap;
       }
@@ -1223,6 +1234,7 @@
       /* Platform badge: the title's own type; reads as text until hovered. */
       .dialect-btn {
         display: inline-flex;
+        align-self: stretch;
         align-items: center;
         gap: 8px;
         min-width: 8em; /* fits the widest name + BETA, so a switch never reflows the toolbar */
@@ -1285,19 +1297,15 @@
       .popup-menu .dialect-flag {
         margin-left: auto;
         align-self: center;
-        top: 0;
       }
 
       /* Same pill as a config badge, in the warning color. */
       .dialect-flag {
-        position: relative;
-        top: 1px; /* centered on the caps, not the line box */
-        padding: 1px 6px;
+        padding: 3.5px 6px;
         border-radius: var(--radius-sm);
         font-family: var(--mono);
         font-size: 10px;
         font-weight: 700;
-        line-height: 1.2;
         letter-spacing: 0.5px;
         background: rgba(var(--rgb-warn), 0.18);
         color: var(--warn);
@@ -1620,10 +1628,6 @@
         display: flex;
         align-items: center;
         gap: 8px;
-      }
-
-      .lightbox-header h2 svg {
-        transform: translateY(2px);
       }
 
       .lightbox-close {
@@ -2177,13 +2181,15 @@
         </div>
         <div class="instructions">
           <ol>
-            <li>Load a template</li>
-            <li>Load or detect variables</li>
-            <li>Fill out the form, then copy or save the config</li>
+            <li><span>Load a template</span></li>
+            <li><span>Load or detect variables</span></li>
+            <li>
+              <span>Fill out the form, then copy or save the config</span>
+            </li>
           </ol>
         </div>
         <div class="panel-header">
-          Template
+          <span class="panel-title">Template</span>
           <span
             id="templateWarnBadge"
             class="panel-warn"
@@ -2226,7 +2232,7 @@
           <input type="file" id="templateInput" class="hidden" />
         </div>
         <div class="panel-header" style="margin-top: 20px">
-          Variables
+          <span class="panel-title">Variables</span>
           <span id="varsCountBadge" class="vars-count"></span>
           <span
             id="varsWarnBadge"
@@ -2295,7 +2301,7 @@
         <div class="preview-toolbar">
           <div class="toolbar-header">
             <h2>
-              CONFIG PREVIEW
+              <span>CONFIG PREVIEW</span>
               <button
                 id="dialectBadge"
                 class="dialect-btn"
@@ -2383,7 +2389,7 @@
             <svg width="18" height="18">
               <use href="#icon-book"></use>
             </svg>
-            Guide
+            <span>Guide</span>
           </h2>
           <button
             class="lightbox-close"
@@ -3841,9 +3847,11 @@
         INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
         INLINE_OR_LINE_COMMENT_RE = new RegExp(`(?:^|\\s)${c}`);
         const badge = document.getElementById("dialectBadge");
+        const nameHtml =
+          `<span class="dialect-name">${escHtml(DIALECT.short)}</span>`;
         badge.innerHTML = DIALECT.experimental
-          ? `${escHtml(DIALECT.short)}<span class="dialect-flag">BETA</span>`
-          : escHtml(DIALECT.short);
+          ? `${nameHtml}<span class="dialect-flag">BETA</span>`
+          : nameHtml;
 
         // Guide examples are authored in IOS syntax.
         document.querySelectorAll("[data-syntax]").forEach((el) => {
