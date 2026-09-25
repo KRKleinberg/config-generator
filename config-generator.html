@@ -3844,8 +3844,7 @@
         INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
         INLINE_OR_LINE_COMMENT_RE = new RegExp(`(?:^|\\s)${c}`);
         const badge = document.getElementById("dialectBadge");
-        const nameHtml =
-          `<span class="dialect-name">${escHtml(DIALECT.short)}</span>`;
+        const nameHtml = `<span class="dialect-name">${escHtml(DIALECT.short)}</span>`;
         badge.innerHTML = DIALECT.experimental
           ? `${nameHtml}<span class="dialect-flag">BETA</span>`
           : nameHtml;
