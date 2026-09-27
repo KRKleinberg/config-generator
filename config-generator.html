@@ -51,6 +51,12 @@
         --badge-fg-3: #34d399;
         --rgb-badge-4: 168, 85, 247;
         --badge-fg-4: #c084fc;
+        --rgb-badge-5: 249, 115, 22;
+        --badge-fg-5: #fb923c;
+        --rgb-badge-6: 132, 204, 22;
+        --badge-fg-6: #a3e635;
+        --rgb-badge-7: 99, 102, 241;
+        --badge-fg-7: #818cf8;
 
         /* Read by the keyword tables in the script and by the warn-row chips. */
         --syn-interface: #4ec9b0;
@@ -1194,6 +1200,21 @@
       .badge-c4 {
         --badge-rgb: var(--rgb-badge-4);
         --badge-fg: var(--badge-fg-4);
+      }
+
+      .badge-c5 {
+        --badge-rgb: var(--rgb-badge-5);
+        --badge-fg: var(--badge-fg-5);
+      }
+
+      .badge-c6 {
+        --badge-rgb: var(--rgb-badge-6);
+        --badge-fg: var(--badge-fg-6);
+      }
+
+      .badge-c7 {
+        --badge-rgb: var(--rgb-badge-7);
+        --badge-fg: var(--badge-fg-7);
       }
 
       .badge-group.badge-alone {
@@ -2858,7 +2879,7 @@
 =============================================================== #}\n\n`;
       }
 
-      const BADGE_COLOR_COUNT = 5; // must match the number of .badge-c* classes in CSS
+      const BADGE_COLOR_COUNT = 8; // must match the number of .badge-c* classes in CSS
       // Recognized .vars.ini keys; shared by the parser and warn-row coloring.
       const INI_KEYS = new Set([
         "description",
