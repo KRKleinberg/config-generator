@@ -5500,16 +5500,20 @@ category = General
         container.innerHTML = html;
       }
 
-      // Markers count only on lines that start outside {# #} (no nesting).
+      // Markers count only on lines that start outside {# #} (no nesting) and
+      // outside banner text, judged on the lines as the device will get them.
       function linesWithCommentState(text) {
         const out = [];
+        const visible = [];
         let inComment = false;
         for (const line of (text ?? "").split("\n")) {
-          out.push({ line, startsInComment: inComment });
+          out.push({ line, startsInComment: inComment, inBanner: false });
+          let shown = "";
           let idx = 0;
           while (idx < line.length) {
             if (!inComment) {
               const open = line.indexOf("{#", idx);
+              shown += line.slice(idx, open === -1 ? undefined : open);
               if (open === -1) break;
               inComment = true;
               idx = open + 2;
@@ -5520,6 +5524,24 @@ category = General
               idx = close + 2;
             }
           }
+          visible.push(shown);
+        }
+        const sent = visible.map((v) =>
+          STRIP_BADGES ? v.replace(CLEAN_BADGE_RE, "") : v,
+        );
+        // An unclosed banner hides no markers; lint reports it instead.
+        const neverCloses = new Set();
+        for (let i = 0; i < out.length; i++) {
+          const delim = bannerStart(sent[i])?.delim;
+          if (!delim || neverCloses.has(delim)) continue;
+          let end = i + 1;
+          while (end < out.length && !bannerCloses(sent[end], delim)) end++;
+          if (end === out.length) {
+            neverCloses.add(delim);
+            continue;
+          }
+          for (let k = i + 1; k <= end; k++) out[k].inBanner = true;
+          i = end;
         }
         return out;
       }
@@ -5527,10 +5549,11 @@ category = General
       function parseSections(template) {
         const sections = [];
         let current = { name: null, isImportant: false, lines: [] };
-        for (const { line, startsInComment } of linesWithCommentState(
+        for (const { line, startsInComment, inBanner } of linesWithCommentState(
           template,
         )) {
-          const match = startsInComment ? null : line.match(SECTION_RE);
+          const match =
+            startsInComment || inBanner ? null : line.match(SECTION_RE);
           if (match) {
             if (current.lines.length > 0 || current.name !== null)
               sections.push(current);
@@ -5558,8 +5581,8 @@ category = General
       // Canonical markers keep a fresh load from reading as edited.
       function canonicalizeMarkers(text) {
         return linesWithCommentState(text)
-          .map(({ line, startsInComment }) => {
-            if (startsInComment) return line;
+          .map(({ line, startsInComment, inBanner }) => {
+            if (startsInComment || inBanner) return line;
             const m = line.match(SECTION_RE);
             if (!m) return line;
             return markerLine(m[2].trim(), m[1].length >= 5);
@@ -5674,8 +5697,8 @@ category = General
       // Gates the disassembler: a body edit with a typed !!! must split the section.
       function containsSectionMarker(text) {
         return linesWithCommentState(text).some(
-          ({ line, startsInComment }) =>
-            !startsInComment && SECTION_RE.test(line),
+          ({ line, startsInComment, inBanner }) =>
+            !startsInComment && !inBanner && SECTION_RE.test(line),
         );
       }
 
@@ -6337,11 +6360,12 @@ category = General
           lines = card ? [...card.querySelectorAll(".config-line")] : [];
         } else {
           const all = [...document.querySelectorAll(".config-line")];
-          const isMarker = (l) => SECTION_RE.test(l.textContent.trim());
+          // Banner text can look like a marker; only record names count.
+          const names = new Set(sectionRecords.map((r) => r.name));
+          const markerName = (l) => l.textContent.trim().match(SECTION_RE)?.[2];
+          const isMarker = (l) => names.has(markerName(l));
           const start = all.findIndex(
-            (l) =>
-              isMarker(l) &&
-              l.textContent.trim().replace(SECTION_RE, "$2") === name,
+            (l) => isMarker(l) && markerName(l) === name,
           );
           const end = all.findIndex((l, i) => i > start && isMarker(l));
           lines =
