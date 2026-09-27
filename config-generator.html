@@ -1174,12 +1174,13 @@
         color: var(--text-dim);
       }
 
-      /* Not copied: a dropped comment or inactive code. */
+      /* Not copied. Full line height; the period tiles a line, so stacked rows show no seam. */
       .config-comment .dropped {
+        display: inline-block;
         background: repeating-linear-gradient(
           -45deg,
           rgba(var(--rgb-slate), 0.12) 0 2px,
-          transparent 2px 6px
+          transparent 2px calc(1lh / 2.8284)
         );
       }
 
