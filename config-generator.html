@@ -1958,6 +1958,10 @@
         opacity: 1;
       }
 
+      .copied-label.empty {
+        color: var(--text-hint);
+      }
+
       .toast {
         position: fixed;
         bottom: 24px;
@@ -5619,6 +5623,13 @@ category = General
         updateTemplateWarnBadge();
       }
 
+      // A card that renders to nothing keeps its place but says so.
+      function copiedLabelHtml(id, empty) {
+        return empty
+          ? `<span class="copied-label show empty" id="${id}">Nothing to paste</span>`
+          : `<span class="copied-label" id="${id}">Copied!</span>`;
+      }
+
       function renderFullMode(container, sections, badgeColorMap) {
         const isEditing = activeSectionEditors.has(FULL_EDIT_KEY);
         const edited = hasEdits();
@@ -5631,11 +5642,12 @@ category = General
               KEYWORD_GROUPS,
               badgeColorMap,
             );
+        const empty = !isEditing && jinjaRaw(assembleFullEditableText()) === "";
         let html = `<div class="config-section" id="section-full">
                             <div class="section-header${headerClass}">
                               <h3>Full Config</h3>
                               <div class="btn-group">
-                                <span class="copied-label" id="copied-full">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
+                                ${copiedLabelHtml("copied-full", empty)}${preview ? headerWarnHtml(preview.issues) : ""}`;
 
         if (isEditing) {
           html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelFullEdit()"><svg><use href="#icon-close"></use></svg></button>
@@ -5691,11 +5703,13 @@ category = General
           const preview = isEditing
             ? null
             : jinjaDisplay(trimBodyEnds(body), KEYWORD_GROUPS, badgeColorMap);
+          const empty =
+            !isEditing && !!r && jinjaRaw(recordEffectiveBody(r)) === "";
           html += `<div class="config-section" id="section-${i}">
                            <div class="section-header${headerClass}">
                              <h3>${escHtml(name)}</h3>
                              <div class="btn-group">
-                               <span class="copied-label" id="copied-${i}">Copied!</span>${preview ? headerWarnHtml(preview.issues) : ""}`;
+                               ${copiedLabelHtml(`copied-${i}`, empty)}${preview ? headerWarnHtml(preview.issues) : ""}`;
 
           if (isEditing) {
             html += `<button class="header-icon-btn" title="Cancel Edit" onclick="cancelSectionEdit(${id})"><svg><use href="#icon-close"></use></svg></button>
@@ -6192,6 +6206,11 @@ category = General
         const r = recordById(id);
         if (!r) return;
         const { raw, issues } = rawWithIssues(recordEffectiveBody(r));
+        // Nothing is copied, but copy-and-go still moves on.
+        if (raw === "") {
+          showToast("Nothing to paste in this section");
+          return Promise.resolve(true);
+        }
         const output = raw + COPY_EOL;
         return navigator.clipboard
           .writeText(output)
@@ -6241,6 +6260,10 @@ category = General
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const { raw, issues } = rawWithIssues(assembleFullEditableText());
+        if (raw === "") {
+          showToast("Nothing to paste");
+          return;
+        }
         const output = raw + COPY_EOL;
 
         navigator.clipboard
