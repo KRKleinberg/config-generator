@@ -2663,7 +2663,8 @@
                         <tr>
                           <td><code>{% if VAR %} {% else %}</code></td>
                           <td>
-                            Branches on whether VAR is filled and must open and
+                            Branches on whether VAR is filled, or empty with
+                            <code>{% if not VAR %}</code>, and must open and
                             close within one section; there is no
                             <code>==</code>, so use a <code>choices</code>
                             dropdown with one field per branch.
@@ -2872,6 +2873,7 @@
    {{  VAR | trim  }}                       Remove leading/trailing spaces
    {{  [V1, V2, V3] | join(',')  }}         Join non-empty values
    {% if VAR %}...{% endif %}               Conditional block
+   {% if not VAR %}...{% endif %}           Block for an empty VAR
    {% if VAR %}...{% else %}...{% endif %}  With else branch
    Comment blocks use opening {-# and closing #-} (without dashes)
 
@@ -2898,9 +2900,9 @@
         "group",
       ]);
       const INNER_IF_ELSE_RE =
-        /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
+        /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
       const INNER_IF_RE =
-        /\{%\s*if\s+([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
+        /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
       let cachedKwGroupsRef = null;
       let cachedKwMap = null;
       const IOS_KEYWORDS = [
@@ -3552,7 +3554,9 @@
         const found = new Set();
         for (const [, expr] of source.matchAll(EXPR_RE))
           for (const v of exprReferencesVars(expr)) found.add(v);
-        for (const [, name] of source.matchAll(/\{%\s*if\s+([\w.-]+)\s*%\}/g))
+        for (const [, name] of source.matchAll(
+          /\{%\s*if\s+(?:not\s+)?([\w.-]+)\s*%\}/g,
+        ))
           if (isValidVarName(name)) found.add(name);
         return found;
       }
@@ -3634,15 +3638,15 @@
         const MAX_ITERATIONS = 50;
         while (result !== prev && iterations < MAX_ITERATIONS) {
           prev = result;
-          result = result.replace(INNER_IF_ELSE_RE, (_, v, yes, __, no) =>
-            isValuePresent(values[v])
+          result = result.replace(INNER_IF_ELSE_RE, (_, neg, v, yes, __, no) =>
+            isValuePresent(values[v]) !== !!neg
               ? yes.replace(/^\n/, "").replace(/\n$/, "")
               : no.replace(/^\n/, "").replace(/\n$/, ""),
           );
           result = result.replace(
             INNER_IF_RE,
-            (_, v, content, _inner, tail, offset, str) => {
-              if (isValuePresent(values[v]))
+            (_, neg, v, content, _inner, tail, offset, str) => {
+              if (isValuePresent(values[v]) !== !!neg)
                 return content.replace(/^\n/, "").replace(/\n$/, "") + tail;
               if (opts.commentFalse) {
                 const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
@@ -4686,11 +4690,11 @@
         // A {{ }} split across lines matches no expression regex; renders literally.
         if (/\{\{|\}\}/.test(cleanText.replace(EXPR_RE, "")))
           msgs.push("`{{ }}` split across lines");
-        // Only bare-var conditions are evaluatable; anything else renders literally.
+        // Only VAR or not VAR evaluates; anything else renders literally.
         const ifCondRE = /\{%\s*if\b([\s\S]*?)%\}/g;
         let condMatch;
         while ((condMatch = ifCondRE.exec(cleanText)) !== null) {
-          if (!/^\s+[\w.-]+\s*$/.test(condMatch[1]))
+          if (!/^\s+(?:not\s+)?[\w.-]+\s*$/.test(condMatch[1]))
             msgs.push(`Unsupported condition \`{% if${condMatch[1]}%}\``);
         }
         // Open ifs as written, so the message names the one left unpaired.
