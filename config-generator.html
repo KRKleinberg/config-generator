@@ -4256,7 +4256,10 @@
         COMMENT_LINE_RE = new RegExp(`^\\s*${c}`);
         BARE_COMMENT_RE = new RegExp(`^\\s*${c}\\s*$`);
         INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
-        INLINE_OR_LINE_COMMENT_RE = new RegExp(`(?:^|\\s)${c}`);
+        // A pill token stands where the output keeps whitespace, so a comment can follow one.
+        INLINE_OR_LINE_COMMENT_RE = new RegExp(
+          `(?:^|\\s|\\x00BG\\d+\\x00)${c}`,
+        );
         const badge = document.getElementById("dialectBadge");
         const shown = DIALECT.generic
           ? `${DIALECT.short} (${COMMENT})`
