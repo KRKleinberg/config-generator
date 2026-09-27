@@ -3190,6 +3190,21 @@
         return !s ? "" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
 
+      // True when the group opening at 0 closes at the end: (^\d+$), not (^a)|(b$).
+      function wrapsWhole(re) {
+        if (re[0] !== "(") return false;
+        let depth = 0;
+        for (let i = 0, inClass = false; i < re.length; i++) {
+          const ch = re[i];
+          if (ch === "\\") i++;
+          else if (inClass) inClass = ch !== "]";
+          else if (ch === "[") inClass = true;
+          else if (ch === "(") depth++;
+          else if (ch === ")" && --depth === 0) return i === re.length - 1;
+        }
+        return false;
+      }
+
       // Strings only: session formValues are not type-checked.
       function isValuePresent(v) {
         return typeof v === "string" && v.trim() !== "";
@@ -3198,9 +3213,17 @@
       function parseINI(text, errorList = []) {
         const result = {};
         const groupLines = {};
+        const categories = [];
         const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = text.split("\n");
         let currentItem = null;
+        const commit = () => {
+          categories.push({
+            name: currentItem.category || "",
+            line: currentItem.keyLines.category ?? currentItem.line,
+          });
+          commitINIItem(result, currentItem, errorList);
+        };
         for (let i = 0; i < lines.length; i++) {
           let rawLine = lines[i];
           // unquoted '#' starts a comment; '#' inside a quoted value is literal
@@ -3233,7 +3256,7 @@
           try {
             const headerMatch = line.match(/^\s*\[\s*(.+?)\s*\]\s*$/);
             if (headerMatch) {
-              if (currentItem) commitINIItem(result, currentItem, errorList);
+              if (currentItem) commit();
               currentItem = { name: headerMatch[1], line: i + 1, keyLines: {} };
               if (!isValidVarName(headerMatch[1]))
                 lint(
@@ -3277,7 +3300,19 @@
             errorList.push(`Line ${i + 1}: Fatal parse error`);
           }
         }
-        if (currentItem) commitINIItem(result, currentItem, errorList);
+        if (currentItem) commit();
+        // Mirrors buildForm: a field without a category stays under the last heading.
+        const seenCategories = new Set();
+        let lastCategory = "";
+        for (const { name, line } of categories) {
+          if (!name || name === lastCategory) continue;
+          if (seenCategories.has(name))
+            lint(
+              `Line ${line}: Category '${name}' returns after '${lastCategory}', so the form shows its heading twice`,
+            );
+          seenCategories.add(name);
+          lastCategory = name;
+        }
         const groupCounts = {};
         for (const def of Object.values(result))
           if (def.group)
@@ -3340,6 +3375,17 @@
             );
           }
         }
+        // A wrapping group doesn't count, as in (^\d+$); an escaped \$ is a literal dollar.
+        let core = item.regex ?? "";
+        while (wrapsWhole(core))
+          core = core.replace(/^\((?:\?:)?/, "").slice(0, -1);
+        if (
+          compiledRegex &&
+          !(core.startsWith("^") && /(?<!\\)(?:\\\\)*\$$/.test(core))
+        )
+          lint(
+            `${at("regex")}\`regex\` for '${item.name}' isn't anchored with \`^\` and \`$\`, so it can match part of a value`,
+          );
         let parsedChoices = null;
         if (item.choices) {
           parsedChoices = parseINIInlineList(item.choices);
