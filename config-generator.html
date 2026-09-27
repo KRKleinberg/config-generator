@@ -4110,7 +4110,8 @@
       }
 
       // Banner-aware line walk shared by lint, preview marks, and the editor.
-      function walkConfigLines(text) {
+      // inactive: rows of a false block's preview, which never end a banner.
+      function walkConfigLines(text, inactive = null) {
         const parts = [];
         let bannerDelim = null;
         let bannerLine = -1;
@@ -4129,7 +4130,8 @@
               delim: bannerDelim,
               from: 0,
             });
-            if (bannerCloses(sent, bannerDelim)) bannerDelim = null;
+            if (!inactive?.has(i) && bannerCloses(sent, bannerDelim))
+              bannerDelim = null;
             continue;
           }
           const b = bannerStart(sent);
@@ -4175,15 +4177,15 @@
       }
 
       // Values stay tokenized so their ! is never a comment; restore fills them.
-      function lintConfigLines(text, restore = (s) => s) {
+      function lintConfigLines(text, restore = (s) => s, inactive = null) {
         const issues = [];
         if (!LINT_PASTE_WARNINGS) return issues;
         const add = (line, message, range = null) =>
           issues.push({ line, message, range });
-        const { parts, unclosed } = walkConfigLines(text);
+        const { parts, unclosed } = walkConfigLines(text, inactive);
         for (const { i, cmd, banner, indent, delim, from } of parts) {
           const cmdText = restore(cmd);
-          if (cmdText.trim() === "") continue;
+          if (cmdText.trim() === "" || inactive?.has(i)) continue;
           const seen = new Set();
           for (const m of cmdText.matchAll(RISK_CHAR_RE)) {
             if (m.index < indent) continue;
@@ -4385,6 +4387,7 @@
           result.replace(/\x00BG\d+\x00/g, "").replace(/[^\S\n]+$/gm, ""),
           (s) =>
             s.replace(/\x00EX(\d+)\x00/g, (_, i) => exprTokens[i].displayText),
+          inactiveRows,
         );
         // Marks are tokenized past highlighting: lint ranges, then risky chars between them.
         const marks = [];
@@ -4394,7 +4397,7 @@
         };
         const markChars = (s) =>
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
-        const { parts } = walkConfigLines(result);
+        const { parts } = walkConfigLines(result, inactiveRows);
         const bannerRows = new Set(
           parts.filter((p) => p.banner).map((p) => p.i),
         );
@@ -4407,6 +4410,7 @@
         if (LINT_PASTE_WARNINGS)
           result = parts
             .map(({ i, line, cmd, indent }) => {
+              if (inactiveRows.has(i)) return line;
               for (const m of cmd.matchAll(/\x00EX(\d+)\x00/g))
                 exprTokens[m[1]].risky = true;
               const ranges = issues
