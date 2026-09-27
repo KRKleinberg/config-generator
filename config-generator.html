@@ -1154,6 +1154,23 @@
         background: var(--success-dim);
       }
 
+      /* Inactive code: hatched, so a chip still reads as a variable, not a live one. */
+      .var-unfilled.var-inactive {
+        background: repeating-linear-gradient(
+          -45deg,
+          rgba(var(--rgb-warn), 0.3) 0 2px,
+          rgba(var(--rgb-warn), 0.08) 2px 6px
+        );
+      }
+
+      .var-filled.var-inactive {
+        background: repeating-linear-gradient(
+          -45deg,
+          rgba(var(--rgb-success), 0.3) 0 2px,
+          rgba(var(--rgb-success), 0.08) 2px 6px
+        );
+      }
+
       .badge-group {
         margin-left: 16px;
         user-select: none;
@@ -2523,6 +2540,11 @@
                       <code>{{ VARIABLE }}</code>
                       to jump back to its field.
                     </dd>
+                    <dt>Inactive code</dt>
+                    <dd>
+                      Lines a condition leaves out show as comments with hatched
+                      variables; they are not copied.
+                    </dd>
                   </dl>
                 </div>
               </details>
@@ -3636,8 +3658,8 @@
           : `{{ ${expr} }}`;
       }
 
-      // opts.commentFalse (preview): whole-line false blocks render as comments,
-      // each line led by INACTIVE so later passes can tell it from banner text.
+      // opts.commentFalse (preview): lines of an unused whole-line branch render
+      // as comments, each led by INACTIVE so later passes can tell it from banner text.
       function processConditionals(template, values, opts = {}) {
         // A line of tags alone is layout, so its indentation goes with it.
         let result = template.replace(TAG_LINE_RE, (_, tags) =>
@@ -3655,16 +3677,43 @@
             : s.replace(/^\n/, "").replace(/\n$/, "").split("\n");
         const atLineStart = (offset, str) =>
           offset === 0 || str[offset - 1] === "\n";
+        // Lines already marked, or already comments, get no second comment char;
+        // a leading badge keeps one, since badges need whitespace before them.
+        const commentLine = new RegExp(
+          `^\\s*${escRegex(COMMENT)}(?![A-Z][A-Z0-9_-]*:)`,
+        );
+        const inactive = (ls) =>
+          ls.map((l) =>
+            l.startsWith(INACTIVE)
+              ? l
+              : l.trim() === "" || commentLine.test(l)
+                ? INACTIVE + l
+                : `${INACTIVE}${COMMENT} ` + l,
+          );
         while (result !== prev && iterations < MAX_ITERATIONS) {
           prev = result;
           result = result.replace(
             INNER_IF_ELSE_RE,
-            (_, neg, v, yes, _yes, no, _no, tail, offset, str) => {
-              const body = lines(on(neg, v) ? yes : no);
+            (m, neg, v, yes, _yes, no, _no, tail, offset, str) => {
+              const taken = on(neg, v);
+              const whole = atLineStart(offset, str);
+              // A block if/else previews its other branch commented out, in place;
+              // text after the endif would land on that branch, so none may follow.
+              if (
+                opts.commentFalse &&
+                whole &&
+                yes.startsWith("\n") &&
+                no.startsWith("\n") &&
+                (tail === "\n" || offset + m.length === str.length)
+              ) {
+                const shown = taken
+                  ? [...lines(yes), ...inactive(lines(no))]
+                  : [...inactive(lines(yes)), ...lines(no)];
+                return shown.length ? shown.join("\n") + tail : "";
+              }
+              const body = lines(taken ? yes : no);
               // An empty branch on lines of its own leaves no blank line.
-              return !body.length && atLineStart(offset, str)
-                ? ""
-                : body.join("\n") + tail;
+              return !body.length && whole ? "" : body.join("\n") + tail;
             },
           );
           result = result.replace(
@@ -3675,13 +3724,7 @@
               if (body.length && opts.commentFalse) {
                 const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
                 if (/^\s*$/.test(str.slice(lineStart, offset)))
-                  return (
-                    body
-                      .map((l) =>
-                        l.trim() === "" ? l : `${INACTIVE}${COMMENT} ` + l,
-                      )
-                      .join("\n") + tail
-                  );
+                  return inactive(body).join("\n") + tail;
               }
               // Drop the tail newline only for a whole-line tag, else lines merge.
               return atLineStart(offset, str) ? "" : tail;
@@ -4489,6 +4532,8 @@
           .map((line, i) => {
             if (!line.includes(INACTIVE)) return line;
             inactiveRows.add(i);
+            for (const [, k] of line.matchAll(/\x00EX(\d+)\x00/g))
+              exprTokens[k].inactive = true;
             return line.replaceAll(INACTIVE, "");
           })
           .join("\n");
@@ -4551,9 +4596,18 @@
             : markRiskChars(escHtml(text));
         });
         result = result.replace(/\x00EX(\d+)\x00/g, (_, i) => {
-          const { displayText, filled, baseVar, vars, rawContent, risky } =
-            exprTokens[i];
-          const cls = filled ? "var-filled" : "var-unfilled";
+          const {
+            displayText,
+            filled,
+            baseVar,
+            vars,
+            rawContent,
+            risky,
+            inactive,
+          } = exprTokens[i];
+          const cls =
+            (filled ? "var-filled" : "var-unfilled") +
+            (inactive ? " var-inactive" : "");
           const safeVar = escHtml(baseVar);
           const safeVars = escHtml(vars.join(" "));
           const safeRaw = escHtml(rawContent);
@@ -4587,7 +4641,8 @@
               ? ` class="config-line line-warn"${warnAttrs("paste warnings", w)}`
               : ` class="config-line"`;
             const banner = bannerRows.has(i) ? " data-banner" : "";
-            return `<span${attrs}${banner}>${line === "" ? " " : line}</span>`;
+            const off = inactiveRows.has(i) ? " data-inactive" : "";
+            return `<span${attrs}${banner}${off}>${line === "" ? " " : line}</span>`;
           })
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
@@ -6999,6 +7054,14 @@ category = General
             const frag = sel.getRangeAt(0).cloneContents();
             // cloneContents ignores user-select: none, so drop pills here
             frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
+            // With live text selected, leave out the rows a condition drops.
+            const rows = [...frag.querySelectorAll(".config-line")];
+            const live = (r) =>
+              !r.hasAttribute("data-inactive") && r.textContent.trim() !== "";
+            if (rows.some(live))
+              rows
+                .filter((r) => r.hasAttribute("data-inactive"))
+                .forEach((r) => r.remove());
             // Tab, NBSP, and Ctrl-V are drawn as glyphs; copy the real character.
             frag
               .querySelectorAll("[data-ch]")
