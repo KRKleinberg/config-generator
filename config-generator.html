@@ -3187,7 +3187,15 @@
               const c = rawLine[j];
               if (inQuote) {
                 if (c === quoteChar) inQuote = false;
-              } else if (c === '"' || c === "'") {
+              } else if (
+                c === '"' ||
+                // An apostrophe inside a word (Don't) is not a quote.
+                (c === "'" &&
+                  !(
+                    /\w/.test(rawLine[j - 1] ?? "") &&
+                    /\w/.test(rawLine[j + 1] ?? "")
+                  ))
+              ) {
                 inQuote = true;
                 quoteChar = c;
               } else if (c === "#") {
