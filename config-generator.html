@@ -2891,9 +2891,11 @@
             "twogigabitethernet",
             "fivegigabitethernet",
             "tengigabitethernet",
-            "twentyfivegigethernet",
+            "twentyfivegige",
             "fortygigabitethernet",
-            "hundredgigethernet",
+            "fiftygige",
+            "hundredgige",
+            "fourhundredgige",
             "appgigabitethernet",
             "serial",
             "port-channel",
@@ -2914,6 +2916,7 @@
             "virtual-template",
             "range",
           ],
+          short: ["gi", "tw", "fi", "te", "twe", "fo", "hu"], // Gi1/0/1, Te1/1/1
         },
         {
           name: "Good Words & Permits",
@@ -4490,19 +4493,23 @@
           return cachedKwMap;
         const colors = {};
         const entries = [];
+        const num = "\\d+(?:[/.:]\\d+)*";
         for (const group of keywordGroups) {
-          for (const word of group.words) {
+          const suffix = group.numbered === true ? `(?:${num})?` : "";
+          // Short names need a number: Gi1/0/1 is a port, a bare "te" is not.
+          const words = [
+            ...group.words.map((word) => [word, suffix]),
+            ...(group.short ?? []).map((word) => [word, num]),
+          ];
+          for (const [word, after] of words) {
             const w = word.toLowerCase();
             if (Object.hasOwn(colors, w)) continue; // first group wins
             colors[w] = group.color;
-            entries.push({ w, numbered: group.numbered === true });
+            entries.push({ w, after });
           }
         }
         entries.sort((a, b) => b.w.length - a.w.length); // "port-channel" before "port"
-        const alts = entries.map(
-          ({ w, numbered }) =>
-            escRegex(w) + (numbered ? "(?:\\d+(?:[/.:]\\d+)*)?" : ""),
-        );
+        const alts = entries.map(({ w, after }) => escRegex(w) + after);
         cachedKwGroupsRef = keywordGroups;
         cachedKwMap = {
           pattern: new RegExp(`(?<!\\w)(${alts.join("|")})(?!\\w)`, "gi"),
