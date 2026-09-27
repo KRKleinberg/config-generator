@@ -2952,7 +2952,7 @@
       // Platform and editor
       const DIALECT_NAME = "ios"; // ios, nxos, eos, junos, generic (see DIALECTS); only ios is device-tested
       const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
-      const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
+      const EDITOR_TAB_SIZE = null; // spaces per Tab in editors; null follows the platform, 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
       const COPY_EOL = COPY_TRAILING_NEWLINE ? "\n" : "";
@@ -4102,6 +4102,7 @@
           label: "Cisco IOS / IOS XE",
           short: "IOS XE",
           comment: "!",
+          indent: 1, // spaces per level in the device's own config listing
           descriptionMax: 240,
           freeform: IOS_FREEFORM,
           banner: IOS_BANNER,
@@ -4112,6 +4113,7 @@
           label: "Cisco NX-OS",
           short: "NX-OS",
           comment: "!",
+          indent: 2,
           descriptionMax: 254,
           freeform: IOS_FREEFORM,
           banner: IOS_BANNER,
@@ -4129,6 +4131,7 @@
           label: "Arista EOS",
           short: "EOS",
           comment: "!",
+          indent: 3,
           descriptionMax: 240,
           freeform: IOS_FREEFORM,
           banner: {
@@ -4148,6 +4151,7 @@
           label: "Juniper Junos",
           short: "Junos",
           comment: "#",
+          indent: 4,
           descriptionMax: 255,
           freeform: JUNOS_FREEFORM,
           banner: null,
@@ -4159,6 +4163,7 @@
           label: "Generic, no platform rules",
           short: "Generic",
           comment: "!",
+          indent: 4,
           descriptionMax: Infinity,
           freeform: /(?!)/,
           banner: null,
@@ -7332,17 +7337,18 @@ category = General
             closeDialectMenu();
           if (!e.target.closest("#saveMenu, #saveBtn")) closeSaveMenu();
         });
-        // Tab indents in editors; a multi-line selection shifts every line.
+        // Tab indents one platform level in editors; a multi-line selection shifts every line.
         document.addEventListener("keydown", (e) => {
           const ta = e.target;
-          if (e.key !== "Tab" || !EDITOR_TAB_SIZE) return;
+          const size = EDITOR_TAB_SIZE ?? DIALECT.indent;
+          if (e.key !== "Tab" || !size) return;
           if (
             !(ta instanceof HTMLTextAreaElement) ||
             !ta.matches(".section-edit")
           )
             return;
           e.preventDefault();
-          const pad = " ".repeat(EDITOR_TAB_SIZE);
+          const pad = " ".repeat(size);
           const { value, selectionStart: s, selectionEnd: en } = ta;
           const multi = value.slice(s, en).includes("\n");
           if (!multi && !e.shiftKey) {
@@ -7353,7 +7359,7 @@ category = General
           const to = en > from && value[en - 1] === "\n" ? en - 1 : en;
           const block = value.slice(from, to);
           const shifted = e.shiftKey
-            ? block.replace(new RegExp(`^ {1,${EDITOR_TAB_SIZE}}`, "gm"), "")
+            ? block.replace(new RegExp(`^ {1,${size}}`, "gm"), "")
             : block.replace(/^/gm, pad);
           ta.setSelectionRange(from, to);
           document.execCommand("insertText", false, shifted);
