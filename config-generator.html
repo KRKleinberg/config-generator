@@ -4102,19 +4102,38 @@
         const lines = (text ?? "").split("\n");
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
+          // Badge pills never reach the device, so banners are judged without them.
+          const sent = line.replace(/\x00BG\d+\x00/g, "");
           if (bannerDelim) {
-            parts.push({ i, line, cmd: line, banner: true, indent: 0 });
-            if (bannerCloses(line, bannerDelim)) bannerDelim = null;
+            parts.push({
+              i,
+              line,
+              cmd: line,
+              banner: true,
+              indent: 0,
+              delim: bannerDelim,
+              from: 0,
+            });
+            if (bannerCloses(sent, bannerDelim)) bannerDelim = null;
             continue;
           }
-          const b = bannerStart(line);
+          const b = bannerStart(sent);
           if (b) {
             if (b.delim) {
               bannerDelim = b.delim;
               bannerLine = i;
             }
             const indent = indentOf(line);
-            parts.push({ i, line, cmd: line, banner: true, indent });
+            // from: banner text starts after the opening delimiter.
+            parts.push({
+              i,
+              line,
+              cmd: line,
+              banner: true,
+              indent,
+              delim: b.delim ?? sent[b.at],
+              from: b.at + 1,
+            });
             continue;
           }
           const cmd = commandPart(line);
@@ -4147,7 +4166,7 @@
         const add = (line, message, range = null) =>
           issues.push({ line, message, range });
         const { parts, unclosed } = walkConfigLines(text);
-        for (const { i, cmd, banner, indent } of parts) {
+        for (const { i, cmd, banner, indent, delim, from } of parts) {
           const cmdText = restore(cmd);
           if (cmdText.trim() === "") continue;
           const seen = new Set();
@@ -4159,7 +4178,24 @@
           }
           for (const m of cmd.matchAll(SYNTAX_RE))
             add(i, SYNTAX_MSG, [m.index, m.index + m[0].length]);
-          if (banner) continue;
+          if (banner) {
+            // A value holding the delimiter ends the banner early on the device.
+            const fixed = DIALECT.banner.delimiter;
+            const hit = [...cmd.matchAll(/\x00(?:EX|RV)\d+\x00/g)].find(
+              (m) =>
+                m.index >= from &&
+                (fixed
+                  ? cmdText.trim() === fixed && cmd.trim() !== fixed
+                  : restore(m[0]).includes(delim)),
+            );
+            if (hit)
+              add(
+                i,
+                `Value contains the banner delimiter \`${delim}\`; the device ends the banner there`,
+                [hit.index, hit.index + hit[0].length],
+              );
+            continue;
+          }
           const d = cmdText.match(/^\s*description\s+(?=(.*)$)/i);
           if (d && d[1].length > MAX_DESCRIPTION_LEN)
             add(i, `Description exceeds ${MAX_DESCRIPTION_LEN} characters`, [
@@ -4334,9 +4370,13 @@
         };
         const markChars = (s) =>
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
+        const { parts } = walkConfigLines(result);
+        const bannerRows = new Set(
+          parts.filter((p) => p.banner).map((p) => p.i),
+        );
         if (LINT_PASTE_WARNINGS)
-          result = walkConfigLines(result)
-            .parts.map(({ i, line, cmd, indent }) => {
+          result = parts
+            .map(({ i, line, cmd, indent }) => {
               for (const m of cmd.matchAll(/\x00EX(\d+)\x00/g))
                 exprTokens[m[1]].risky = true;
               const ranges = issues
@@ -4403,7 +4443,8 @@
             const attrs = w
               ? ` class="config-line line-warn"${warnAttrs("paste warnings", w)}`
               : ` class="config-line"`;
-            return `<span${attrs}>${line === "" ? " " : line}</span>`;
+            const banner = bannerRows.has(i) ? " data-banner" : "";
+            return `<span${attrs}${banner}>${line === "" ? " " : line}</span>`;
           })
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
@@ -5152,14 +5193,18 @@ category = General
         renderTimeout = setTimeout(() => render(), 150);
       }
 
-      // Description length is checked per line, so any value on one can cross it.
-      function feedsDescription(varName) {
+      // Description length and banner delimiters are checked per line, so any
+      // value on such a line can add or clear a warning.
+      function feedsLineCheck(varName) {
         if (!LINT_PASTE_WARNINGS) return false;
-        return [...document.querySelectorAll(".preview-var")].some(
-          (span) =>
-            span.dataset.vars.split(" ").includes(varName) &&
-            /^\s*description\s/i.test(span.closest(".config-line").textContent),
-        );
+        return [...document.querySelectorAll(".preview-var")].some((span) => {
+          if (!span.dataset.vars.split(" ").includes(varName)) return false;
+          const row = span.closest(".config-line");
+          return (
+            row.hasAttribute("data-banner") ||
+            /^\s*description\s/i.test(row.textContent)
+          );
+        });
       }
 
       // A pill holds its values as text, which the fast path can't refresh.
@@ -5271,7 +5316,7 @@ category = General
             !!oldVal !== !!newVal ||
             lintSensitive(oldVal) ||
             lintSensitive(newVal) ||
-            feedsDescription(varName) ||
+            feedsLineCheck(varName) ||
             feedsBadge(varName)
           )
             debouncedRender();
