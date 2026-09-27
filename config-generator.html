@@ -76,6 +76,10 @@
         --section-header-h: 40px;
         --panel-pad-y: 28px;
         --panel-pad-x: 28px;
+
+        /* Hatch: stripes repeat every 8px across and down, so each is drawn the same. */
+        --hatch-period: calc(8px / 1.4142);
+        --hatch-stripe: calc(var(--hatch-period) / 3);
       }
 
       * {
@@ -1205,16 +1209,16 @@
       .var-unfilled.var-inactive {
         background: repeating-linear-gradient(
           -45deg,
-          rgba(var(--rgb-warn), 0.3) 0 2px,
-          rgba(var(--rgb-warn), 0.08) 2px 6px
+          rgba(var(--rgb-warn), 0.3) 0 var(--hatch-stripe),
+          rgba(var(--rgb-warn), 0.08) var(--hatch-stripe) var(--hatch-period)
         );
       }
 
       .var-filled.var-inactive {
         background: repeating-linear-gradient(
           -45deg,
-          rgba(var(--rgb-success), 0.3) 0 2px,
-          rgba(var(--rgb-success), 0.08) 2px 6px
+          rgba(var(--rgb-success), 0.3) 0 var(--hatch-stripe),
+          rgba(var(--rgb-success), 0.08) var(--hatch-stripe) var(--hatch-period)
         );
       }
 
