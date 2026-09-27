@@ -6,7 +6,7 @@ A single-file, offline browser tool that turns a Jinja template and an optional 
 
 - Jinja2 subset compatible with Ansible: `{{ VAR }}`, `default`, `upper`, `lower`, `trim`, `join`, and `{% if %}`, `{% if not %}` and `{% else %}` blocks.
 - Form generated from the template's variables, or from a vars file that adds hints, placeholders, defaults, dropdowns, built-in checks for IPv4 addresses, masks, wildcards, VLANs and hostnames, number ranges, regex validation, linked field groups, and one-way requirements.
-- Live highlighted preview: click a variable to jump to its field, or a field label to find it in the config; code a condition leaves out stays visible as comments.
+- Live highlighted preview: click a variable to jump to its field, or a field label to find it in the config; code a condition leaves out stays visible as comments, and hatched text or variables won't be copied.
 - Copyable sections: `!!! Name` markers split the preview into cards with a copy-and-advance workflow.
 - Manual edits at the template level in a highlighted editor; variables keep working inside edited text.
 - Paste warnings for `?` and tab (unless escaped with Ctrl-V), non-ASCII, over-long descriptions, unclosed banners, and unrendered template syntax, marked in place and listed on the section header.

@@ -1174,6 +1174,15 @@
         color: var(--text-dim);
       }
 
+      /* Not copied, like a hatched chip: a dropped comment or inactive code. */
+      .config-comment.dropped {
+        background: repeating-linear-gradient(
+          -45deg,
+          rgba(var(--rgb-slate), 0.12) 0 2px,
+          transparent 2px 6px
+        );
+      }
+
       .var-unfilled,
       .var-filled {
         font-weight: 600;
@@ -1191,7 +1200,7 @@
         background: var(--success-dim);
       }
 
-      /* Inactive code: hatched, so a chip still reads as a variable, not a live one. */
+      /* Not copied (inactive code, a dropped comment, a marker): hatched, so a chip still reads as a variable. */
       .var-unfilled.var-inactive {
         background: repeating-linear-gradient(
           -45deg,
@@ -2589,8 +2598,12 @@
                     </dd>
                     <dt>Inactive code</dt>
                     <dd>
-                      Lines a condition leaves out show as comments with hatched
-                      variables; they are not copied.
+                      Lines a condition leaves out stay visible as comments.
+                    </dd>
+                    <dt>Hatching</dt>
+                    <dd>
+                      Hatched text and variables are never copied: inactive
+                      code, section markers, and comments the output leaves out.
                     </dd>
                   </dl>
                 </div>
@@ -4843,6 +4856,19 @@
         const markChars = (s) =>
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
         const { parts } = walkConfigLines(result, inactiveRows);
+        // Hatch means not copied: text past the device-bound part (a dropped
+        // comment, a section marker) hatches like inactive code, and so do its
+        // values. Pills go first, as in the output, since a comment can follow one.
+        const droppedRows = new Set(inactiveRows);
+        for (const { i, line, banner } of parts) {
+          if (banner) continue;
+          const sent = line.replace(/\x00BG\d+\x00/g, "");
+          if (BARE_COMMENT_RE.test(sent)) continue; // sent as is: it answers prompts
+          const dropped = sent.slice(commandPart(sent).length);
+          if (dropped.trim()) droppedRows.add(i);
+          for (const [, k] of dropped.matchAll(/\x00EX(\d+)\x00/g))
+            exprTokens[k].inactive = true;
+        }
         const bannerRows = new Set(
           parts.filter((p) => p.banner).map((p) => p.i),
         );
@@ -4877,7 +4903,12 @@
             .join("\n");
         result = escHtml(result);
         if (keywordGroups && keywordGroups.length) {
-          result = applyKeywordHighlighting(result, keywordGroups, textRows);
+          result = applyKeywordHighlighting(
+            result,
+            keywordGroups,
+            textRows,
+            droppedRows,
+          );
         }
         // One pass per kind, outermost first: a mark can contain chips and pills.
         result = result.replace(/\x00RK(\d+)\x00/g, (_, i) => {
@@ -4974,7 +5005,13 @@
       }
 
       // textRows: line indexes of banner text, which has no comments.
-      function applyKeywordHighlighting(html, keywordGroups, textRows = null) {
+      // droppedRows: lines whose comment the output drops, hatched to say so.
+      function applyKeywordHighlighting(
+        html,
+        keywordGroups,
+        textRows = null,
+        droppedRows = null,
+      ) {
         const { pattern, colors } = getKeywordMap(keywordGroups);
         const lines = html.split("\n");
         for (let i = 0; i < lines.length; i++) {
@@ -4991,7 +5028,10 @@
           if (commentMatch) {
             const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
-            commentHtml = `<span class="config-comment">${rawComment}</span>`;
+            const cls = droppedRows?.has(i)
+              ? "config-comment dropped"
+              : "config-comment";
+            commentHtml = `<span class="${cls}">${rawComment}</span>`;
             line = line.slice(0, commentIdx);
           }
           if (line.trim().length > 0) {
