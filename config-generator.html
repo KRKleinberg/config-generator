@@ -3595,7 +3595,7 @@
         delimiter: null,
       };
       const IOS_FREEFORM =
-        /^\s*(?:description|remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
+        /^\s*(?:description|(?:\d+\s+)?remark|password|key-string|key\s|enable\s|username\s|snmp-server\s+(?:contact|location|user\s)|tacacs-server\s+key|radius-server\s+key|server-private\s|crypto\s+isakmp\s+key|pre-shared-key|ntp\s+authentication-key|ip\s+ospf\s+(?:authentication-key|message-digest-key)|standby\s+\d+\s+authentication|vrrp\s+\d+\s+authentication|neighbor\s+\S+\s+password|access-list\s+\d+\s+remark)\b/i;
       // Junos: set-style or hierarchical; the argument can sit anywhere on the line.
       const JUNOS_FREEFORM =
         /\b(?:description|message|announcement|authentication-key|pre-shared-key|encrypted-password|plain-text-password|secret|key|community)\s/i;
