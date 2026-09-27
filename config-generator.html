@@ -4371,7 +4371,16 @@
           },
         );
         // Trim while tokens are in place so lint and rows share line indexes.
-        result = cleanFormatting(result).replaceAll(INACTIVE, "");
+        result = cleanFormatting(result);
+        const inactiveRows = new Set();
+        result = result
+          .split("\n")
+          .map((line, i) => {
+            if (!line.includes(INACTIVE)) return line;
+            inactiveRows.add(i);
+            return line.replaceAll(INACTIVE, "");
+          })
+          .join("\n");
         const issues = lintConfigLines(
           result.replace(/\x00BG\d+\x00/g, "").replace(/[^\S\n]+$/gm, ""),
           (s) =>
@@ -4388,6 +4397,12 @@
         const { parts } = walkConfigLines(result);
         const bannerRows = new Set(
           parts.filter((p) => p.banner).map((p) => p.i),
+        );
+        // Rows of banner text only; a false block's rows stay comments.
+        const textRows = new Set(
+          parts
+            .filter((p) => p.from === 0 && !inactiveRows.has(p.i))
+            .map((p) => p.i),
         );
         if (LINT_PASTE_WARNINGS)
           result = parts
@@ -4413,7 +4428,7 @@
             .join("\n");
         result = escHtml(result);
         if (keywordGroups && keywordGroups.length) {
-          result = applyKeywordHighlighting(result, keywordGroups);
+          result = applyKeywordHighlighting(result, keywordGroups, textRows);
         }
         // One pass per kind, outermost first: a mark can contain chips and pills.
         result = result.replace(/\x00RK(\d+)\x00/g, (_, i) => {
@@ -4492,18 +4507,21 @@
         return cachedKwMap;
       }
 
-      function applyKeywordHighlighting(html, keywordGroups) {
+      // textRows: line indexes of banner text, which has no comments.
+      function applyKeywordHighlighting(html, keywordGroups, textRows = null) {
         const { pattern, colors } = getKeywordMap(keywordGroups);
         const lines = html.split("\n");
         for (let i = 0; i < lines.length; i++) {
           let line = lines[i];
           let commentHtml = "";
           // Free-form lines only comment at line start, as in commandPart.
-          const commentMatch = line.match(
-            FREEFORM_CMD_RE.test(line)
-              ? COMMENT_LINE_RE
-              : INLINE_OR_LINE_COMMENT_RE,
-          );
+          const commentMatch = textRows?.has(i)
+            ? null
+            : line.match(
+                FREEFORM_CMD_RE.test(line)
+                  ? COMMENT_LINE_RE
+                  : INLINE_OR_LINE_COMMENT_RE,
+              );
           if (commentMatch) {
             const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
@@ -6252,7 +6270,7 @@ category = General
         const marks = [];
         const issues = [];
         // A multi-line tag or comment is tokenized per line so row indexes hold.
-        const tokenized = walkConfigLines(
+        const { parts } = walkConfigLines(
           text.replace(
             /\{#[\s\S]*?#\}|\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}|\{[{%#]|[}%#]\}/g,
             (m) =>
@@ -6265,8 +6283,12 @@ category = General
                 })
                 .join("\n"),
           ),
-        )
-          .parts.map(({ i, line, cmd, indent }) => {
+        );
+        const textRows = new Set(
+          parts.filter((p) => p.from === 0).map((p) => p.i),
+        );
+        const tokenized = parts
+          .map(({ i, line, cmd, indent }) => {
             if (!LINT_PASTE_WARNINGS) return line;
             const seen = new Set();
             const marked = cmd.slice(indent).replace(RISK_CHAR_RE, (ch) => {
@@ -6284,7 +6306,7 @@ category = General
         const escaped = escHtml(tokenized);
         const html = (
           EDITOR_HIGHLIGHTING
-            ? applyKeywordHighlighting(escaped, KEYWORD_GROUPS)
+            ? applyKeywordHighlighting(escaped, KEYWORD_GROUPS, textRows)
             : escaped
         )
           .replace(/\x00J(\d+)\x00/g, (_, i) =>
