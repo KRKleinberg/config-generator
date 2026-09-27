@@ -3829,7 +3829,8 @@
           : DIALECT.freeform;
         TEMPLATE_HEADER = templateHeader(COMMENT);
         const c = escRegex(COMMENT);
-        SECTION_RE = new RegExp(`^(${c}{3,})\\s*(.+)$`);
+        // A name can't start with the leader, so a divider row stays a comment.
+        SECTION_RE = new RegExp(`^(${c}{3,})\\s*([^${c}\\s].*)$`);
         // (?<![^\s]): line start or after whitespace; P@ss!NOTE:1 is a value.
         BADGE_RE = new RegExp(
           `(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`,
@@ -6336,7 +6337,7 @@ category = General
           lines = card ? [...card.querySelectorAll(".config-line")] : [];
         } else {
           const all = [...document.querySelectorAll(".config-line")];
-          const isMarker = (l) => l.textContent.trim().startsWith(MARKER);
+          const isMarker = (l) => SECTION_RE.test(l.textContent.trim());
           const start = all.findIndex(
             (l) =>
               isMarker(l) &&
