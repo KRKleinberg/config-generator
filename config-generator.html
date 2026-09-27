@@ -2812,7 +2812,15 @@
                         <tr>
                           <td><code>group</code></td>
                           <td>
-                            Fill any field in a group and all become required.
+                            Members start optional; fill any field in a group
+                            and all become required.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>requires</code></td>
+                          <td>
+                            <code>VAR</code> or <code>[V1, V2]</code>: filling
+                            this field makes those required, one way.
                           </td>
                         </tr>
                       </tbody>
@@ -2936,6 +2944,7 @@
         "required",
         "group",
         "range",
+        "requires",
       ]);
       const OCTET = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
       const IPV4_RE = new RegExp(`^(${OCTET}\\.){3}${OCTET}$`);
@@ -3302,6 +3311,7 @@
       function parseINI(text, errorList = []) {
         const result = {};
         const groupLines = {};
+        const requiresLines = {};
         const categories = [];
         const lint = LINT_VARS_FILE ? (m) => errorList.push(m) : () => {};
         const lines = text.split("\n");
@@ -3311,6 +3321,7 @@
             name: currentItem.category || "",
             line: currentItem.keyLines.category ?? currentItem.line,
           });
+          requiresLines[currentItem.name] = currentItem.keyLines.requires;
           commitINIItem(result, currentItem, errorList);
         };
         for (let i = 0; i < lines.length; i++) {
@@ -3409,6 +3420,12 @@
         for (const [g, n] of Object.entries(groupCounts))
           if (n < 2)
             lint(`Line ${groupLines[g]}: Group '${g}' has only one member`);
+        for (const [name, def] of Object.entries(result))
+          for (const target of def.requires ?? [])
+            if (target === name || !Object.hasOwn(result, target))
+              lint(
+                `Line ${requiresLines[name]}: \`requires\` for '${name}' names ${target === name ? "itself" : `'${target}', which this file doesn't define`}`,
+              );
         const lineOf = (m) => Number(m.match(/^Line (\d+):/)?.[1] ?? Infinity);
         errorList.sort((a, b) => lineOf(a) - lineOf(b));
         return result;
@@ -3477,6 +3494,14 @@
           lint(
             `${at("error")}\`error\` for '${item.name}' has no effect without \`regex\`, \`type\` or \`range\``,
           );
+        // A default fills the field at load, which switches its group on.
+        if (item.group && item.default)
+          lint(
+            `${at("default")}\`default\` for '${item.name}' makes group '${item.group}' required from the start`,
+          );
+        const requires = item.requires
+          ? (parseINIInlineList(item.requires) ?? [item.requires.trim()])
+          : null;
         let compiledRegex = null;
         if (item.regex) {
           try {
@@ -3546,11 +3571,13 @@
           description: item.description || "",
           placeholder: item.placeholder || "",
           default: item.default || "",
+          // Group members start optional; the group makes them required.
           required:
-            String(item.required ?? "")
-              .trim()
-              .toLowerCase() !== "false",
+            item.required === undefined
+              ? !item.group
+              : String(item.required).trim().toLowerCase() !== "false",
           group: item.group || null,
+          requires,
           type: item.type || null,
           range,
           regex: item.regex || null,
@@ -5453,7 +5480,8 @@
 #  --- FORM BEHAVIOR & LAYOUT ---
 #  category =            A visual heading in the UI to sort fields under
 #  required =            false = optional, doesn't count in progress bar
-#  group =               If any field in a group is filled, all become required
+#  group =               Members start optional; fill one and all become required
+#  requires =            VAR or [VAR1, VAR2] = filling this field makes those required
 # =============================================================================
 
 `;
@@ -5471,6 +5499,7 @@ category = General
 # error = Invalid format
 # required = false
 # group =
+# requires =
 
 `;
         }
@@ -5738,17 +5767,21 @@ category = General
 
       function updateProgressBar() {
         const activeGroups = {};
+        const requiredBy = new Set();
         for (const [varName, config] of Object.entries(variableDefs)) {
-          if (config.group && isValuePresent(formValues[varName])) {
-            activeGroups[config.group] = true;
-          }
+          if (!isValuePresent(formValues[varName])) continue;
+          if (config.group) activeGroups[config.group] = true;
+          if (Array.isArray(config.requires))
+            for (const target of config.requires) requiredBy.add(target);
         }
 
         let total = 0;
         let filled = 0;
         for (const [varName, config] of Object.entries(variableDefs)) {
           const isRequired =
-            config.required || (config.group && activeGroups[config.group]);
+            config.required ||
+            (config.group && activeGroups[config.group]) ||
+            requiredBy.has(varName);
           const starEl = document.getElementById(`req-star-${varName}`);
           if (starEl)
             starEl.style.display = isRequired ? "inline-block" : "none";
