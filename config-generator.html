@@ -638,7 +638,6 @@
         border-radius: var(--radius-sm);
       }
 
-      /* Fades at full size, like focus-flash. */
       @keyframes search-flash {
         30%,
         85% {
@@ -7218,7 +7217,6 @@ category = General
         replayFlash(el, "flash-jump");
       }
 
-      // Runs a one-shot animation class from the start; it comes off when done.
       function replayFlash(el, cls) {
         el.classList.remove(cls);
         void el.offsetWidth; // restart on repeat clicks
