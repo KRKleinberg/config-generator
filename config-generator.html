@@ -482,14 +482,23 @@
       .field {
         margin-bottom: 14px;
         border-radius: var(--radius-sm);
-        transition:
-          background 0.3s,
-          box-shadow 0.3s;
+      }
+
+      /* Rings fade at full size: a shrinking shadow can leave stale pixels on screen. */
+      @keyframes focus-flash {
+        33%,
+        67% {
+          background: rgba(var(--rgb-accent), 0.15);
+          box-shadow: 0 0 0 6px rgba(var(--rgb-accent), 0.15);
+        }
+
+        100% {
+          box-shadow: 0 0 0 6px transparent;
+        }
       }
 
       .field.flash-focus {
-        background: rgba(var(--rgb-accent), 0.15);
-        box-shadow: 0 0 0 6px rgba(var(--rgb-accent), 0.15);
+        animation: focus-flash 0.9s ease;
       }
 
       .field label {
@@ -629,13 +638,23 @@
         border-radius: var(--radius-sm);
       }
 
+      /* Fades at full size, like focus-flash. */
+      @keyframes search-flash {
+        30%,
+        85% {
+          background: var(--accent);
+          color: var(--on-accent);
+          box-shadow: 0 0 0 4px var(--accent);
+        }
+
+        100% {
+          box-shadow: 0 0 0 4px transparent;
+        }
+      }
+
       .preview-var.flash-search,
       .badge.flash-search {
-        background: var(--accent);
-        color: var(--on-accent);
-        box-shadow: 0 0 0 4px var(--accent);
-        border-radius: var(--radius-sm);
-        transition: all 0.3s ease;
+        animation: search-flash 1s ease;
       }
 
       .progress-bar {
@@ -6117,13 +6136,7 @@ category = General
           el.scrollIntoView({ behavior: "smooth", block: "center" });
           setTimeout(() => el.focus(), 100);
           const fieldContainer = el.closest(".field");
-          if (fieldContainer) {
-            fieldContainer.classList.add("flash-focus");
-            setTimeout(
-              () => fieldContainer.classList.remove("flash-focus"),
-              600,
-            );
-          }
+          if (fieldContainer) replayFlash(fieldContainer, "flash-focus");
         }
       }
 
@@ -7202,14 +7215,17 @@ category = General
 
       function flashLine(el, i = 0) {
         if (i === 0) el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.remove("flash-jump");
+        replayFlash(el, "flash-jump");
+      }
+
+      // Runs a one-shot animation class from the start; it comes off when done.
+      function replayFlash(el, cls) {
+        el.classList.remove(cls);
         void el.offsetWidth; // restart on repeat clicks
-        el.classList.add("flash-jump");
-        el.addEventListener(
-          "animationend",
-          () => el.classList.remove("flash-jump"),
-          { once: true },
-        );
+        el.classList.add(cls);
+        el.addEventListener("animationend", () => el.classList.remove(cls), {
+          once: true,
+        });
       }
 
       function setWarnBadge(id, kind, msgs) {
@@ -7295,8 +7311,7 @@ category = General
           (entries, obs) => {
             entries.forEach((entry) => {
               if (entry.isIntersecting) {
-                target.classList.add("flash-search");
-                setTimeout(() => target.classList.remove("flash-search"), 800);
+                replayFlash(target, "flash-search");
                 obs.disconnect();
               }
             });
