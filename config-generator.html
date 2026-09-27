@@ -2577,7 +2577,9 @@
                       <code data-syntax>!</code>
                       is part of the value. Bare
                       <code data-syntax>!</code>
-                      lines and banner blocks pass through.
+                      lines and banner blocks pass through. Lines left empty by
+                      template tags, comments or badges are dropped; blank lines
+                      you type stay.
                     </dd>
                     <dt>Unfilled variables</dt>
                     <dd>
@@ -2900,9 +2902,14 @@
         "group",
       ]);
       const INNER_IF_ELSE_RE =
-        /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}/g;
+        /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
       const INNER_IF_RE =
         /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
+      const TAG_LINE_RE =
+        /^[ \t]*((?:\{%\s*(?:if\s[^%\n]*|else|endif)\s*%\}[ \t]*)+)$/gm;
+      // Comments filling whole lines, which then leave no blank line behind.
+      const COMMENT_LINES_RE =
+        /^[ \t]*(?:\{#(?:(?!#\})[\s\S])*#\}[ \t]*)+(?:\n|$)/gm;
       let cachedKwGroupsRef = null;
       let cachedKwMap = null;
       const IOS_KEYWORDS = [
@@ -3632,39 +3639,52 @@
       // opts.commentFalse (preview): whole-line false blocks render as comments,
       // each line led by INACTIVE so later passes can tell it from banner text.
       function processConditionals(template, values, opts = {}) {
-        let result = template;
+        // A line of tags alone is layout, so its indentation goes with it.
+        let result = template.replace(TAG_LINE_RE, (_, tags) =>
+          tags.replace(/[ \t]+$/, "").replace(/%\}[ \t]+\{%/g, "%}{%"),
+        );
         let prev = "";
         let iterations = 0;
         const MAX_ITERATIONS = 50;
+        const on = (neg, v) => isValuePresent(values[v]) !== !!neg;
+        // A branch's lines; "\n" (tags on lines of their own) holds none, while
+        // "\n\n" holds one typed blank line, which stays.
+        const lines = (s) =>
+          s === "" || s === "\n"
+            ? []
+            : s.replace(/^\n/, "").replace(/\n$/, "").split("\n");
+        const atLineStart = (offset, str) =>
+          offset === 0 || str[offset - 1] === "\n";
         while (result !== prev && iterations < MAX_ITERATIONS) {
           prev = result;
-          result = result.replace(INNER_IF_ELSE_RE, (_, neg, v, yes, __, no) =>
-            isValuePresent(values[v]) !== !!neg
-              ? yes.replace(/^\n/, "").replace(/\n$/, "")
-              : no.replace(/^\n/, "").replace(/\n$/, ""),
+          result = result.replace(
+            INNER_IF_ELSE_RE,
+            (_, neg, v, yes, _yes, no, _no, tail, offset, str) => {
+              const body = lines(on(neg, v) ? yes : no);
+              // An empty branch on lines of its own leaves no blank line.
+              return !body.length && atLineStart(offset, str)
+                ? ""
+                : body.join("\n") + tail;
+            },
           );
           result = result.replace(
             INNER_IF_RE,
             (_, neg, v, content, _inner, tail, offset, str) => {
-              if (isValuePresent(values[v]) !== !!neg)
-                return content.replace(/^\n/, "").replace(/\n$/, "") + tail;
-              if (opts.commentFalse) {
+              const body = lines(content);
+              if (body.length && on(neg, v)) return body.join("\n") + tail;
+              if (body.length && opts.commentFalse) {
                 const lineStart = str.lastIndexOf("\n", offset - 1) + 1;
-                if (/^\s*$/.test(str.slice(lineStart, offset))) {
-                  const body = content.replace(/^\n/, "").replace(/\n$/, "");
+                if (/^\s*$/.test(str.slice(lineStart, offset)))
                   return (
                     body
-                      .split("\n")
                       .map((l) =>
                         l.trim() === "" ? l : `${INACTIVE}${COMMENT} ` + l,
                       )
                       .join("\n") + tail
                   );
-                }
               }
-              // False: drop the tail newline only for a whole-line tag, else lines merge.
-              const atLineStart = offset === 0 || str[offset - 1] === "\n";
-              return atLineStart ? "" : tail;
+              // Drop the tail newline only for a whole-line tag, else lines merge.
+              return atLineStart(offset, str) ? "" : tail;
             },
           );
           iterations++;
@@ -4348,8 +4368,12 @@
         };
       }
 
+      function stripTemplateComments(text) {
+        return text.replace(COMMENT_LINES_RE, "").replace(JINJA_COMMENT_RE, "");
+      }
+
       function jinjaRawParts(template) {
-        let result = template.replace(JINJA_COMMENT_RE, "");
+        let result = stripTemplateComments(template);
         result = processConditionals(result, formValues);
         // Values ride through the badge/comment strips as tokens, never mangled.
         const rendered = [];
@@ -4359,7 +4383,14 @@
           rendered.push(r.text);
           return `\x00RV${rendered.length - 1}\x00`;
         });
-        if (STRIP_BADGES) result = replaceBadges(result, CLEAN_BADGE_RE, "");
+        if (STRIP_BADGES) {
+          const before = result.split("\n");
+          // A line that held only badges goes rather than leave a blank line.
+          result = replaceBadges(result, CLEAN_BADGE_RE, "")
+            .split("\n")
+            .filter((line, i) => line.trim() !== "" || before[i].trim() === "")
+            .join("\n");
+        }
         const restore = (s) =>
           s.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
         const lintText = cleanFormatting(result);
@@ -4396,7 +4427,7 @@
       }
 
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
-        let result = template.replace(JINJA_COMMENT_RE, "");
+        let result = stripTemplateComments(template);
         result = processConditionals(result, formValues, {
           commentFalse: true,
         });
