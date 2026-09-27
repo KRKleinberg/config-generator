@@ -13,7 +13,7 @@ A single-file, offline browser tool that turns a Jinja template and an optional 
 - Template and vars file checks: unmatched tags, unsupported syntax, unknown keys, bad defaults, duplicates, unanchored regexes, and categories split across the file.
 - Inline badges: `!STIG: V-1234` or any all-caps keyword renders a colored pill; badges and template comments are stripped from output.
 - Sessions save the whole workspace as one JSON file, except values of secret fields, which stay masked on screen too; nothing is written to browser storage, so nothing else survives closing the tab.
-- The platform badge in the preview title switches the platform, and loading a template picks it automatically when the syntax is unambiguous.
+- The platform badge in the preview title switches the platform, and loading a template picks it automatically when the syntax is unambiguous; Generic turns every platform rule off as a fallback.
 
 ## Platforms
 
@@ -21,6 +21,7 @@ A single-file, offline browser tool that turns a Jinja template and an optional 
 - Cisco NX-OS (untested)
 - Arista EOS (untested)
 - Juniper Junos (untested)
+- Generic: no platform rules; only template syntax, section markers and badges are removed, lines keep their indentation, and `!` or `#` is read from the template's markers
 
 ## Configuration
 
@@ -43,7 +44,7 @@ Constants at the top of the script:
 | `LINT_NON_ASCII` | `true` | Flag non-ASCII characters; off for sites with umlauts in banners |
 | `LINT_TEMPLATE` | `true` | Template syntax badge |
 | `LINT_VARS_FILE` | `true` | Advisory vars file checks (parse errors always show) |
-| `DIALECT_NAME` | `"ios"` | Startup platform: `ios`, `nxos`, `eos`, `junos` |
+| `DIALECT_NAME` | `"ios"` | Startup platform: `ios`, `nxos`, `eos`, `junos`, `generic` |
 | `DIALECT_AUTODETECT` | `true` | Switch platform on template load when the text makes it clear |
 | `EDITOR_TAB_SIZE` | `4` | Spaces inserted by Tab in editors; `0` restores focus navigation |
 | `EDITOR_HIGHLIGHTING` | `true` | Keyword and Jinja coloring in editors |

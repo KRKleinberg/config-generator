@@ -2648,7 +2648,8 @@
                       <code data-syntax>!</code>
                       lines and banner blocks pass through. Lines left empty by
                       template tags, comments or badges are dropped; blank lines
-                      you type stay.
+                      you type stay. The Generic platform strips only template
+                      syntax, section markers and badges, and keeps indentation.
                     </dd>
                     <dt>Unfilled variables</dt>
                     <dd>
@@ -2753,7 +2754,8 @@
                           <td>
                             Starts a copyable section.
                             <code data-syntax>!!!!!</code> or more marks it
-                            important with a red header.
+                            important with a red header. A leading space keeps a
+                            line from being read as a marker.
                           </td>
                         </tr>
                         <tr>
@@ -2933,7 +2935,7 @@
       const LINT_TEMPLATE = true; // template syntax badge
       const LINT_VARS_FILE = true; // advisory .vars.ini checks; parse errors always show
       // Platform and editor
-      const DIALECT_NAME = "ios"; // ios, nxos, eos, junos (see DIALECTS); only ios is device-tested
+      const DIALECT_NAME = "ios"; // ios, nxos, eos, junos, generic (see DIALECTS); only ios is device-tested
       const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
       const EDITOR_TAB_SIZE = 4; // spaces per Tab in editors; 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
@@ -4140,9 +4142,62 @@
           banner: null,
           keywords: JUNOS_KEYWORDS,
         },
+        // No platform rules: only the tool's own syntax is removed. Its leader
+        // is read from the template (markerLeader), so comment is a fallback.
+        generic: {
+          generic: true,
+          label: "Generic, no platform rules",
+          short: "Generic",
+          comment: "!",
+          descriptionMax: Infinity,
+          freeform: /(?!)/,
+          banner: null,
+          // Color only: permits and denies read the same on any platform.
+          keywords: [
+            {
+              name: "Good Words & Permits",
+              color: "var(--syn-good)",
+              words: [
+                "permit",
+                "permitted",
+                "allow",
+                "allowed",
+                "accept",
+                "accepted",
+                "enable",
+                "enabled",
+                "trust",
+                "trusted",
+                "true",
+              ],
+            },
+            {
+              name: "Bad Words & Denies",
+              color: "var(--syn-bad)",
+              words: [
+                "deny",
+                "denied",
+                "reject",
+                "rejected",
+                "drop",
+                "dropped",
+                "discard",
+                "block",
+                "blocked",
+                "disable",
+                "disabled",
+                "shutdown",
+                "false",
+              ],
+            },
+          ],
+        },
       };
       // Derived from the active dialect; only applyDialect assigns these.
       let DIALECT, COMMENT, MARKER, KEYWORD_GROUPS, MAX_DESCRIPTION_LEN;
+      let STRIPS_COMMENTS, STRIPS_INDENT;
+      // Generic's leader for the loaded template; kept across platform switches.
+      let genericLeader = null;
       let FREEFORM_CMD_RE,
         TEMPLATE_HEADER,
         SECTION_RE,
@@ -4152,9 +4207,15 @@
         BARE_COMMENT_RE,
         INLINE_COMMENT_RE,
         INLINE_OR_LINE_COMMENT_RE;
-      function applyDialect(name) {
+      // text: the template Generic reads its leader from.
+      function applyDialect(name, text = "") {
         DIALECT = DIALECTS[name] ?? DIALECTS.ios;
-        COMMENT = DIALECT.comment;
+        COMMENT = DIALECT.generic
+          ? (genericLeader ??= markerLeader(text))
+          : DIALECT.comment;
+        // Generic sends lines as written, indentation included.
+        STRIPS_COMMENTS = STRIP_COMMENTS && !DIALECT.generic;
+        STRIPS_INDENT = STRIP_INDENT && !DIALECT.generic;
         MARKER = COMMENT.repeat(3);
         KEYWORD_GROUPS = DIALECT.keywords;
         MAX_DESCRIPTION_LEN = DIALECT.descriptionMax;
@@ -4184,7 +4245,10 @@
         INLINE_COMMENT_RE = new RegExp(`\\s+${c}.*$`);
         INLINE_OR_LINE_COMMENT_RE = new RegExp(`(?:^|\\s)${c}`);
         const badge = document.getElementById("dialectBadge");
-        const nameHtml = `<span class="dialect-name">${escHtml(DIALECT.short)}</span>`;
+        const shown = DIALECT.generic
+          ? `${DIALECT.short} (${COMMENT})`
+          : DIALECT.short;
+        const nameHtml = `<span class="dialect-name">${escHtml(shown)}</span>`;
         badge.innerHTML = DIALECT.experimental
           ? `${nameHtml}<span class="dialect-flag">BETA</span>`
           : nameHtml;
@@ -4226,9 +4290,42 @@
           originalTemplateSource === null
             ? null
             : deriveRecordsFromTemplate(originalTemplateSource);
-        applyDialect(name);
+        // Generic reads the file as loaded; a switch rewrites only the original.
+        applyDialect(name, templateSource ?? "");
         if (original) originalTemplateSource = assembleFromRecords(original);
         if (templateSource !== null) render();
+      }
+
+      // Generic re-reads its leader when edited text is parsed, as a switch would.
+      function refreshGenericLeader(text) {
+        const leader = markerLeader(text);
+        if (!DIALECT.generic || leader === COMMENT) return;
+        const original =
+          originalTemplateSource === null
+            ? null
+            : deriveRecordsFromTemplate(originalTemplateSource);
+        genericLeader = leader;
+        applyDialect("generic");
+        if (original) originalTemplateSource = assembleFromRecords(original);
+      }
+
+      // Named markers vote for ! or #, then badges break a tie; ! by default.
+      function markerLeader(text) {
+        const body = (text ?? "").replace(JINJA_COMMENT_RE, "");
+        const count = (re) => (body.match(re) || []).length;
+        const vote = (bang, hash) =>
+          hash > bang ? "#" : bang > hash ? "!" : null;
+        return (
+          vote(
+            count(/^!{3,}[^\S\n]*[^!\s]/gm),
+            count(/^#{3,}[^\S\n]*[^#\s]/gm),
+          ) ??
+          vote(
+            count(/(?<![^\s])![A-Z][A-Z0-9_-]*:/g),
+            count(/(?<![^\s])#[A-Z][A-Z0-9_-]*:/g),
+          ) ??
+          "!"
+        );
       }
 
       // Weighted signatures unique to each dialect; a guess needs a clear lead.
@@ -4376,32 +4473,35 @@
             bannerDelim = b.delim;
             continue;
           }
-          if (BARE_COMMENT_RE.test(line)) {
+          if (!DIALECT.generic && BARE_COMMENT_RE.test(line)) {
             out.push(COMMENT); // bare comment char passes through: answers device prompts on paste
             continue;
           }
           if (SECTION_RE.test(line)) continue; // even with STRIP_COMMENTS off
-          if (STRIP_COMMENTS && COMMENT_LINE_RE.test(line)) continue;
+          if (STRIPS_COMMENTS && COMMENT_LINE_RE.test(line)) continue;
           out.push(dedent(commandPart(line)));
         }
         return out.join("\n");
       }
 
       function dedent(line) {
-        return STRIP_INDENT ? line.replace(/^\s+/, "") : line;
+        return STRIPS_INDENT ? line.replace(/^\s+/, "") : line;
       }
 
       // What dedent removes; lint and marks start after it.
       function indentOf(line) {
-        return STRIP_INDENT ? line.match(/^\s*/)[0].length : 0;
+        return STRIPS_INDENT ? line.match(/^\s*/)[0].length : 0;
       }
 
       function cleanFormatting(text) {
-        return text
+        const lines = text
           .split("\n")
           .map((line) => line.replace(/\s+$/, ""))
-          .join("\n")
-          .trim();
+          .join("\n");
+        // Generic keeps the first line's indentation; only blank edges go.
+        return DIALECT.generic
+          ? lines.replace(/^\n+/, "").replace(/\n+$/, "")
+          : lines.trim();
       }
 
       // Ctrl-V (0x16) escapes ? and tab; encoding hazards have no escape.
@@ -4427,7 +4527,7 @@
       // Device-bound part of a line; cleanOutputLines emits it, dedented.
       function commandPart(line) {
         if (SECTION_RE.test(line)) return "";
-        if (!STRIP_COMMENTS) return line;
+        if (!STRIPS_COMMENTS) return line;
         if (COMMENT_LINE_RE.test(line)) return "";
         if (FREEFORM_CMD_RE.test(line)) return line;
         return line.replace(INLINE_COMMENT_RE, "");
@@ -5040,6 +5140,8 @@
       }
 
       function newTemplate() {
+        genericLeader = null;
+        if (DIALECT.generic) applyDialect("generic");
         templateSource = TEMPLATE_HEADER;
         originalTemplateSource = templateSource;
         templateFileName = NEW_TEMPLATE_NAME;
@@ -5112,9 +5214,13 @@
         readFileAsText(file, "Error reading template file", (evt) => {
           try {
             const raw = toInternalEOL(evt.target.result);
-            const guess = DIALECT_AUTODETECT && detectDialect(raw);
+            // Generic is a deliberate fallback, so detection leaves it alone.
+            const guess =
+              DIALECT_AUTODETECT && !DIALECT.generic && detectDialect(raw);
             const detected = guess && DIALECTS[guess] !== DIALECT;
+            genericLeader = null;
             if (detected) applyDialect(guess);
+            else if (DIALECT.generic) applyDialect("generic", raw);
             templateSource = canonicalizeMarkers(raw);
             templateFileName = fullName;
             originalTemplateSource = templateSource;
@@ -5225,6 +5331,7 @@
         const session = {
           schemaVersion: SESSION_SCHEMA_VERSION,
           dialect: Object.keys(DIALECTS).find((k) => DIALECTS[k] === DIALECT),
+          ...(DIALECT.generic && { leader: COMMENT }),
           templateSource,
           originalTemplateSource,
           templateFileName,
@@ -5438,11 +5545,15 @@
               session.originalTemplateSource !== null
                 ? toInternalEOL(session.originalTemplateSource)
                 : null;
+            // Generic's leader rides in the session; older ones fall back to reading it.
+            genericLeader = ["!", "#"].includes(session.leader)
+              ? session.leader
+              : null;
             if (
               session.dialect in DIALECTS &&
-              DIALECTS[session.dialect] !== DIALECT
+              (DIALECTS[session.dialect] !== DIALECT || DIALECT.generic)
             )
-              applyDialect(session.dialect);
+              applyDialect(session.dialect, originalTemplateSource ?? "");
             // Sessions saved before new templates got a name store "".
             templateFileName =
               session.templateFileName ||
@@ -6530,6 +6641,7 @@ category = General
 
       function commitFullModeEdit() {
         activeSectionEditors.delete(FULL_EDIT_KEY);
+        refreshGenericLeader(fullModeEditBuffer);
         sectionRecords = disassembleFullEdit(
           sectionRecords,
           fullModeEditBuffer,
