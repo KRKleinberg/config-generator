@@ -2818,6 +2818,7 @@
       const SESSION_SCHEMA_VERSION = 1;
       const JINJA_COMMENT_RE = /\{#[\s\S]*?#\}/g;
       const EXPR_RE = /\{\{(.+?)\}\}/g;
+      const INACTIVE = "\x00IN\x00";
       let variableDefs = {};
       let templateSource = null;
       let originalTemplateSource = null;
@@ -3541,7 +3542,8 @@
           : `{{ ${expr} }}`;
       }
 
-      // opts.commentFalse (preview): whole-line false blocks render as comments.
+      // opts.commentFalse (preview): whole-line false blocks render as comments,
+      // each line led by INACTIVE so later passes can tell it from banner text.
       function processConditionals(template, values, opts = {}) {
         let result = template;
         let prev = "";
@@ -3566,7 +3568,9 @@
                   return (
                     body
                       .split("\n")
-                      .map((l) => (l.trim() === "" ? l : `${COMMENT} ` + l))
+                      .map((l) =>
+                        l.trim() === "" ? l : `${INACTIVE}${COMMENT} ` + l,
+                      )
                       .join("\n") + tail
                   );
                 }
@@ -3958,6 +3962,37 @@
           : line.includes(delim);
       }
 
+      // Banner text reaches the device as written, so its badges stay text;
+      // the command side of an opening or closing line still drops them.
+      function replaceBadges(text, re, replacement) {
+        const fixed = DIALECT.banner?.delimiter;
+        let delim = null;
+        return text
+          .split("\n")
+          .map((line) => {
+            if (delim) {
+              // A false block's preview line never reaches the device.
+              if (line.includes(INACTIVE)) return line;
+              // IOS: text before the delimiter is banner text. EOS: EOF plus
+              // badges closes, since the badges never reach the device.
+              const at = fixed
+                ? line.replace(re, "").trim() === delim
+                  ? 0
+                  : -1
+                : line.indexOf(delim);
+              if (at === -1) return line;
+              delim = null;
+              return (
+                line.slice(0, at) + line.slice(at).replace(re, replacement)
+              );
+            }
+            // Judge an opening line without its badges, as the device sees it.
+            delim = bannerStart(line.replace(re, ""))?.delim ?? null;
+            return line.replace(re, replacement);
+          })
+          .join("\n");
+      }
+
       function cleanOutputLines(text) {
         const out = [];
         let bannerDelim = null;
@@ -4164,7 +4199,7 @@
           rendered.push(r.text);
           return `\x00RV${rendered.length - 1}\x00`;
         });
-        if (STRIP_BADGES) result = result.replace(CLEAN_BADGE_RE, "");
+        if (STRIP_BADGES) result = replaceBadges(result, CLEAN_BADGE_RE, "");
         const restore = (s) =>
           s.replace(/\x00RV(\d+)\x00/g, (_, i) => rendered[i]);
         const lintText = cleanFormatting(result);
@@ -4223,7 +4258,8 @@
         const badgeTokens = [];
         const order = badgeColorMap || {};
         // Off, badges stay in the text and read as comments, matching the output.
-        result = result.replace(
+        result = replaceBadges(
+          result,
           STRIP_BADGES ? BADGE_RE : /(?!)/g,
           (match, keyword, ids, offset, str) => {
             // A badge alone on its line drops its left margin.
@@ -4248,7 +4284,7 @@
           },
         );
         // Trim while tokens are in place so lint and rows share line indexes.
-        result = cleanFormatting(result);
+        result = cleanFormatting(result).replaceAll(INACTIVE, "");
         const issues = lintConfigLines(
           result.replace(/\x00BG\d+\x00/g, "").replace(/[^\S\n]+$/gm, ""),
           (s) =>
@@ -5526,9 +5562,11 @@ category = General
           }
           visible.push(shown);
         }
-        const sent = visible.map((v) =>
-          STRIP_BADGES ? v.replace(CLEAN_BADGE_RE, "") : v,
-        );
+        const sent = replaceBadges(
+          visible.join("\n"),
+          STRIP_BADGES ? CLEAN_BADGE_RE : /(?!)/g,
+          "",
+        ).split("\n");
         // An unclosed banner hides no markers; lint reports it instead.
         const neverCloses = new Set();
         for (let i = 0; i < out.length; i++) {
