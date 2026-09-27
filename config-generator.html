@@ -582,7 +582,8 @@
         border-radius: var(--radius-sm);
       }
 
-      .preview-var.flash-search {
+      .preview-var.flash-search,
+      .badge.flash-search {
         background: var(--accent);
         color: var(--on-accent);
         box-shadow: 0 0 0 4px var(--accent);
@@ -3836,13 +3837,14 @@
         // A name can't start with the leader, so a divider row stays a comment.
         SECTION_RE = new RegExp(`^(${c}{3,})\\s*([^${c}\\s].*)$`);
         // (?<![^\s]): line start or after whitespace; P@ss!NOTE:1 is a value.
+        // The value ends at the line end or a leader after whitespace.
         BADGE_RE = new RegExp(
-          `(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):\\s*([\\w\\-., ]+)`,
+          `(?<![^\\s])${c}([A-Z][A-Z0-9_-]*):[^\\S\\n]*((?!${c})(?:[^\\n${c}]|(?<!\\s)${c})+)`,
           "g",
         );
         // Strip exactly what BADGE_RE renders as pills, so preview predicts output.
         CLEAN_BADGE_RE = new RegExp(
-          `(?<![^\\s])${c}[A-Z][A-Z0-9_-]*:\\s*[\\w\\-., ]+`,
+          `(?<![^\\s])${c}[A-Z][A-Z0-9_-]*:[^\\S\\n]*(?!${c})(?:[^\\n${c}]|(?<!\\s)${c})+`,
           "g",
         );
         COMMENT_LINE_RE = new RegExp(`^\\s*${c}`);
@@ -3966,6 +3968,35 @@
       // the command side of an opening or closing line still drops them.
       function replaceBadges(text, re, replacement) {
         const fixed = DIALECT.banner?.delimiter;
+        // Replaces in line[from, to); a badge inside a quoted string ends at
+        // its closing quote, counting quotes from the line start.
+        const cut = (line, rep, from = 0, to = line.length) => {
+          let seen = 0;
+          let quotes = 0;
+          return line.slice(from, to).replace(re, (...a) => {
+            const run = (args) =>
+              typeof rep === "function" ? rep(...args) : rep;
+            const [m] = a;
+            for (const end = from + a.at(-2); seen < end; seen++)
+              if (line[seen] === '"') quotes++;
+            const q = m.indexOf('"');
+            if (q === -1 || quotes % 2 === 0) return run(a);
+            const head = m.slice(0, q);
+            if (head.endsWith(":")) return m;
+            const args = [head, ...a.slice(1)];
+            if (a.length > 3)
+              args[2] = a[2].slice(0, a[2].length - m.length + q);
+            return run(args) + m.slice(q);
+          });
+        };
+        // An opening line splits at its closing delimiter so no badge eats it.
+        const command = (line, rep) => {
+          const b = fixed ? null : bannerStart(line);
+          const close = b ? line.indexOf(line[b.at], b.at + 1) : -1;
+          return close === -1
+            ? cut(line, rep)
+            : cut(line, rep, 0, close) + cut(line, rep, close);
+        };
         let delim = null;
         return text
           .split("\n")
@@ -3976,19 +4007,17 @@
               // IOS: text before the delimiter is banner text. EOS: EOF plus
               // badges closes, since the badges never reach the device.
               const at = fixed
-                ? line.replace(re, "").trim() === delim
+                ? cut(line, "").trim() === delim
                   ? 0
                   : -1
                 : line.indexOf(delim);
               if (at === -1) return line;
               delim = null;
-              return (
-                line.slice(0, at) + line.slice(at).replace(re, replacement)
-              );
+              return line.slice(0, at) + cut(line, replacement, at);
             }
             // Judge an opening line without its badges, as the device sees it.
-            delim = bannerStart(line.replace(re, ""))?.delim ?? null;
-            return line.replace(re, replacement);
+            delim = bannerStart(command(line, ""))?.delim ?? null;
+            return command(line, replacement);
           })
           .join("\n");
       }
@@ -4272,12 +4301,19 @@
             );
             if (!(keyword in order)) order[keyword] = Object.keys(order).length;
             const token = `\x00BG${badgeTokens.length}\x00`;
+            // A value inside a badge shows as text; data-vars lets it refresh.
+            const values = [...ids.matchAll(/\x00EX(\d+)\x00/g)];
             badgeTokens.push({
               keyword: keyword,
               ids: ids
+                .replace(
+                  /\x00EX(\d+)\x00/g,
+                  (_, i) => exprTokens[i].displayText,
+                )
                 .split(",")
                 .map((s) => s.trim())
                 .filter(Boolean),
+              vars: values.flatMap(([, i]) => exprTokens[i].vars),
               alone: before.trim() === "" && after.trim() === "",
             });
             return token;
@@ -4350,7 +4386,10 @@
             .map((id) => `<span>${escHtml(id)}</span>`)
             .join(`<span class="badge-divider"></span>`);
           const copyText = escHtml(`${tok.keyword}: ${tok.ids.join(", ")}`);
-          const pill = `<span class="badge ${colorClass}" data-copy-text="${copyText}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
+          const vars = tok.vars.length
+            ? ` data-vars="${escHtml(tok.vars.join(" "))}"`
+            : "";
+          const pill = `<span class="badge ${colorClass}"${vars} data-copy-text="${copyText}" onclick="openBadgeCopy(this)"><span class="badge-kw">${escHtml(tok.keyword)}</span><span class="badge-vals">${valsHtml}</span></span>`;
           const cls = tok.alone ? "badge-group badge-alone" : "badge-group";
           return `<span class="${cls}">${pill}</span>`;
         });
@@ -5123,6 +5162,13 @@ category = General
         );
       }
 
+      // A pill holds its values as text, which the fast path can't refresh.
+      function feedsBadge(varName) {
+        return [...document.querySelectorAll(".badge[data-vars]")].some((el) =>
+          el.dataset.vars.split(" ").includes(varName),
+        );
+      }
+
       function fastUpdatePreview(varName) {
         // Query data-raw, not data-var: list spans refresh when any member changes.
         const spans = document.querySelectorAll(".preview-var");
@@ -5225,7 +5271,8 @@ category = General
             !!oldVal !== !!newVal ||
             lintSensitive(oldVal) ||
             lintSensitive(newVal) ||
-            feedsDescription(varName)
+            feedsDescription(varName) ||
+            feedsBadge(varName)
           )
             debouncedRender();
           else {
@@ -6504,8 +6551,9 @@ category = General
       }
 
       function findVarInPreview(varName) {
+        const vars = `[data-vars~="${CSS.escape(varName)}"]`;
         const instances = document.querySelectorAll(
-          `.preview-var[data-vars~="${CSS.escape(varName)}"]`,
+          `.preview-var${vars}, .badge${vars}`,
         );
         if (instances.length === 0)
           return showToast("Variable not found in current preview");
