@@ -2766,8 +2766,18 @@
                         <tr>
                           <td><code>type</code></td>
                           <td>
-                            <code>int</code>
-                            restricts input to digits.
+                            <code>int</code> and <code>vlan</code> restrict
+                            input to digits; <code>ipv4</code>,
+                            <code>mask</code>, <code>wildcard</code>,
+                            <code>vlan</code> and <code>hostname</code> are
+                            checked with a built-in message.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><code>range</code></td>
+                          <td>
+                            <code>low-high</code> bounds an <code>int</code> or
+                            <code>vlan</code> field, e.g. <code>2-4094</code>.
                           </td>
                         </tr>
                         <tr>
@@ -2783,7 +2793,10 @@
                         </tr>
                         <tr>
                           <td><code>error</code></td>
-                          <td>Message shown when the regex rejects a value.</td>
+                          <td>
+                            Message shown when the type, range or regex rejects
+                            a value.
+                          </td>
                         </tr>
                         <tr>
                           <td><code>category</code></td>
@@ -2922,7 +2935,48 @@
         "category",
         "required",
         "group",
+        "range",
       ]);
+      const OCTET = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
+      const IPV4_RE = new RegExp(`^(${OCTET}\\.){3}${OCTET}$`);
+      const ipv4Bits = (v) => v.split(".").reduce((n, o) => n * 256 + +o, 0);
+      // 0...01...1 as a 32-bit value; wraps through int32 on purpose.
+      const lowOnes = (n) => ((n + 1) & n) === 0;
+      // Built-in type checks; min/max bound numeric types before any range.
+      const FIELD_TYPES = {
+        int: {
+          numeric: true,
+          test: (v) => /^\d+$/.test(v),
+          error: "Enter a whole number",
+        },
+        ipv4: {
+          test: (v) => IPV4_RE.test(v),
+          error: "Enter an IPv4 address such as 10.0.0.1",
+        },
+        mask: {
+          test: (v) => IPV4_RE.test(v) && lowOnes(~ipv4Bits(v) >>> 0),
+          error: "Enter a subnet mask such as 255.255.255.0",
+        },
+        wildcard: {
+          test: (v) => IPV4_RE.test(v) && lowOnes(ipv4Bits(v)),
+          error: "Enter a wildcard mask such as 0.0.0.255",
+        },
+        vlan: {
+          numeric: true,
+          min: 1,
+          max: 4094,
+          test: (v) =>
+            /^\d+$/.test(v) &&
+            +v >= 1 &&
+            +v <= 4094 &&
+            !(+v >= 1002 && +v <= 1005),
+        },
+        hostname: {
+          test: (v) => /^[A-Za-z]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(v),
+          error:
+            "Letters, digits and hyphens; start with a letter and end with a letter or digit, 63 at most",
+        },
+      };
       const INNER_IF_ELSE_RE =
         /\{%\s*if\s+(not\s+)?([\w.-]+)\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*else\s*%\}(((?!\{%\s*(?:if|else|endif))[\s\S])*?)\{%\s*endif\s*%\}(\n?)/g;
       const INNER_IF_RE =
@@ -3369,6 +3423,7 @@
           required: true,
           group: null,
           type: null,
+          range: null,
           regex: null,
           error: null,
           choices: null,
@@ -3385,10 +3440,32 @@
         };
         if (Object.hasOwn(result, item.name))
           errorList.push(`${at()}Duplicate variable name: '${item.name}'`);
-        if (item.type && item.type !== "int")
+        const type = Object.hasOwn(FIELD_TYPES, item.type ?? "")
+          ? FIELD_TYPES[item.type]
+          : null;
+        if (item.type && !type)
           lint(
-            `${at("type")}Unknown type \`${item.type}\` for '${item.name}' (only \`int\` is supported)`,
+            `${at("type")}Unknown type \`${item.type}\` for '${item.name}' (use \`int\`, \`ipv4\`, \`mask\`, \`wildcard\`, \`vlan\` or \`hostname\`)`,
           );
+        let range = null;
+        if (item.range) {
+          const m = String(item.range).match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+          if (!m || +m[1] > +m[2])
+            errorList.push(
+              `${at("range")}Invalid \`range\` for '${item.name}'; use \`low-high\`, such as \`2-4094\``,
+            );
+          else if (!type?.numeric)
+            lint(
+              `${at("range")}\`range\` for '${item.name}' needs \`type = int\` or \`type = vlan\``,
+            );
+          else {
+            range = [+m[1], +m[2]];
+            if (type.max && (range[0] < type.min || range[1] > type.max))
+              lint(
+                `${at("range")}\`range\` for '${item.name}' goes past ${item.type} ${type.min}-${type.max}`,
+              );
+          }
+        }
         if (
           item.required !== undefined &&
           !/^(true|false)$/i.test(String(item.required).trim())
@@ -3396,9 +3473,9 @@
           lint(
             `${at("required")}\`required\` for '${item.name}' must be \`true\` or \`false\``,
           );
-        if (item.error && !item.regex)
+        if (item.error && !item.regex && !type && !range)
           lint(
-            `${at("error")}\`error\` for '${item.name}' has no effect without \`regex\``,
+            `${at("error")}\`error\` for '${item.name}' has no effect without \`regex\`, \`type\` or \`range\``,
           );
         let compiledRegex = null;
         if (item.regex) {
@@ -3439,18 +3516,25 @@
             lint(
               `${at("choices")}\`choices\` for '${item.name}' has duplicate options`,
             );
-          if (item.regex || item.type)
+          if (item.regex || item.type || item.range)
             lint(
-              `${at("choices")}\`regex\` and \`type\` are ignored for '${item.name}' because it has \`choices\``,
+              `${at("choices")}\`regex\`, \`type\` and \`range\` are ignored for '${item.name}' because it has \`choices\``,
             );
           if (item.default && !parsedChoices.includes(item.default))
             lint(
               `${at("default")}\`default\` for '${item.name}' is not one of its \`choices\``,
             );
         } else if (item.default) {
-          if (item.type === "int" && !/^\d+$/.test(item.default))
+          if (type && !type.test(item.default))
             lint(
-              `${at("default")}\`default\` for '${item.name}' is not an integer`,
+              `${at("default")}\`default\` for '${item.name}' is not a valid \`${item.type}\``,
+            );
+          else if (
+            range &&
+            !(+item.default >= range[0] && +item.default <= range[1])
+          )
+            lint(
+              `${at("default")}\`default\` for '${item.name}' is outside its \`range\``,
             );
           if (compiledRegex && !compiledRegex.test(item.default))
             lint(
@@ -3468,6 +3552,7 @@
               .toLowerCase() !== "false",
           group: item.group || null,
           type: item.type || null,
+          range,
           regex: item.regex || null,
           compiledRegex: compiledRegex,
           error: item.error || null,
@@ -5359,10 +5444,11 @@
 #  default =             Value pre-filled into the field
 #
 #  --- DATA TYPES & VALIDATION ---
-#  type =                int = restricts input to numbers only
+#  type =                int, ipv4, mask, wildcard, vlan or hostname (built-in check)
+#  range =               low-high bounds for int or vlan, e.g. 2-4094
 #  choices =             [opt1, opt2] = creates a dropdown menu
 #  regex =               Regex pattern (wrap in single quotes: '^[0-9]+$')
-#  error =               Custom error text if regex validation fails
+#  error =               Custom error text if type, range or regex validation fails
 #
 #  --- FORM BEHAVIOR & LAYOUT ---
 #  category =            A visual heading in the UI to sort fields under
@@ -5379,6 +5465,7 @@ category = General
 # placeholder = example value
 # default = pre-filled value
 # type = int
+# range = 1-100
 # choices = [Option1, Option2]
 # regex = '^[0-9]+$'
 # error = Invalid format
@@ -5430,19 +5517,48 @@ category = General
         });
       }
 
-      function isFieldValueValid(value, config) {
+      // "" when the value passes its type, range and regex, else the message to show.
+      function fieldError(value, config) {
         const v = typeof value === "string" ? value.trim() : "";
-        if (!v) return true;
-        const re = config.compiledRegex;
-        return re instanceof RegExp ? re.test(v) : true;
+        if (!v) return "";
+        // A dropdown ignores type, range and regex, as the vars file check says.
+        const type =
+          !config.choices && Object.hasOwn(FIELD_TYPES, config.type ?? "")
+            ? FIELD_TYPES[config.type]
+            : null;
+        const range =
+          !config.choices && Array.isArray(config.range) ? config.range : null;
+        const outside =
+          range && !(Number(v) >= range[0] && Number(v) <= range[1]);
+        if ((type && !type.test(v)) || outside)
+          return config.error || typeError(config.type, range);
+        const re = !config.choices && config.compiledRegex;
+        if (re instanceof RegExp && !re.test(v))
+          return config.error || "Invalid format";
+        return "";
+      }
+
+      function typeError(type, range) {
+        const [lo, hi] = range ?? [
+          FIELD_TYPES[type]?.min,
+          FIELD_TYPES[type]?.max,
+        ];
+        if (type === "vlan")
+          return `Enter a VLAN from ${lo} to ${hi}${lo <= 1005 && hi >= 1002 ? ", except 1002-1005" : ""}`;
+        if (range) return `Enter a number from ${lo} to ${hi}`;
+        return FIELD_TYPES[type].error;
+      }
+
+      function isFieldValueValid(value, config) {
+        return fieldError(value, config) === "";
       }
 
       function applyValidity(inputEl, validMsg, value, config) {
-        const valid = isFieldValueValid(value, config);
-        inputEl.classList.toggle("invalid", !valid);
+        const message = fieldError(value, config);
+        inputEl.classList.toggle("invalid", message !== "");
         if (validMsg) {
-          validMsg.textContent = valid ? "" : config.error || "Invalid format";
-          validMsg.style.display = valid ? "none" : "";
+          validMsg.textContent = message;
+          validMsg.style.display = message ? "" : "none";
         }
       }
 
@@ -5481,8 +5597,11 @@ category = General
       }
 
       function buildTextField(field, varName, config) {
-        const validationRE =
-          config.compiledRegex instanceof RegExp ? config.compiledRegex : null;
+        const checked =
+          config.compiledRegex instanceof RegExp ||
+          Object.hasOwn(FIELD_TYPES, config.type ?? "") ||
+          Array.isArray(config.range);
+        const numeric = FIELD_TYPES[config.type]?.numeric === true;
         const inputEl = document.createElement("input");
         inputEl.id = `field-${varName}`;
         inputEl.autocomplete = "off";
@@ -5493,7 +5612,7 @@ category = General
           formValues[varName] = config.default;
         }
 
-        if (config.type === "int") {
+        if (numeric) {
           inputEl.inputMode = "numeric";
           inputEl.pattern = "[0-9]*";
         }
@@ -5505,7 +5624,7 @@ category = General
 
         inputEl.addEventListener("input", (e) => {
           let val = e.target.value;
-          if (config.type === "int") {
+          if (numeric) {
             val = val.replace(/\D/g, "");
             e.target.value = val;
           }
@@ -5533,7 +5652,7 @@ category = General
         });
 
         field.appendChild(inputEl);
-        if (validationRE) field.appendChild(validMsg);
+        if (checked) field.appendChild(validMsg);
         // Validate now so an invalid default can't reach output unflagged.
         applyValidity(inputEl, validMsg, formValues[varName], config);
         return inputEl;
