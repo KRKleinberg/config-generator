@@ -555,6 +555,43 @@
         box-shadow: 0 0 0 3px rgba(var(--rgb-error), 0.15);
       }
 
+      .secret-wrap {
+        position: relative;
+      }
+
+      .secret-wrap input {
+        padding-right: 40px;
+      }
+
+      .field input.masked:not(:placeholder-shown) {
+        -webkit-text-security: disc;
+      }
+
+      .secret-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 38px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--text-hint);
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+
+      .secret-toggle:hover {
+        color: var(--text);
+      }
+
+      .secret-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+
       .field select {
         cursor: pointer;
         appearance: none;
@@ -2157,6 +2194,16 @@
           <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
           <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
         </symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </symbol>
+        <symbol id="icon-eye-off" viewBox="0 0 24 24">
+          <path
+            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+          ></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </symbol>
         <symbol id="icon-alert" viewBox="0 0 24 24">
           <path
             d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
@@ -2634,7 +2681,7 @@
                       <strong>Session</strong>
                       (also Ctrl+S) saves your whole workspace as one
                       <code>.session.json</code>
-                      file.
+                      file, except secret fields, which reopen empty.
                       <strong>Template</strong>
                       writes the template with its
                       <code>{{ VARIABLE }}</code>
@@ -2823,6 +2870,14 @@
                             this field makes those required, one way.
                           </td>
                         </tr>
+                        <tr>
+                          <td><code>secret</code></td>
+                          <td>
+                            <code>true</code> masks the field and its preview
+                            value until shown, and keeps the value out of saved
+                            sessions.
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -2906,6 +2961,9 @@
       let varsFileName = "";
       let emptyStateHtml = "";
       let lastPickedHandle = null; // in-memory only: reopens pickers where the user last was, never persisted
+      const revealedSecrets = new Set(); // in-memory only: secret fields shown in clear, never persisted
+      const secretNames = new Set(); // fields built as secret; buildForm drops a value once its field isn't
+      const SECRET_MASK = "•".repeat(8);
       // Examples are indented so older tool copies don't read them as markers.
       function templateHeader(c) {
         return `{# ===============================================================
@@ -2945,6 +3003,7 @@
         "group",
         "range",
         "requires",
+        "secret",
       ]);
       const OCTET = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
       const IPV4_RE = new RegExp(`^(${OCTET}\\.){3}${OCTET}$`);
@@ -3439,6 +3498,8 @@
           default: "",
           required: true,
           group: null,
+          requires: null,
+          secret: false,
           type: null,
           range: null,
           regex: null,
@@ -3483,12 +3544,21 @@
               );
           }
         }
-        if (
-          item.required !== undefined &&
-          !/^(true|false)$/i.test(String(item.required).trim())
-        )
+        for (const key of ["required", "secret"])
+          if (
+            item[key] !== undefined &&
+            !/^(true|false)$/i.test(String(item[key]).trim())
+          )
+            lint(
+              `${at(key)}\`${key}\` for '${item.name}' must be \`true\` or \`false\``,
+            );
+        const secret =
+          String(item.secret ?? "")
+            .trim()
+            .toLowerCase() === "true";
+        if (secret && item.choices)
           lint(
-            `${at("required")}\`required\` for '${item.name}' must be \`true\` or \`false\``,
+            `${at("secret")}\`secret\` is ignored for '${item.name}' because it has \`choices\``,
           );
         if (item.error && !item.regex && !type && !range)
           lint(
@@ -3578,6 +3648,7 @@
               : String(item.required).trim().toLowerCase() !== "false",
           group: item.group || null,
           requires,
+          secret: secret && !item.choices,
           type: item.type || null,
           range,
           regex: item.regex || null,
@@ -4509,6 +4580,13 @@
         return `<span class="risk-char"${warnAttrs("paste warnings", [message])}>${markRiskChars(escapedHtml)}</span>`;
       }
 
+      // A filled chip of a secret field shows bullets until the field is revealed.
+      function hidesSecret(vars) {
+        return vars.some(
+          (v) => variableDefs[v]?.secret === true && !revealedSecrets.has(v),
+        );
+      }
+
       // Single chokepoint for {{ }} evaluation so render paths can't drift.
       function renderExpr(content) {
         const trimmed = content.trim();
@@ -4623,9 +4701,10 @@
             badgeTokens.push({
               keyword: keyword,
               ids: ids
-                .replace(
-                  /\x00EX(\d+)\x00/g,
-                  (_, i) => exprTokens[i].displayText,
+                .replace(/\x00EX(\d+)\x00/g, (_, i) =>
+                  exprTokens[i].filled && hidesSecret(exprTokens[i].vars)
+                    ? SECRET_MASK
+                    : exprTokens[i].displayText,
                 )
                 .split(",")
                 .map((s) => s.trim())
@@ -4723,10 +4802,13 @@
           const safeVar = escHtml(baseVar);
           const safeVars = escHtml(vars.join(" "));
           const safeRaw = escHtml(rawContent);
-          const text = risky
-            ? markRiskChars(escHtml(displayText))
-            : escHtml(displayText);
-          return `<span class="${cls} preview-var" data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml(vars.join(", "))}">${text}</span>`;
+          const masked = filled && hidesSecret(vars);
+          const text = masked
+            ? SECRET_MASK
+            : risky
+              ? markRiskChars(escHtml(displayText))
+              : escHtml(displayText);
+          return `<span class="${cls} preview-var"${masked ? " data-masked" : ""} data-var="${safeVar}" data-vars="${safeVars}" data-raw="${safeRaw}" title="Click to edit ${escHtml(vars.join(", "))}">${text}</span>`;
         });
         result = result.replace(/\x00BG(\d+)\x00/g, (_, i) => {
           const tok = badgeTokens[i];
@@ -5077,6 +5159,7 @@
             variableDefs = defs;
             varsFromFile = structuredClone(defs);
             varsFileName = file.name;
+            revealedSecrets.clear();
             setWarnBadge(
               "varsWarnBadge",
               "variable definition issues",
@@ -5148,7 +5231,17 @@
           varsFromFile,
           varsFileName,
           variableDefs,
-          formValues,
+          // Secret values never reach the file. A changed one is saved as ""
+          // so it reopens empty instead of quietly taking its default.
+          formValues: Object.fromEntries(
+            Object.entries(formValues).flatMap(([k, v]) =>
+              !secretNames.has(k) && variableDefs[k]?.secret !== true
+                ? [[k, v]]
+                : variableDefs[k]?.default && v !== variableDefs[k].default
+                  ? [[k, ""]]
+                  : [],
+            ),
+          ),
           // ids are runtime; strip before persisting.
           sections: sectionRecords.map((r) => ({
             name: r.name,
@@ -5361,6 +5454,8 @@
             recompileRegexes(varsFromFile);
             for (const k of Object.keys(formValues)) delete formValues[k];
             Object.assign(formValues, session.formValues);
+            revealedSecrets.clear();
+            secretNames.clear(); // the session's values replaced any typed as secret
             sectionRecords = recordsFromSession(session.sections);
             resetEditState();
             if (templateSource !== null) setTemplateStatus(templateFileName);
@@ -5380,7 +5475,14 @@
             render();
             // An older or hand-edited session may not match its template.
             autoDetectVars({ quiet: true });
-            showToast(`Loaded ${file.name}`);
+            const secrets = Object.entries(variableDefs).filter(
+              ([k, d]) => d.secret === true && !isValuePresent(formValues[k]),
+            ).length;
+            showToast(
+              secrets
+                ? `Loaded ${file.name} — re-enter ${secrets} secret field${secrets === 1 ? "" : "s"}`
+                : `Loaded ${file.name}`,
+            );
           } catch (err) {
             console.error("Session Parse Error:", err);
             showToast("Failed to load session JSON", "error");
@@ -5482,6 +5584,7 @@
 #  required =            false = optional, doesn't count in progress bar
 #  group =               Members start optional; fill one and all become required
 #  requires =            VAR or [VAR1, VAR2] = filling this field makes those required
+#  secret =              true = masked, and left out of saved sessions
 # =============================================================================
 
 `;
@@ -5500,6 +5603,7 @@ category = General
 # required = false
 # group =
 # requires =
+# secret = true
 
 `;
         }
@@ -5542,7 +5646,10 @@ category = General
           const rawContent = span.getAttribute("data-raw");
           if (!rawContent) return;
           if (!exprReferencesVars(rawContent).includes(varName)) return;
-          span.textContent = renderExpr(rawContent).text;
+          const r = renderExpr(rawContent);
+          const masked = r.filled && hidesSecret(r.vars);
+          span.toggleAttribute("data-masked", masked);
+          span.textContent = masked ? SECRET_MASK : r.text;
         });
       }
 
@@ -5680,14 +5787,51 @@ category = General
           }
         });
 
-        field.appendChild(inputEl);
+        field.appendChild(
+          config.secret ? secretWrap(inputEl, varName) : inputEl,
+        );
         if (checked) field.appendChild(validMsg);
         // Validate now so an invalid default can't reach output unflagged.
         applyValidity(inputEl, validMsg, formValues[varName], config);
         return inputEl;
       }
 
+      // Masked text rather than type=password, so no password manager steps in.
+      function secretWrap(inputEl, varName) {
+        secretNames.add(varName);
+        // Spellcheck and autocorrect can send field text to a cloud service.
+        inputEl.spellcheck = false;
+        inputEl.setAttribute("autocapitalize", "off");
+        inputEl.setAttribute("autocorrect", "off");
+        const wrap = document.createElement("div");
+        wrap.className = "secret-wrap";
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "secret-toggle";
+        const sync = () => {
+          const shown = revealedSecrets.has(varName);
+          inputEl.classList.toggle("masked", !shown);
+          toggle.title = shown ? "Hide value" : "Show value";
+          toggle.setAttribute("aria-pressed", String(shown));
+          toggle.innerHTML = `<svg><use href="#icon-${shown ? "eye-off" : "eye"}"></use></svg>`;
+        };
+        toggle.onclick = () => {
+          if (!revealedSecrets.delete(varName)) revealedSecrets.add(varName);
+          sync();
+          render();
+        };
+        sync();
+        wrap.append(inputEl, toggle);
+        return wrap;
+      }
+
       function buildForm() {
+        // A value typed while its field was secret goes once the field isn't.
+        for (const name of secretNames)
+          if (variableDefs[name]?.secret !== true) {
+            delete formValues[name];
+            secretNames.delete(name);
+          }
         const container = document.getElementById("formFields");
         container.innerHTML = "";
         const fragment = document.createDocumentFragment();
@@ -7203,7 +7347,8 @@ category = General
             if (e.target.closest("textarea")) return;
             const sel = window.getSelection();
             if (!sel || sel.isCollapsed) return;
-            const frag = sel.getRangeAt(0).cloneContents();
+            const range = sel.getRangeAt(0);
+            const frag = range.cloneContents();
             // cloneContents ignores user-select: none, so drop pills here
             frag.querySelectorAll(".badge-group").forEach((n) => n.remove());
             // With live text selected, leave out the rows a condition drops.
@@ -7214,6 +7359,18 @@ category = General
               rows
                 .filter((r) => r.hasAttribute("data-inactive"))
                 .forEach((r) => r.remove());
+            // A masked secret copies as its value, never as the bullets.
+            const unmask = (n) =>
+              (n.textContent = renderExpr(n.dataset.raw).text);
+            frag.querySelectorAll(".preview-var[data-masked]").forEach(unmask);
+            const holder = range.commonAncestorContainer;
+            const chip = (
+              holder.nodeType === 1 ? holder : holder.parentElement
+            )?.closest(".preview-var[data-masked]");
+            if (chip) {
+              frag.replaceChildren(chip.cloneNode(true));
+              unmask(frag.firstChild);
+            }
             // Tab, NBSP, and Ctrl-V are drawn as glyphs; copy the real character.
             frag
               .querySelectorAll("[data-ch]")
