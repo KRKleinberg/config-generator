@@ -3925,20 +3925,27 @@
         ],
         ios: [
           [
-            /^\s*interface\s+(?:Gigabit|TenGigabit|FastEthernet|TwoGigabit|FiveGigabit|TwentyFiveGig|FortyGigabit|HundredGig)/im,
+            /^\s*interface\s+(?:Gigabit|TenGigabit|FastEthernet|TwoGigabit|FiveGigabit|TwentyFiveGig|FortyGigabit|FiftyGig|HundredGig|FourHundredGig)/im,
             4,
           ],
           [
             /^\s*(?:service\s+password-encryption|enable\s+secret|ip\s+domain[- ]name|boot\s+system)\b/m,
             2,
           ],
+          [/^\s*(?:enable|username)\s.*\balgorithm-type\s/m, 2],
+          [/^\s*aaa\s+new-model\b/m, 2],
+          [/^\s*interface\s+range\b/m, 2],
           [/^\s*spanning-tree\s+portfast\b/m, 1],
         ],
       };
       function detectDialect(text) {
+        // Comments can quote other platforms; only config lines are scored.
+        const config = text
+          .replace(JINJA_COMMENT_RE, "")
+          .replace(/^[^\S\n]*[!#].*\n?/gm, "");
         const scores = Object.entries(DIALECT_SIGNS).map(([key, signs]) => [
           key,
-          signs.reduce((n, [re, w]) => n + (re.test(text) ? w : 0), 0),
+          signs.reduce((n, [re, w]) => n + (re.test(config) ? w : 0), 0),
         ]);
         scores.sort((a, b) => b[1] - a[1]);
         const [[best, top], [, next]] = scores;
