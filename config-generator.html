@@ -1175,7 +1175,7 @@
       }
 
       /* Not copied: a dropped comment or inactive code. */
-      .config-comment.dropped {
+      .config-comment .dropped {
         background: repeating-linear-gradient(
           -45deg,
           rgba(var(--rgb-slate), 0.12) 0 2px,
@@ -5020,10 +5020,18 @@
           if (commentMatch) {
             const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
-            const cls = droppedRows?.has(i)
-              ? "config-comment dropped"
-              : "config-comment";
-            commentHtml = `<span class="${cls}">${rawComment}</span>`;
+            // Only the text is hatched: a badge pill is stripped anyway.
+            const body = droppedRows?.has(i)
+              ? rawComment
+                  .split(/(\s*\x00BG\d+\x00\s*)/)
+                  .map((part, k) =>
+                    k % 2 || !part
+                      ? part
+                      : `<span class="dropped">${part}</span>`,
+                  )
+                  .join("")
+              : rawComment;
+            commentHtml = `<span class="config-comment">${body}</span>`;
             line = line.slice(0, commentIdx);
           }
           if (line.trim().length > 0) {
