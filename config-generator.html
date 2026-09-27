@@ -1174,7 +1174,7 @@
         color: var(--text-dim);
       }
 
-      /* Not copied, like a hatched chip: a dropped comment or inactive code. */
+      /* Not copied: a dropped comment or inactive code. */
       .config-comment.dropped {
         background: repeating-linear-gradient(
           -45deg,
@@ -1200,7 +1200,7 @@
         background: var(--success-dim);
       }
 
-      /* Not copied (inactive code, a dropped comment, a marker): hatched, so a chip still reads as a variable. */
+      /* Not copied: hatched, so a chip still reads as a variable. */
       .var-unfilled.var-inactive {
         background: repeating-linear-gradient(
           -45deg,
@@ -3025,7 +3025,7 @@
       const ipv4Bits = (v) => v.split(".").reduce((n, o) => n * 256 + +o, 0);
       // 0...01...1 as a 32-bit value; wraps through int32 on purpose.
       const lowOnes = (n) => ((n + 1) & n) === 0;
-      // Built-in type checks; min/max bound numeric types before any range.
+      // min/max bound a numeric type before any range.
       const FIELD_TYPES = {
         int: {
           numeric: true,
@@ -3597,7 +3597,7 @@
             );
           }
         }
-        // A wrapping group doesn't count, as in (^\d+$); an escaped \$ is a literal dollar.
+        // An escaped \$ at the end is a literal dollar, not an anchor.
         let core = item.regex ?? "";
         while (wrapsWhole(core))
           core = core.replace(/^\((?:\?:)?/, "").slice(0, -1);
@@ -3856,8 +3856,7 @@
           : `{{ ${expr} }}`;
       }
 
-      // opts.commentFalse (preview): lines of an unused whole-line branch render
-      // as comments, each led by INACTIVE so later passes can tell it from banner text.
+      // opts.commentFalse (preview): unused whole-line branches render as INACTIVE-led comments.
       function processConditionals(template, values, opts = {}) {
         // A line of tags alone is layout, so its indentation goes with it.
         let result = template.replace(TAG_LINE_RE, (_, tags) =>
@@ -3867,16 +3866,14 @@
         let iterations = 0;
         const MAX_ITERATIONS = 50;
         const on = (neg, v) => isValuePresent(values[v]) !== !!neg;
-        // A branch's lines; "\n" (tags on lines of their own) holds none, while
-        // "\n\n" holds one typed blank line, which stays.
+        // "\n" (tags on their own lines) holds no line; "\n\n" holds one typed blank line.
         const lines = (s) =>
           s === "" || s === "\n"
             ? []
             : s.replace(/^\n/, "").replace(/\n$/, "").split("\n");
         const atLineStart = (offset, str) =>
           offset === 0 || str[offset - 1] === "\n";
-        // Lines already marked, or already comments, get no second comment char;
-        // a leading badge keeps one, since badges need whitespace before them.
+        // Marked lines and comments get no second leader; a line-leading badge is not a comment.
         const commentLine = new RegExp(
           `^\\s*${escRegex(COMMENT)}(?![A-Z][A-Z0-9_-]*:)`,
         );
@@ -3895,8 +3892,7 @@
             (m, neg, v, yes, _yes, no, _no, tail, offset, str) => {
               const taken = on(neg, v);
               const whole = atLineStart(offset, str);
-              // A block if/else previews its other branch commented out, in place;
-              // text after the endif would land on that branch, so none may follow.
+              // Show the unused branch in place, unless text after the endif would land on it.
               if (
                 opts.commentFalse &&
                 whole &&
@@ -4155,8 +4151,7 @@
           banner: null,
           keywords: JUNOS_KEYWORDS,
         },
-        // No platform rules: only the tool's own syntax is removed. Its leader
-        // is read from the template (markerLeader), so comment is a fallback.
+        // Its leader comes from the template (markerLeader); comment is the fallback.
         generic: {
           generic: true,
           label: "Generic, no platform rules",
@@ -4416,12 +4411,10 @@
           : line.includes(delim);
       }
 
-      // Banner text reaches the device as written, so its badges stay text;
-      // the command side of an opening or closing line still drops them.
+      // Badges in banner text stay text; an opening or closing line's command part drops them.
       function replaceBadges(text, re, replacement) {
         const fixed = DIALECT.banner?.delimiter;
-        // Replaces in line[from, to); a badge inside a quoted string ends at
-        // its closing quote, counting quotes from the line start.
+        // Replaces in line[from, to); a badge in a quoted string ends at the closing quote.
         const cut = (line, rep, from = 0, to = line.length) => {
           let seen = 0;
           let quotes = 0;
@@ -4456,8 +4449,7 @@
             if (delim) {
               // A false block's preview line never reaches the device.
               if (line.includes(INACTIVE)) return line;
-              // IOS: text before the delimiter is banner text. EOS: EOF plus
-              // badges closes, since the badges never reach the device.
+              // IOS: text before the delimiter is banner text. EOS: EOF plus badges still closes.
               const at = fixed
                 ? cut(line, "").trim() === delim
                   ? 0
@@ -4696,7 +4688,6 @@
         return `<span class="risk-char"${warnAttrs("paste warnings", [message])}>${markRiskChars(escapedHtml)}</span>`;
       }
 
-      // A filled chip of a secret field shows bullets until the field is revealed.
       function hidesSecret(vars) {
         return vars.some(
           (v) => variableDefs[v]?.secret === true && !revealedSecrets.has(v),
@@ -4859,9 +4850,7 @@
         const markChars = (s) =>
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
         const { parts } = walkConfigLines(result, inactiveRows);
-        // Hatch means not copied: text past the device-bound part (a dropped
-        // comment, a section marker) hatches like inactive code, and so do its
-        // values. Pills go first, as in the output, since a comment can follow one.
+        // Hatch what the output drops (comments, markers), judged without pills like the output.
         const droppedRows = new Set(inactiveRows);
         for (const { i, line, banner } of parts) {
           if (banner) continue;
@@ -5008,7 +4997,7 @@
       }
 
       // textRows: line indexes of banner text, which has no comments.
-      // droppedRows: lines whose comment the output drops, hatched to say so.
+      // droppedRows: lines whose comment the output drops.
       function applyKeywordHighlighting(
         html,
         keywordGroups,
@@ -5381,8 +5370,7 @@
           varsFromFile,
           varsFileName,
           variableDefs,
-          // Secret values never reach the file. A changed one is saved as ""
-          // so it reopens empty instead of quietly taking its default.
+          // Secrets never reach the file; a changed one saves as "" so its default can't return.
           formValues: Object.fromEntries(
             Object.entries(formValues).flatMap(([k, v]) =>
               !secretNames.has(k) && variableDefs[k]?.secret !== true
@@ -5772,8 +5760,7 @@ category = General
         renderTimeout = setTimeout(() => render(), 150);
       }
 
-      // Description length and banner delimiters are checked per line, so any
-      // value on such a line can add or clear a warning.
+      // Line checks (description length, banner delimiter) can flip on any value in the line.
       function feedsLineCheck(varName) {
         if (!LINT_PASTE_WARNINGS) return false;
         return [...document.querySelectorAll(".preview-var")].some((span) => {
@@ -6293,8 +6280,7 @@ category = General
         container.innerHTML = html;
       }
 
-      // Markers count only on lines that start outside {# #} (no nesting) and
-      // outside banner text, judged on the lines as the device will get them.
+      // Markers count only on lines starting outside {# #} (no nesting) and banner text.
       function linesWithCommentState(text) {
         const out = [];
         const visible = [];
