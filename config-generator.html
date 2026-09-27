@@ -1178,14 +1178,10 @@
         color: var(--text-dim);
       }
 
-      /* Not copied. Full line height; the period tiles a line, so stacked rows show no seam. */
+      /* Not copied: a dropped comment or inactive code. */
       .config-comment .dropped {
-        display: inline-block;
-        background: repeating-linear-gradient(
-          -45deg,
-          rgba(var(--rgb-slate), 0.12) 0 2px,
-          transparent 2px calc(1lh / 2.8284)
-        );
+        font-style: italic;
+        color: var(--text-hint);
       }
 
       .var-unfilled,
@@ -2605,10 +2601,11 @@
                     <dd>
                       Lines a condition leaves out stay visible as comments.
                     </dd>
-                    <dt>Hatching</dt>
+                    <dt>Not copied</dt>
                     <dd>
-                      Hatched text and variables are never copied: inactive
-                      code, section markers, and comments the output leaves out.
+                      Italic text and hatched variables never reach the copy:
+                      inactive code, section markers, and comments the output
+                      leaves out.
                     </dd>
                   </dl>
                 </div>
@@ -4855,7 +4852,7 @@
         const markChars = (s) =>
           s.replace(MARK_CHAR_RE, (ch) => mark(ch, null));
         const { parts } = walkConfigLines(result, inactiveRows);
-        // Hatch what the output drops (comments, markers), judged without pills like the output.
+        // Mark what the output drops (comments, markers), judged without pills like the output.
         const droppedRows = new Set(inactiveRows);
         for (const { i, line, banner } of parts) {
           if (banner) continue;
@@ -5025,7 +5022,7 @@
           if (commentMatch) {
             const commentIdx = line.indexOf(COMMENT, commentMatch.index);
             const rawComment = line.slice(commentIdx);
-            // Only the text is hatched: a badge pill is stripped anyway.
+            // Only the text is marked: a badge pill is stripped anyway.
             const body = droppedRows?.has(i)
               ? rawComment
                   .split(/(\s*\x00BG\d+\x00\s*)/)
