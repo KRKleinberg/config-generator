@@ -3086,9 +3086,9 @@
           test: (v) => /^\d+$/.test(v) && +v >= 1 && +v <= 4094,
         },
         hostname: {
-          test: (v) => /^[A-Za-z]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(v),
+          test: (v) => /^[A-Za-z]([\w-]{0,61}[A-Za-z0-9])?$/.test(v),
           error:
-            "Letters, digits and hyphens; start with a letter and end with a letter or digit, 63 at most",
+            "Letters, digits, hyphens and underscores; start with a letter and end with a letter or digit, 63 at most",
         },
       };
       const INNER_IF_ELSE_RE =
