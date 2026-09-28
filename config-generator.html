@@ -6207,7 +6207,8 @@ category = General
 
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(() => el.focus(), 100);
+          // A scrolling focus would cut the smooth scroll short.
+          el.focus({ preventScroll: true });
           const fieldContainer = el.closest(".field");
           if (fieldContainer) replayFlash(fieldContainer, "flash-focus");
         }
