@@ -3059,6 +3059,7 @@
       const ipv4Bits = (v) => v.split(".").reduce((n, o) => n * 256 + +o, 0);
       // 0...01...1 as a 32-bit value; wraps through int32 on purpose.
       const lowOnes = (n) => ((n + 1) & n) === 0;
+      // Universal on purpose: a vars file's range or regex adds platform and site rules.
       // min/max bound a numeric type before any range.
       const FIELD_TYPES = {
         int: {
@@ -3082,11 +3083,7 @@
           numeric: true,
           min: 1,
           max: 4094,
-          test: (v) =>
-            /^\d+$/.test(v) &&
-            +v >= 1 &&
-            +v <= 4094 &&
-            !(+v >= 1002 && +v <= 1005),
+          test: (v) => /^\d+$/.test(v) && +v >= 1 && +v <= 4094,
         },
         hostname: {
           test: (v) => /^[A-Za-z]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(v),
@@ -5914,8 +5911,7 @@ category = General
           FIELD_TYPES[type]?.min,
           FIELD_TYPES[type]?.max,
         ];
-        if (type === "vlan")
-          return `Enter a VLAN from ${lo} to ${hi}${lo <= 1005 && hi >= 1002 ? ", except 1002-1005" : ""}`;
+        if (type === "vlan") return `Enter a VLAN from ${lo} to ${hi}`;
         if (range) return `Enter a number from ${lo} to ${hi}`;
         return FIELD_TYPES[type].error;
       }
