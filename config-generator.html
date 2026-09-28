@@ -5971,7 +5971,7 @@ category = General
         inputEl.id = `field-${varName}`;
         const emptyOpt = document.createElement("option");
         emptyOpt.value = "";
-        emptyOpt.textContent = config.placeholder || "— select —";
+        emptyOpt.textContent = config.placeholder || "Select";
         emptyOpt.disabled = config.required === true;
         emptyOpt.selected = true;
         inputEl.appendChild(emptyOpt);
