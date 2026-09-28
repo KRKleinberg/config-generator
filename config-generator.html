@@ -2062,10 +2062,20 @@
         color: var(--text-hint);
       }
 
-      .toast {
+      .toasts {
         position: fixed;
         bottom: 24px;
         right: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .toast {
+        max-width: min(420px, calc(100vw - 48px));
         background: var(--surface-raised);
         border: 1px solid var(--border);
         color: var(--text);
@@ -2075,14 +2085,33 @@
         font-weight: 600;
         opacity: 0;
         transform: translateY(8px);
-        transition: all 0.2s ease;
-        pointer-events: none;
-        z-index: 100;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
       }
 
       .toast.show {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
+      }
+
+      @keyframes toast-bump {
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .toast.bump {
+        animation: toast-bump 0.25s ease;
+      }
+
+      .toast-count {
+        margin-left: 8px;
+        opacity: 0.7;
+      }
+
+      .toast-count:empty {
+        display: none;
       }
 
       .toast.warn {
@@ -2508,7 +2537,7 @@
         <use href="#icon-chevron-up"></use>
       </svg>
     </button>
-    <div class="toast" id="toast" role="status"></div>
+    <div class="toasts" id="toasts" role="status"></div>
     <div
       class="lightbox-overlay"
       id="guideLightbox"
@@ -7318,16 +7347,39 @@ category = General
         setTimeout(() => badge.classList.remove("show"), 1500);
       }
 
-      let toastTimer = null;
+      const TOAST_LIMIT = 3;
       function showToast(message, kind = "") {
-        const el = document.getElementById("toast");
-        el.textContent = message;
-        el.className = `toast show${kind ? ` ${kind}` : ""}`;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(
-          () => el.classList.remove("show"),
-          kind ? 4500 : 3000,
+        const stack = document.getElementById("toasts");
+        const live = [...stack.children].filter((t) =>
+          t.classList.contains("show"),
         );
+        let el = live.find((t) => t.dataset.message === message);
+        if (el) {
+          el.dataset.count = +el.dataset.count + 1;
+          el.lastChild.textContent = `\u00d7${el.dataset.count}`;
+          replayFlash(el, "bump");
+        } else {
+          el = document.createElement("div");
+          el.className = `toast${kind ? ` ${kind}` : ""}`;
+          el.dataset.message = message;
+          el.dataset.count = 1;
+          const count = document.createElement("span");
+          count.className = "toast-count";
+          el.append(message, count);
+          stack.append(el);
+          void el.offsetWidth; // start from the hidden state so it fades in
+          el.classList.add("show");
+          live.push(el);
+          while (live.length > TOAST_LIMIT) dismissToast(live.shift());
+        }
+        clearTimeout(el.timer);
+        el.timer = setTimeout(() => dismissToast(el), kind ? 4500 : 3000);
+      }
+
+      function dismissToast(el) {
+        clearTimeout(el.timer);
+        el.classList.remove("show");
+        setTimeout(() => el.remove(), 200);
       }
 
       let guideOpener = null;
