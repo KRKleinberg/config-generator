@@ -18,6 +18,7 @@
         --surface-alt: #0f1115;
         --surface-raised: #15181d;
         --border: #20242c;
+        --indent-guide: #353a44;
         --text: #d5d7dd;
         --text-dim: #8a8e96;
         --text-hint: #787c86;
@@ -1154,6 +1155,15 @@
 
       .config-line:hover {
         background: rgba(var(--rgb-slate), 0.05);
+      }
+
+      .indent-guide {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: calc(var(--pad-x) + var(--col) * 1ch);
+        border-left: 1px solid var(--indent-guide);
+        pointer-events: none;
       }
 
       /* Edge marker only: scannable as a column, no wash over the text. */
@@ -4791,6 +4801,33 @@
         return warns.length ? `${base} — warning: ${warns.join(", ")}` : null;
       }
 
+      // Guides sit under each enclosing line's first column, so any indent step works.
+      // A false block's row keeps its own indentation but shows only live blocks' guides.
+      function indentGuides(parts, skip, inactive) {
+        const guides = [];
+        const open = [];
+        let blanks = [];
+        const lead = `${COMMENT} `;
+        for (const { i, line } of parts) {
+          if (skip.has(i)) continue;
+          if (!line.trim()) {
+            blanks.push(i);
+            continue;
+          }
+          const off = inactive.has(i);
+          const text =
+            off && line.startsWith(lead) ? line.slice(lead.length) : line;
+          const col = text.match(/^ */)[0].length;
+          while (open.at(-1)?.col >= col) open.pop();
+          guides[i] = open.filter((o) => o.live || !off).map((o) => o.col);
+          // A blank row takes the next line's guides, so a block runs through it.
+          for (const b of blanks) guides[b] = guides[i];
+          blanks = [];
+          open.push({ col, live: !off });
+        }
+        return guides;
+      }
+
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
         let result = stripTemplateComments(template);
         result = processConditionals(result, formValues, {
@@ -4895,6 +4932,7 @@
             .filter((p) => p.from === 0 && !inactiveRows.has(p.i))
             .map((p) => p.i),
         );
+        const guides = indentGuides(parts, textRows, inactiveRows);
         if (LINT_PASTE_WARNINGS)
           result = parts
             .map(({ i, line, cmd, indent }) => {
@@ -4984,7 +5022,12 @@
               : ` class="config-line"`;
             const banner = bannerRows.has(i) ? " data-banner" : "";
             const off = inactiveRows.has(i) ? " data-inactive" : "";
-            return `<span${attrs}${banner}${off}>${line === "" ? " " : line}</span>`;
+            const rules = (guides[i] ?? [])
+              .map(
+                (c) => `<span class="indent-guide" style="--col: ${c}"></span>`,
+              )
+              .join("");
+            return `<span${attrs}${banner}${off}>${rules}${line === "" ? " " : line}</span>`;
           })
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
