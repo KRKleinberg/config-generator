@@ -1161,9 +1161,13 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        left: calc(var(--pad-x) + var(--col) * 1ch);
+        left: calc(var(--col) * 1ch);
         border-left: 1px solid var(--indent-guide);
         pointer-events: none;
+      }
+
+      .config-line .indent-guide {
+        margin-left: var(--pad-x);
       }
 
       /* Edge marker only: scannable as a column, no wash over the text. */
@@ -4803,31 +4807,39 @@
 
       // Guides sit under each enclosing line's first column, so any indent step works.
       // A false block's row keeps its own indentation but shows only live blocks' guides.
-      function indentGuides(parts, skip, inactive) {
+      function indentGuides(parts, skip, inactive, layout) {
         const guides = [];
         const open = [];
-        let blanks = [];
+        let held = [];
         const lead = `${COMMENT} `;
+        const indent = (s) => s.match(/^ */)[0].length;
         for (const { i, line } of parts) {
           if (skip.has(i)) continue;
-          if (!line.trim()) {
-            blanks.push(i);
+          // A guide stops at a row's first character, so it never cuts text.
+          const end = line.trim() ? indent(line) : Infinity;
+          // Blank and template-syntax rows carry the next line's guides.
+          if (!line.trim() || layout.has(i)) {
+            held.push([i, end]);
             continue;
           }
           const off = inactive.has(i);
-          const text =
-            off && line.startsWith(lead) ? line.slice(lead.length) : line;
-          const col = text.match(/^ */)[0].length;
+          const col = indent(
+            off && line.startsWith(lead) ? line.slice(lead.length) : line,
+          );
           while (open.at(-1)?.col >= col) open.pop();
           const cols = open.filter((o) => o.live || !off).map((o) => o.col);
-          // A guide stops at a row's first character, so it never cuts text.
-          guides[i] = cols.filter((c) => c <= line.match(/^ */)[0].length);
-          // A blank row takes the next line's guides, so a block runs through it.
-          for (const b of blanks) guides[b] = cols;
-          blanks = [];
+          guides[i] = cols.filter((c) => c <= end);
+          for (const [h, max] of held) guides[h] = cols.filter((c) => c <= max);
+          held = [];
           open.push({ col, live: !off });
         }
         return guides;
+      }
+
+      function guideHtml(cols = []) {
+        return cols
+          .map((c) => `<span class="indent-guide" style="--col: ${c}"></span>`)
+          .join("");
       }
 
       function jinjaDisplay(template, keywordGroups, badgeColorMap) {
@@ -4934,7 +4946,7 @@
             .filter((p) => p.from === 0 && !inactiveRows.has(p.i))
             .map((p) => p.i),
         );
-        const guides = indentGuides(parts, textRows, inactiveRows);
+        const guides = indentGuides(parts, textRows, inactiveRows, new Set());
         if (LINT_PASTE_WARNINGS)
           result = parts
             .map(({ i, line, cmd, indent }) => {
@@ -5024,12 +5036,7 @@
               : ` class="config-line"`;
             const banner = bannerRows.has(i) ? " data-banner" : "";
             const off = inactiveRows.has(i) ? " data-inactive" : "";
-            const rules = (guides[i] ?? [])
-              .map(
-                (c) => `<span class="indent-guide" style="--col: ${c}"></span>`,
-              )
-              .join("");
-            return `<span${attrs}${banner}${off}>${rules}${line === "" ? " " : line}</span>`;
+            return `<span${attrs}${banner}${off}>${guideHtml(guides[i])}${line === "" ? " " : line}</span>`;
           })
           .join("");
         return { html: `<span class="config-lines">${rows}</span>`, issues };
@@ -6967,6 +6974,7 @@ category = General
       // Risk chars get underlines, not glyphs: widths must match the textarea.
       function highlightTemplate(text) {
         const jinja = [];
+        const tags = new Set();
         const marks = [];
         const issues = [];
         // A multi-line tag or comment is tokenized per line so row indexes hold.
@@ -6978,6 +6986,7 @@ category = General
                 .split("\n")
                 .map((seg) => {
                   if (!seg) return ""; // an empty span would give the row no height
+                  if (/^\{[%#]/.test(m)) tags.add(jinja.length);
                   jinja.push(seg);
                   return `\x00J${jinja.length - 1}\x00`;
                 })
@@ -6986,6 +6995,16 @@ category = General
         );
         const textRows = new Set(
           parts.filter((p) => p.from === 0).map((p) => p.i),
+        );
+        const syntaxOnly = (line) =>
+          !line
+            .replace(/\x00J(\d+)\x00/g, (t, k) => (tags.has(+k) ? "" : t))
+            .trim();
+        const guides = indentGuides(
+          parts,
+          textRows,
+          new Set(),
+          new Set(parts.filter((p) => syntaxOnly(p.line)).map((p) => p.i)),
         );
         const tokenized = parts
           .map(({ i, line, cmd, indent }) => {
@@ -7022,7 +7041,7 @@ category = General
           .split("\n")
           .map(
             (line, i) =>
-              `<span class="mirror-line${warned.has(i) ? " line-warn" : ""}">${line || " "}</span>`,
+              `<span class="mirror-line${warned.has(i) ? " line-warn" : ""}">${guideHtml(guides[i])}${line || " "}</span>`,
           )
           .join("");
         return { html, issues };
