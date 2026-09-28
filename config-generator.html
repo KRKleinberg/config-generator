@@ -4807,37 +4807,29 @@
       }
 
       // Guides sit under each enclosing line's first column, so any indent step works.
-      // A false block's row keeps its own indentation but shows only live blocks' guides.
-      function indentGuides(parts, skip, inactive, layout) {
+      function indentGuides(parts, skip, layout) {
         const guides = [];
         const steps = {};
         const open = [];
         let held = [];
-        const lead = `${COMMENT} `;
         const indent = (s) => s.match(/^ */)[0].length;
         for (const { i, line } of parts) {
           if (skip.has(i)) continue;
-          // A guide stops at a row's first character, so it never cuts text.
-          const end = line.trim() ? indent(line) : Infinity;
-          // Blank and template-syntax rows carry the next line's guides.
+          // Blank and template-syntax rows carry the next line's guides, up to their first character.
           if (!line.trim() || layout.has(i)) {
-            held.push([i, end]);
+            held.push([i, line.trim() ? indent(line) : Infinity]);
             continue;
           }
-          const off = inactive.has(i);
-          const col = indent(
-            off && line.startsWith(lead) ? line.slice(lead.length) : line,
-          );
-          while (open.at(-1)?.col >= col) open.pop();
+          const col = indent(line);
+          while (open.at(-1) >= col) open.pop();
           if (open.length) {
-            const step = col - open.at(-1).col;
+            const step = col - open.at(-1);
             steps[step] = (steps[step] ?? 0) + 1;
           }
-          const cols = open.filter((o) => o.live || !off).map((o) => o.col);
-          guides[i] = cols.filter((c) => c <= end);
-          for (const [h, max] of held) guides[h] = cols.filter((c) => c <= max);
+          guides[i] = [...open];
+          for (const [h, max] of held) guides[h] = open.filter((c) => c <= max);
           held = [];
-          open.push({ col, live: !off });
+          open.push(col);
         }
         const [step] = Object.keys(steps).sort((a, b) => steps[b] - steps[a]);
         return { guides, step: step ? +step : null };
@@ -4851,7 +4843,7 @@
         const banner = new Set(
           parts.filter((p) => p.from === 0).map((p) => p.i),
         );
-        return indentGuides(parts, banner, new Set(), new Set()).step;
+        return indentGuides(parts, banner, new Set()).step;
       }
 
       function guideHtml(cols = []) {
@@ -4964,12 +4956,7 @@
             .filter((p) => p.from === 0 && !inactiveRows.has(p.i))
             .map((p) => p.i),
         );
-        const { guides } = indentGuides(
-          parts,
-          textRows,
-          inactiveRows,
-          new Set(),
-        );
+        const { guides } = indentGuides(parts, textRows, new Set());
         if (LINT_PASTE_WARNINGS)
           result = parts
             .map(({ i, line, cmd, indent }) => {
@@ -7027,7 +7014,6 @@ category = General
         const { guides } = indentGuides(
           parts,
           textRows,
-          new Set(),
           new Set(parts.filter((p) => syntaxOnly(p.line)).map((p) => p.i)),
         );
         const tokenized = parts
