@@ -75,6 +75,7 @@
         --radius-lg: 10px;
         --radius-xl: 12px;
         --section-header-h: 40px;
+        --top-row-h: 36px;
         --panel-pad-y: 28px;
         --panel-pad-x: 28px;
 
@@ -218,8 +219,8 @@
 
       /* Filled artwork: opts out of the stroked-icon base rule. */
       .brand-icon {
-        width: 36px;
-        height: 36px;
+        width: var(--top-row-h);
+        height: var(--top-row-h);
         background: var(--accent-dim);
         border-radius: var(--radius);
         fill: var(--on-accent);
@@ -885,11 +886,13 @@
         height: 20px;
       }
 
+      /* As tall as the brand row, so both panels' top rows share a center line. */
       .preview-toolbar {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 12px 8px;
+        min-height: var(--top-row-h);
         margin-bottom: 16px;
       }
 
