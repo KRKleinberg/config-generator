@@ -4835,7 +4835,6 @@
         return { guides, step: step ? +step : null };
       }
 
-      // A template's own indent step, or null when nothing is indented.
       function indentStep(text) {
         const { parts } = walkConfigLines(
           stripTemplateComments(text).replace(TAG_LINE_RE, ""),
