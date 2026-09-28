@@ -4819,9 +4819,11 @@
             off && line.startsWith(lead) ? line.slice(lead.length) : line;
           const col = text.match(/^ */)[0].length;
           while (open.at(-1)?.col >= col) open.pop();
-          guides[i] = open.filter((o) => o.live || !off).map((o) => o.col);
+          const cols = open.filter((o) => o.live || !off).map((o) => o.col);
+          // A guide stops at a row's first character, so it never cuts text.
+          guides[i] = cols.filter((c) => c <= line.match(/^ */)[0].length);
           // A blank row takes the next line's guides, so a block runs through it.
-          for (const b of blanks) guides[b] = guides[i];
+          for (const b of blanks) guides[b] = cols;
           blanks = [];
           open.push({ col, live: !off });
         }
