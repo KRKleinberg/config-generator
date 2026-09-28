@@ -3911,13 +3911,14 @@
         const commentLine = new RegExp(
           `^\\s*${escRegex(COMMENT)}(?![A-Z][A-Z0-9_-]*:)`,
         );
+        // The leader follows the indentation, so a greyed line stays in its block.
         const inactive = (ls) =>
           ls.map((l) =>
             l.startsWith(INACTIVE)
               ? l
               : l.trim() === "" || commentLine.test(l)
                 ? INACTIVE + l
-                : `${INACTIVE}${COMMENT} ` + l,
+                : INACTIVE + l.replace(/^\s*/, (ws) => `${ws}${COMMENT} `),
           );
         while (result !== prev && iterations < MAX_ITERATIONS) {
           prev = result;
