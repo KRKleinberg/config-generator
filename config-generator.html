@@ -913,7 +913,8 @@
         color: var(--text-dim);
         letter-spacing: 0.3px;
         text-transform: uppercase;
-        min-height: 1lh; /* keeps the platform divider one line tall */
+        /* The platform divider runs 4px past the letters each way, so it centers on them. */
+        min-height: calc(1cap + 8px);
         margin: 0;
         white-space: nowrap;
       }
