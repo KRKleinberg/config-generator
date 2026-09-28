@@ -46,7 +46,7 @@ Constants at the top of the script:
 | `LINT_VARS_FILE` | `true` | Advisory vars file checks (parse errors always show) |
 | `DIALECT_NAME` | `"ios"` | Startup platform: `ios`, `nxos`, `eos`, `junos`, `generic` |
 | `DIALECT_AUTODETECT` | `true` | Switch platform on template load when the text makes it clear |
-| `EDITOR_TAB_SIZE` | `null` | Spaces inserted by Tab in editors; `null` follows the platform (IOS XE 1, NX-OS 2, EOS 3, Junos and Generic 4), `0` restores focus navigation |
+| `EDITOR_TAB_SIZE` | `null` | Spaces inserted by Tab in editors; `null` follows the template's own indent, else the platform's (IOS XE 1, NX-OS 2, EOS 3, Junos and Generic 4); `0` restores focus navigation |
 | `EDITOR_HIGHLIGHTING` | `true` | Keyword and Jinja coloring in editors |
 
 ## Usage

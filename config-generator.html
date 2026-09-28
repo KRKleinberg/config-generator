@@ -2984,7 +2984,7 @@
       // Platform and editor
       const DIALECT_NAME = "ios"; // ios, nxos, eos, junos, generic (see DIALECTS); only ios is device-tested
       const DIALECT_AUTODETECT = true; // switch platform on template load when the text makes it clear
-      const EDITOR_TAB_SIZE = null; // spaces per Tab in editors; null follows the platform, 0 restores focus navigation
+      const EDITOR_TAB_SIZE = null; // spaces per Tab in editors; null follows the template, then the platform; 0 restores focus navigation
       const EDITOR_HIGHLIGHTING = true; // keyword and Jinja coloring in editors
       // ----------------------------
       const COPY_EOL = COPY_TRAILING_NEWLINE ? "\n" : "";
@@ -4809,6 +4809,7 @@
       // A false block's row keeps its own indentation but shows only live blocks' guides.
       function indentGuides(parts, skip, inactive, layout) {
         const guides = [];
+        const steps = {};
         const open = [];
         let held = [];
         const lead = `${COMMENT} `;
@@ -4827,13 +4828,29 @@
             off && line.startsWith(lead) ? line.slice(lead.length) : line,
           );
           while (open.at(-1)?.col >= col) open.pop();
+          if (open.length) {
+            const step = col - open.at(-1).col;
+            steps[step] = (steps[step] ?? 0) + 1;
+          }
           const cols = open.filter((o) => o.live || !off).map((o) => o.col);
           guides[i] = cols.filter((c) => c <= end);
           for (const [h, max] of held) guides[h] = cols.filter((c) => c <= max);
           held = [];
           open.push({ col, live: !off });
         }
-        return guides;
+        const [step] = Object.keys(steps).sort((a, b) => steps[b] - steps[a]);
+        return { guides, step: step ? +step : null };
+      }
+
+      // A template's own indent step, or null when nothing is indented.
+      function indentStep(text) {
+        const { parts } = walkConfigLines(
+          stripTemplateComments(text).replace(TAG_LINE_RE, ""),
+        );
+        const banner = new Set(
+          parts.filter((p) => p.from === 0).map((p) => p.i),
+        );
+        return indentGuides(parts, banner, new Set(), new Set()).step;
       }
 
       function guideHtml(cols = []) {
@@ -4946,7 +4963,12 @@
             .filter((p) => p.from === 0 && !inactiveRows.has(p.i))
             .map((p) => p.i),
         );
-        const guides = indentGuides(parts, textRows, inactiveRows, new Set());
+        const { guides } = indentGuides(
+          parts,
+          textRows,
+          inactiveRows,
+          new Set(),
+        );
         if (LINT_PASTE_WARNINGS)
           result = parts
             .map(({ i, line, cmd, indent }) => {
@@ -7000,7 +7022,7 @@ category = General
           !line
             .replace(/\x00J(\d+)\x00/g, (t, k) => (tags.has(+k) ? "" : t))
             .trim();
-        const guides = indentGuides(
+        const { guides } = indentGuides(
           parts,
           textRows,
           new Set(),
@@ -7414,16 +7436,21 @@ category = General
             closeDialectMenu();
           if (!e.target.closest("#saveMenu, #saveBtn")) closeSaveMenu();
         });
-        // Tab indents one platform level in editors; a multi-line selection shifts every line.
+        // Tab indents by the template's own step, else the platform's; a multi-line selection shifts every line.
         document.addEventListener("keydown", (e) => {
           const ta = e.target;
-          const size = EDITOR_TAB_SIZE ?? DIALECT.indent;
-          if (e.key !== "Tab" || !size) return;
           if (
+            e.key !== "Tab" ||
             !(ta instanceof HTMLTextAreaElement) ||
             !ta.matches(".section-edit")
           )
             return;
+          const size =
+            EDITOR_TAB_SIZE ??
+            indentStep(ta.value) ??
+            indentStep(assembleFullEditableText()) ??
+            DIALECT.indent;
+          if (!size) return;
           e.preventDefault();
           const pad = " ".repeat(size);
           const { value, selectionStart: s, selectionEnd: en } = ta;
