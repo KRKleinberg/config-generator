@@ -4826,14 +4826,19 @@
         return `<span class="header-warn" tabindex="0" aria-label="Paste warnings"${warnAttrs("paste warnings", msgs)}><svg><use href="#icon-alert"></use></svg></span>`;
       }
 
+      function plural(n, word) {
+        return `${n} ${word}${n === 1 ? "" : "s"}`;
+      }
+
       function copyToastMessage(base, output, issues) {
-        const warns = [];
-        if (output.includes("{{")) warns.push("unfilled {{ }} fields");
+        const unfilled = new Set(output.match(/\{\{.*?\}\}/g)).size;
+        const problems = [];
+        if (unfilled) problems.push(plural(unfilled, "unfilled field"));
         if (issues.length)
-          warns.push(
-            `${issues.length} paste warning${issues.length === 1 ? "" : "s"}`,
-          );
-        return warns.length ? `${base} — warning: ${warns.join(", ")}` : null;
+          problems.push(plural(issues.length, "paste warning"));
+        return problems.length
+          ? `${base} with ${problems.join(" and ")}`
+          : null;
       }
 
       // Guides sit under each enclosing line's first column, so any indent step works.
@@ -5367,7 +5372,7 @@
 
       function processTemplateFile(file) {
         const fullName = file.name;
-        readFileAsText(file, "Error reading template file", (evt) => {
+        readFileAsText(file, "Couldn't read the template file", (evt) => {
           try {
             const raw = toInternalEOL(evt.target.result);
             // Generic is a deliberate fallback, so detection leaves it alone.
@@ -5385,19 +5390,17 @@
             setTemplateStatus(fullName);
             applyAutoViewMode();
             const syntaxIssues = templateSyntaxIssues().length;
-            const notes = [];
-            if (detected) notes.push(`Platform: ${DIALECT.label} (detected)`);
+            if (detected) showToast(`Platform set to ${DIALECT.label}`);
             if (syntaxIssues)
-              notes.push(
-                `Template file has ${syntaxIssues} syntax issue${syntaxIssues === 1 ? "" : "s"}`,
+              showToast(
+                `Template has ${plural(syntaxIssues, "syntax issue")}`,
+                "warn",
               );
-            if (notes.length)
-              showToast(notes.join(" — "), syntaxIssues ? "warn" : "");
             renderAutoDetectButtons();
             autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Template Parse Error:", err);
-            showToast("Error rendering template", "error");
+            showToast("Couldn't render the template", "error");
           }
         });
       }
@@ -5409,13 +5412,13 @@
       }
 
       function processVarsFile(file) {
-        readFileAsText(file, "Error reading vars file", (evt) => {
+        readFileAsText(file, "Couldn't read the vars file", (evt) => {
           try {
             const iniErrors = [];
             const defs = parseINI(evt.target.result, iniErrors);
             const count = Object.keys(defs).length;
             if (count === 0) {
-              showToast("No variables found — check INI format", "warn");
+              showToast("No variables found in the vars file", "warn");
               return;
             }
             variableDefs = defs;
@@ -5429,7 +5432,7 @@
             );
             if (iniErrors.length)
               showToast(
-                `Vars file has ${iniErrors.length} definition issue${iniErrors.length === 1 ? "" : "s"}`,
+                `Vars file has ${plural(iniErrors.length, "definition issue")}`,
                 "warn",
               );
             setVarsStatus(file.name, count);
@@ -5438,7 +5441,7 @@
             if (templateSource !== null) autoDetectVars({ quiet: true });
           } catch (err) {
             console.error("Vars Parse Error:", err);
-            showToast("Failed to parse variables file", "error");
+            showToast("Couldn't parse the vars file", "error");
           }
         });
       }
@@ -5684,12 +5687,15 @@
       }
 
       function processSessionFile(file) {
-        readFileAsText(file, "Error reading session file", (evt) => {
+        readFileAsText(file, "Couldn't read the session file", (evt) => {
           try {
             const session = JSON.parse(evt.target.result);
             const validationError = validateSessionV1(session);
             if (validationError) {
-              showToast(`Cannot load session: ${validationError}`, "error");
+              showToast(
+                `Couldn't load the session: ${validationError}`,
+                "error",
+              );
               return;
             }
             templateSource =
@@ -5744,14 +5750,12 @@
             const secrets = Object.entries(variableDefs).filter(
               ([k, d]) => d.secret === true && !isValuePresent(formValues[k]),
             ).length;
-            showToast(
-              secrets
-                ? `Loaded ${file.name} — re-enter ${secrets} secret field${secrets === 1 ? "" : "s"}`
-                : `Loaded ${file.name}`,
-            );
+            showToast(`Loaded ${file.name}`);
+            if (secrets)
+              showToast(`Re-enter ${plural(secrets, "secret field")}`, "warn");
           } catch (err) {
             console.error("Session Parse Error:", err);
-            showToast("Failed to load session JSON", "error");
+            showToast("Couldn't parse the session file", "error");
           }
         });
       }
@@ -5774,7 +5778,7 @@
           }
           buildForm();
           render();
-          if (!quiet) showToast("No variables found in template");
+          if (!quiet) showToast("The template has no variables");
           return;
         }
         variableDefs = structuredClone(varsFromFile);
@@ -5786,7 +5790,7 @@
         const hasFileVars = Object.keys(varsFromFile).length > 0;
         if (!missing.length && hasFileVars) {
           setVarsStatus(varsFileName, Object.keys(varsFromFile).length);
-          if (!quiet) showToast("All template variables are defined in vars");
+          if (!quiet) showToast("Every template variable is already defined");
           buildForm();
           render();
           return;
@@ -5819,13 +5823,13 @@
           return;
         }
         if (varsFileName !== "") {
-          showToast("Vars file already loaded");
+          showToast("A vars file is already loaded");
           return;
         }
         if (activeSectionEditors.has(FULL_EDIT_KEY)) commitFullModeEdit();
         const names = collectTemplateVarNames(assembleFullEditableText());
         if (!names.size) {
-          showToast("No variables found in template");
+          showToast("The template has no variables");
           return;
         }
 
@@ -6218,7 +6222,7 @@ category = General
           buildForm();
           updateProgressBar();
           el = document.getElementById(`field-${varName}`);
-          showToast(`Added missing variable: ${varName}`);
+          showToast(`Added a field for ${varName}`);
         }
 
         if (el) {
@@ -6871,7 +6875,7 @@ category = General
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
-            showToast("Failed to copy to clipboard", "error");
+            showToast("Couldn't copy to the clipboard", "error");
             return false;
           });
       }
@@ -6924,7 +6928,7 @@ category = General
           })
           .catch((err) => {
             console.error("Clipboard Error:", err);
-            showToast("Failed to copy to clipboard", "error");
+            showToast("Couldn't copy to the clipboard", "error");
           });
       }
 
@@ -7420,7 +7424,7 @@ category = General
           `.preview-var${vars}, .badge${vars}`,
         );
         if (instances.length === 0)
-          return showToast("Variable not found in current preview");
+          return showToast(`${varName} isn't in the current preview`);
 
         if (searchIndexes[varName] === undefined) searchIndexes[varName] = 0;
         else searchIndexes[varName]++;
